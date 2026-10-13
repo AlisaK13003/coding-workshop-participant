@@ -1,0 +1,11 @@
+.attention-list { padding: 4px 20px 12px; }
+.attention-list > button { width: 100%; display: flex; align-items: center; gap: 12px; padding: 14px 0; border: 0; border-bottom: 1px solid var(--line); background: transparent; color: var(--muted); text-align: left; }
+.attention-list > button:last-child { border: 0; }
+.attention-list p { flex: 1; display: grid; gap: 4px; margin: 0; }
+.attention-list strong { color: var(--ink); font-size: 12px; }
+.attention-list p span { font-size: 10px; }
+
+@media (max-width: 560px) {
+  .attention-list > button { flex-wrap: wrap; }
+  .attention-list p { min-width: 60%; }
+}

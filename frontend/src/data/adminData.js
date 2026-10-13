@@ -1,7 +1,7 @@
 // Sample data for the admin workspace, ported from the Figma prototype.
 // Replace these with API calls (in src/services) once the backend endpoints exist.
 import { formatDate } from '../utils/format.js'
-import { readStorage } from '../utils/storage.js'
+import { readEmployeeLogs } from '../services/demoSync.js'
 
 export const managerNames = ['Maya Chen', 'Noah Williams', 'Priya Shah']
 
@@ -258,7 +258,7 @@ const employeeMilestoneNames = {
 /** Seed work logs plus any workdays the employee workspace saved in this browser. */
 export function loadWorkLogs() {
   try {
-    const employeeLogs = readStorage('atlas.employee.logs', [])
+    const employeeLogs = readEmployeeLogs()
     return [
       ...workLogsSeed,
       ...employeeLogs.map((log) => ({

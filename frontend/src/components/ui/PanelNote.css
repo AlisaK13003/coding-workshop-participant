@@ -1,0 +1,2 @@
+.profile-cost-note { display: flex; gap: 8px; margin: 0 22px 20px; padding: 11px; border-radius: 8px; background: var(--teal-soft); color: var(--teal-dark); font-size: 10px; line-height: 1.5; }
+.profile-maintained-note { display: flex; gap: 8px; margin: 0 22px 20px; padding: 11px; border-radius: 8px; background: var(--soft); color: var(--muted); font-size: 10px; line-height: 1.5; }

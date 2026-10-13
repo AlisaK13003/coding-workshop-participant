@@ -1,0 +1,8 @@
+.review-detail { display: grid; grid-template-columns: 1fr 1fr; gap: 1px; margin: 20px 22px; overflow: hidden; border: 1px solid var(--line); border-radius: 10px; background: var(--line); }
+.review-detail > div { display: grid; gap: 6px; padding: 13px; background: var(--surface); }
+.review-detail span { color: var(--muted); font-size: 9px; text-transform: uppercase; letter-spacing: .06em; }
+.review-detail strong { font-size: 11px; }
+
+@media (max-width: 560px) {
+  .review-detail { grid-template-columns: 1fr; }
+}

@@ -7,12 +7,17 @@ import { useCallback, useState } from 'react'
 export function useNotifications(initialItems) {
   const [notifications, setNotifications] = useState(initialItems)
 
-  const markRead = useCallback(
-    (id) =>
+  const markReadWhere = useCallback(
+    (predicate) =>
       setNotifications((items) =>
-        items.map((item) => (item.id === id ? { ...item, read: true } : item)),
+        items.map((item) => (predicate(item) ? { ...item, read: true } : item)),
       ),
     [],
+  )
+
+  const markRead = useCallback(
+    (id) => markReadWhere((item) => item.id === id),
+    [markReadWhere],
   )
 
   const markAllRead = useCallback(
@@ -40,6 +45,7 @@ export function useNotifications(initialItems) {
     notifications,
     unreadCount,
     markRead,
+    markReadWhere,
     markAllRead,
     addNotification,
     removeNotifications,

@@ -1,0 +1,7 @@
+.month-calendar { display: grid; grid-template-columns: repeat(7, minmax(110px, 1fr)); overflow-x: auto; }
+.calendar-weekday { padding: 10px; border-bottom: 1px solid var(--line); color: var(--muted); font-size: 9px; font-weight: 700; text-align: center; }
+.calendar-day { min-height: 112px; padding: 8px 5px; border-right: 1px solid var(--line); border-bottom: 1px solid var(--line); }
+.calendar-day.outside { background: var(--soft); opacity: .62; }
+.calendar-day > span { display: block; margin: 0 4px 7px; color: var(--muted); font-size: 10px; }
+.calendar-day > div { display: grid; gap: 4px; }
+.calendar-bar { width: 100%; min-height: 20px; overflow: hidden; padding: 3px 5px; border: 0; border-radius: 4px; color: var(--ink); text-align: left; text-overflow: ellipsis; white-space: nowrap; font-size: 8px; }

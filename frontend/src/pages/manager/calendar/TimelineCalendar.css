@@ -1,0 +1,6 @@
+.timeline-calendar { min-width: 860px; padding: 18px; overflow-x: auto; }
+.timeline-scale { display: grid; grid-template-columns: repeat(11, 1fr); margin: 0 0 8px 210px; color: var(--muted); font-size: 8px; }
+.timeline-row { display: grid; grid-template-columns: 195px 1fr; gap: 15px; align-items: center; min-height: 52px; border-top: 1px solid var(--line); }
+.timeline-row > strong { font-size: 11px; }
+.timeline-row > div { position: relative; height: 30px; background-image: repeating-linear-gradient(to right, var(--line) 0, var(--line) 1px, transparent 1px, transparent 9.09%); }
+.timeline-bar { position: absolute; top: 4px; height: 23px; overflow: hidden; padding: 0 8px; border: 0; border-radius: 5px; color: var(--ink); text-align: left; white-space: nowrap; font-size: 8px; }
