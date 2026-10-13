@@ -152,3 +152,20 @@ CREATE TABLE activity_log (
     changes     JSONB,                            -- before and after values, e.g. {"budget": {"from": 220000, "to": 240000}}
     created_at  TIMESTAMPTZ NOT NULL DEFAULT now()
 );
+
+-- In-app notifications, one row per recipient. The backend creates them in the same
+-- transaction as the event that causes them, and users only see and mark their own.
+-- Marking as read fills in read_at; notifications are never deleted.
+CREATE TABLE notifications (
+    id           INTEGER GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+    recipient_id INTEGER NOT NULL REFERENCES users (id),
+    title        TEXT NOT NULL,  -- e.g. "Milestone review requested"
+    detail       TEXT,           -- e.g. "Emery Employee · Design"
+    project_id   INTEGER REFERENCES projects (id),
+    milestone_id INTEGER,
+    created_at   TIMESTAMPTZ NOT NULL DEFAULT now(),
+    read_at      TIMESTAMPTZ,    -- empty = unread
+
+    CONSTRAINT notification_milestone_in_project
+        FOREIGN KEY (milestone_id, project_id) REFERENCES milestones (id, project_id)
+);

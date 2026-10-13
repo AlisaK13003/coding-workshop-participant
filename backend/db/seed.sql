@@ -103,3 +103,13 @@ WHERE NOT EXISTS (
     SELECT 1 FROM activity_log l
     WHERE l.action = a.action AND l.entity_type = a.entity_type AND l.entity_id = a.entity_id
 );
+
+-- Morgan's notification about Emery's waiting review of Design.
+INSERT INTO notifications (recipient_id, title, detail, project_id, milestone_id, created_at)
+SELECT mgr.id, 'Milestone review requested', 'Emery Employee · Design', p.id, m.id, TIMESTAMPTZ '2026-10-02 16:30-04'
+FROM projects p
+JOIN users mgr    ON mgr.id = p.manager_id
+JOIN milestones m ON m.project_id = p.id AND m.name = 'Design'
+WHERE p.name = 'Customer Portal'
+  AND NOT EXISTS (SELECT 1 FROM notifications n
+                  WHERE n.recipient_id = mgr.id AND n.milestone_id = m.id AND n.title = 'Milestone review requested');
