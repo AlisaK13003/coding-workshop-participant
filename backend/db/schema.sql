@@ -111,3 +111,27 @@ CREATE TABLE milestone_reviews (
 CREATE UNIQUE INDEX one_open_review
     ON milestone_reviews (milestone_id)
     WHERE decision IS NULL;
+
+-- One row per employee per workday. hourly_rate is saved when the log is made, so later
+-- salary changes never alter past costs. A day's cost is hours * hourly_rate.
+-- Wrong entries are corrected in place by an admin; the activity log records the change.
+-- The backend checks: only employees log; employees log today only, admins may enter past
+-- dates, no future dates; the employee is a current member on that milestone, the milestone
+-- is available, and the project is in progress and not archived.
+CREATE TABLE work_logs (
+    id           INTEGER GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+    employee_id  INTEGER NOT NULL REFERENCES users (id),
+    project_id   INTEGER NOT NULL REFERENCES projects (id),
+    milestone_id INTEGER NOT NULL,
+    work_date    DATE NOT NULL,
+    hours        NUMERIC(4, 2) NOT NULL DEFAULT 8 CHECK (hours = 8),
+    hourly_rate  NUMERIC(10, 2) NOT NULL CHECK (hourly_rate >= 0),  -- annual salary / 2080 on the day
+    entered_by   INTEGER NOT NULL REFERENCES users (id),            -- the employee, or an admin for past entries
+    created_at   TIMESTAMPTZ NOT NULL DEFAULT now(),
+
+    -- one project per employee per day
+    CONSTRAINT one_log_per_day UNIQUE (employee_id, work_date),
+    CONSTRAINT log_milestone_in_project FOREIGN KEY (milestone_id, project_id) REFERENCES milestones (id, project_id),
+    -- ISODOW: Monday = 1 ... Sunday = 7
+    CONSTRAINT weekdays_only CHECK (EXTRACT(ISODOW FROM work_date) < 6)
+);

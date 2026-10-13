@@ -59,3 +59,13 @@ JOIN projects p ON p.id = m.project_id
 JOIN users u    ON u.email = 'emery@example.com'
 WHERE p.name = 'Customer Portal' AND m.name = 'Design'
 ON CONFLICT (milestone_id) WHERE decision IS NULL DO NOTHING;
+
+-- Emery's first two workdays on Design, at $83,200 / 2080 = $40.00 per hour.
+INSERT INTO work_logs (employee_id, project_id, milestone_id, work_date, hourly_rate, entered_by)
+SELECT u.id, p.id, m.id, d.work_date, round(u.annual_salary / 2080, 2), u.id
+FROM users u
+JOIN projects p   ON p.name = 'Customer Portal'
+JOIN milestones m ON m.project_id = p.id AND m.name = 'Design'
+JOIN (VALUES (DATE '2026-10-01'), (DATE '2026-10-02')) AS d (work_date) ON true
+WHERE u.email = 'emery@example.com'
+ON CONFLICT (employee_id, work_date) DO NOTHING;
