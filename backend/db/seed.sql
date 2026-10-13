@@ -19,3 +19,9 @@ SELECT 'Customer Portal', id, '2026-10-01', '2026-12-31', 50000.00
 FROM users
 WHERE email = 'morgan@example.com'
   AND NOT EXISTS (SELECT 1 FROM projects WHERE name = 'Customer Portal');
+
+INSERT INTO project_members (project_id, employee_id)
+SELECT p.id, u.id
+FROM projects p, users u
+WHERE p.name = 'Customer Portal' AND u.email = 'emery@example.com'
+ON CONFLICT (project_id, employee_id) WHERE removed_at IS NULL DO NOTHING;

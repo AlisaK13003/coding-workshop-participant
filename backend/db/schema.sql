@@ -38,3 +38,19 @@ CREATE TABLE projects (
     CONSTRAINT manager_is_a_manager FOREIGN KEY (manager_id, manager_role) REFERENCES users (id, role),
     CONSTRAINT end_after_start CHECK (end_date >= start_date)
 );
+
+-- Removing a member fills in removed_at instead of deleting the row, so history is kept.
+-- The backend checks that employee_id is an employee when adding a member. A plain foreign
+-- key is used so past memberships don't block promoting that employee later.
+CREATE TABLE project_members (
+    id          INTEGER GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+    project_id  INTEGER NOT NULL REFERENCES projects (id),
+    employee_id INTEGER NOT NULL REFERENCES users (id),
+    added_at    TIMESTAMPTZ NOT NULL DEFAULT now(),
+    removed_at  TIMESTAMPTZ
+);
+
+-- an employee can only be on a project once at a time
+CREATE UNIQUE INDEX one_active_membership
+    ON project_members (project_id, employee_id)
+    WHERE removed_at IS NULL;
