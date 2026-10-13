@@ -25,3 +25,14 @@ SELECT p.id, u.id
 FROM projects p, users u
 WHERE p.name = 'Customer Portal' AND u.email = 'emery@example.com'
 ON CONFLICT (project_id, employee_id) WHERE removed_at IS NULL DO NOTHING;
+
+INSERT INTO milestones (project_id, name, start_date, end_date)
+SELECT p.id, m.name, m.start_date, m.end_date
+FROM projects p,
+     (VALUES (1, 'Design',      DATE '2026-10-01', DATE '2026-10-31'),
+             (2, 'Backend API', DATE '2026-11-01', DATE '2026-11-30'),
+             (3, 'Frontend',    DATE '2026-11-01', DATE '2026-12-15'),
+             (4, 'Launch',      DATE '2026-12-16', DATE '2026-12-31')) AS m (position, name, start_date, end_date)
+WHERE p.name = 'Customer Portal'
+  AND NOT EXISTS (SELECT 1 FROM milestones WHERE project_id = p.id AND name = m.name)
+ORDER BY m.position;

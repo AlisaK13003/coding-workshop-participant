@@ -54,3 +54,17 @@ CREATE TABLE project_members (
 CREATE UNIQUE INDEX one_active_membership
     ON project_members (project_id, employee_id)
     WHERE removed_at IS NULL;
+
+-- Status is worked out, not stored: completed (completed_at is set), awaiting review
+-- (open review request), blocked (a prerequisite is unfinished), or available.
+-- The backend keeps milestone dates within the project's dates and never clears completed_at.
+CREATE TABLE milestones (
+    id           INTEGER GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+    project_id   INTEGER NOT NULL REFERENCES projects (id),
+    name         TEXT NOT NULL,
+    start_date   DATE NOT NULL,
+    end_date     DATE NOT NULL,
+    completed_at TIMESTAMPTZ,  -- empty = not completed
+
+    CONSTRAINT milestone_end_after_start CHECK (end_date >= start_date)
+);
