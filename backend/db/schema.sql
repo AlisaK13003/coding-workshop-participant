@@ -39,22 +39,6 @@ CREATE TABLE projects (
     CONSTRAINT end_after_start CHECK (end_date >= start_date)
 );
 
--- Removing a member fills in removed_at instead of deleting the row, so history is kept.
--- The backend checks that employee_id is an employee when adding a member. A plain foreign
--- key is used so past memberships don't block promoting that employee later.
-CREATE TABLE project_members (
-    id          INTEGER GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
-    project_id  INTEGER NOT NULL REFERENCES projects (id),
-    employee_id INTEGER NOT NULL REFERENCES users (id),
-    added_at    TIMESTAMPTZ NOT NULL DEFAULT now(),
-    removed_at  TIMESTAMPTZ
-);
-
--- an employee can only be on a project once at a time
-CREATE UNIQUE INDEX one_active_membership
-    ON project_members (project_id, employee_id)
-    WHERE removed_at IS NULL;
-
 -- Status is worked out, not stored: completed (completed_at is set), awaiting review
 -- (open review request), blocked (a prerequisite is unfinished), or available.
 -- The backend keeps milestone dates within the project's dates and never clears completed_at.
@@ -66,7 +50,7 @@ CREATE TABLE milestones (
     end_date     DATE NOT NULL,
     completed_at TIMESTAMPTZ,  -- empty = not completed
 
-    -- lets milestone_dependencies require both milestones to be in the same project
+    -- lets other tables require that a milestone belongs to a given project
     UNIQUE (id, project_id),
     CONSTRAINT milestone_end_after_start CHECK (end_date >= start_date)
 );
@@ -84,3 +68,46 @@ CREATE TABLE milestone_dependencies (
     CONSTRAINT milestone_in_project     FOREIGN KEY (milestone_id, project_id)    REFERENCES milestones (id, project_id),
     CONSTRAINT prerequisite_in_project  FOREIGN KEY (prerequisite_id, project_id) REFERENCES milestones (id, project_id)
 );
+
+-- Removing a member fills in removed_at instead of deleting the row, so history is kept.
+-- The backend checks that employee_id is an employee when adding a member. A plain foreign
+-- key is used so past memberships don't block promoting that employee later.
+CREATE TABLE project_members (
+    id           INTEGER GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+    project_id   INTEGER NOT NULL REFERENCES projects (id),
+    employee_id  INTEGER NOT NULL REFERENCES users (id),
+    added_at     TIMESTAMPTZ NOT NULL DEFAULT now(),
+    removed_at   TIMESTAMPTZ,
+    -- the employee's current milestone in this project; empty = none yet, or waiting to be reassigned
+    milestone_id INTEGER,
+
+    CONSTRAINT milestone_in_members_project
+        FOREIGN KEY (milestone_id, project_id) REFERENCES milestones (id, project_id)
+);
+
+-- an employee can only be on a project once at a time
+CREATE UNIQUE INDEX one_active_membership
+    ON project_members (project_id, employee_id)
+    WHERE removed_at IS NULL;
+
+-- An employee flags a milestone as done; the project's manager (or an admin) accepts it or keeps it open.
+-- Accepting also completes the milestone and moves its employees, in one transaction in the backend.
+CREATE TABLE milestone_reviews (
+    id           INTEGER GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+    milestone_id INTEGER NOT NULL REFERENCES milestones (id),
+    requested_by INTEGER NOT NULL REFERENCES users (id),
+    requested_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+    decision     TEXT CHECK (decision IN ('accepted', 'kept_open')),  -- empty = still waiting
+    decided_by   INTEGER REFERENCES users (id),
+    decided_at   TIMESTAMPTZ,
+    feedback     TEXT,  -- optional
+
+    -- a decision always records who made it and when
+    CONSTRAINT decision_is_complete CHECK (
+        (decision IS NULL) = (decided_by IS NULL) AND (decision IS NULL) = (decided_at IS NULL))
+);
+
+-- only one waiting request per milestone
+CREATE UNIQUE INDEX one_open_review
+    ON milestone_reviews (milestone_id)
+    WHERE decision IS NULL;

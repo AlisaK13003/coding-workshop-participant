@@ -20,12 +20,6 @@ FROM users
 WHERE email = 'morgan@example.com'
   AND NOT EXISTS (SELECT 1 FROM projects WHERE name = 'Customer Portal');
 
-INSERT INTO project_members (project_id, employee_id)
-SELECT p.id, u.id
-FROM projects p, users u
-WHERE p.name = 'Customer Portal' AND u.email = 'emery@example.com'
-ON CONFLICT (project_id, employee_id) WHERE removed_at IS NULL DO NOTHING;
-
 INSERT INTO milestones (project_id, name, start_date, end_date)
 SELECT p.id, m.name, m.start_date, m.end_date
 FROM projects p,
@@ -48,3 +42,20 @@ JOIN milestones m   ON m.project_id = p.id   AND m.name = d.milestone
 JOIN milestones pre ON pre.project_id = p.id AND pre.name = d.prerequisite
 WHERE p.name = 'Customer Portal'
 ON CONFLICT DO NOTHING;
+
+-- Members are added after milestones so each can start on one.
+INSERT INTO project_members (project_id, employee_id, milestone_id)
+SELECT p.id, u.id, m.id
+FROM projects p
+JOIN users u      ON u.email = 'emery@example.com'
+JOIN milestones m ON m.project_id = p.id AND m.name = 'Design'
+WHERE p.name = 'Customer Portal'
+ON CONFLICT (project_id, employee_id) WHERE removed_at IS NULL DO NOTHING;
+
+INSERT INTO milestone_reviews (milestone_id, requested_by)
+SELECT m.id, u.id
+FROM milestones m
+JOIN projects p ON p.id = m.project_id
+JOIN users u    ON u.email = 'emery@example.com'
+WHERE p.name = 'Customer Portal' AND m.name = 'Design'
+ON CONFLICT (milestone_id) WHERE decision IS NULL DO NOTHING;
