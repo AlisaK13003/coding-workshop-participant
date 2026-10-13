@@ -1,0 +1,10 @@
+.log-confirmation { display: flex; gap: 13px; padding: 22px; }
+.log-confirmation > span { width: 42px; height: 42px; display: grid; place-items: center; flex: 0 0 auto; border-radius: 50%; background: var(--teal-soft); color: var(--teal-dark); }
+.log-confirmation p { display: grid; gap: 7px; margin: 0; }
+.log-confirmation strong { font-size: 12px; line-height: 1.5; }
+.log-confirmation small { color: var(--muted); font-size: 10px; line-height: 1.5; }
+.confirmation-summary { margin: 0 22px; padding: 4px 14px; border: 1px solid var(--line); border-radius: 9px; background: var(--soft); }
+.confirmation-summary div { display: flex; justify-content: space-between; padding: 10px 0; font-size: 10px; }
+.confirmation-summary div + div { border-top: 1px solid var(--line); }
+.confirmation-summary dt { color: var(--muted); }
+.confirmation-summary dd { margin: 0; font-weight: 700; }

@@ -2,7 +2,7 @@ import { cx } from '../../utils/cx.js'
 import './Panel.css'
 
 /** Title row of a panel: heading, optional description, optional actions on the right. */
-export function SectionHead({ title, description, actions }) {
+function SectionHead({ title, description, actions }) {
   return (
     <div className="section-head">
       <div>

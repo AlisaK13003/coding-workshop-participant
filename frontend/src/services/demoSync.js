@@ -38,7 +38,7 @@ export function removeReviewRequest(milestoneId) {
 }
 
 // Milestone updates: { [milestoneId]: { status?, employeeIds?, feedback? } }
-export function readMilestoneUpdates() {
+function readMilestoneUpdates() {
   return readStorage(KEYS.milestoneUpdates, {})
 }
 
@@ -48,7 +48,7 @@ export function saveMilestoneUpdates(changes) {
 }
 
 // Demo employee's milestone per project: { [projectId]: milestoneId | null }
-export function readEmployeeAssignments() {
+function readEmployeeAssignments() {
   return readStorage(KEYS.employeeAssignments, {})
 }
 

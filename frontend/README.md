@@ -2,39 +2,80 @@
 
 ## Overview
 
-This folder contains React frontend application with hello world example.
+Project Tracker frontend: a React 19 + Vite app (plain JavaScript) with a sign-in
+page and one workspace per role (admin, manager, employee). It currently runs on
+sample data; the backend API will replace it.
 
 ## Prerequisites
 
-- React - JavaScript library for building user interfaces
-- React Router - Client-side routing for React
-- Material UI - Comprehensive UI component library
+- Node.js and npm
+- React, React Router and lucide-react icons (installed with `npm install`)
 
 ## Structure
 
 ```
-coding-workshop-participant/
-├── frontend/              # React frontend
-│   ├── public/              # Public assets
-│   ├── src/                 # Source code
-│   │   ├── pages/             # Page components
-│   │   ├── components/        # Reusable components
-│   │   ├── services/          # API client
-│   │   └── App.js             # Main app
-│   ├── .env.sample          # React environment variables
-│   ├── eslint.config.js     # ESLint JS tool configuration
-│   ├── index.html           # Landing page
-│   ├── package.json         # App metadata with dependencies
-│   ├── README.md            # Frontend guide (YOU ARE HERE)
-│   └── vite.config.js       # Vite build tool configuration
-├── ...
+frontend/
+├── public/                  # Static assets
+├── src/
+│   ├── main.jsx             # Entry: BrowserRouter + global styles
+│   ├── App.jsx              # Route table: /, /admin/*, /manager/*, /employee/*
+│   ├── index.css            # Design tokens, reset, shared layout helpers
+│   ├── components/
+│   │   ├── ui/              # Small primitives (Button, Badge, DataTable, Modal…) + index.js
+│   │   ├── layout/          # AppShell shared by all roles (sidebar, top bar, menus)
+│   │   ├── dialogs/         # ConfirmDialog, FormDialog and their building blocks
+│   │   ├── milestones/      # DependencyDiagram, MilestoneTimeline, ReviewIcon
+│   │   ├── worklogs/        # WorkLogTable with column presets
+│   │   ├── projects/        # Project summary cards, budget/milestone progress, deadlines
+│   │   ├── users/           # AssignmentList
+│   │   └── activity/        # ActivityList (audit trail)
+│   ├── pages/
+│   │   ├── LoginPage.jsx    # Sign-in page
+│   │   ├── admin/           # Admin workspace: pages, tabs, dialogs, config
+│   │   ├── manager/         # Manager workspace: pages, calendar, dialogs, data hook
+│   │   └── employee/        # Employee workspace: pages, tabs, dialogs, data hook
+│   ├── data/                # Sample data per role (replaced by API calls later)
+│   ├── services/            # Demo sign-in and demo cross-role sync (temporary)
+│   ├── hooks/               # useModal, useToast, useNotifications, useDisclosure
+│   └── utils/               # Pure helpers: formatting, schedule health, milestones, calendar
+├── eslint.config.js         # ESLint configuration
+├── index.html               # HTML entry
+├── package.json             # Scripts and dependencies
+└── vite.config.js           # Vite configuration
 ```
+
+Each component imports its own stylesheet from the same folder.
+
+## Demo sign-in
+
+Until the backend login exists, sign-in is a demo (`src/services/demoAuth.js`).
+Use one of these usernames (not case-sensitive) with any non-empty password:
+
+| Username     | Opens       |
+|--------------|-------------|
+| `aadmin1`    | `/admin`    |
+| `mmanager2`  | `/manager`  |
+| `eemployee3` | `/employee` |
+
+"Sign out" in the profile menu returns to the sign-in page. Manager and employee
+actions (review requests, logged work, milestone changes) are shared through
+localStorage in the same browser; clear site data to reset the demo.
 
 ## Usage
 
 ### Local Development
 
-To run your application locally:
+Run only the frontend:
+
+```sh
+npm install
+npm run dev      # http://localhost:3000
+npm run lint     # ESLint
+npm run build    # Production build into dist/
+```
+
+Or start the full local environment (databases, backend and frontend) from the
+repository root:
 
 ```sh
 ./bin/start-dev.sh

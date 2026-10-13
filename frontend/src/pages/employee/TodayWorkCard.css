@@ -1,0 +1,27 @@
+.today-card { margin-bottom: 20px; overflow: hidden; border: 1px solid var(--line-dark); border-radius: 17px; background: var(--surface); box-shadow: 0 14px 36px rgb(28 34 32 / 6%); }
+.today-card-head { display: flex; align-items: center; justify-content: space-between; gap: 20px; padding: 22px 24px; border-bottom: 1px solid var(--line); }
+.today-card-head h2 { margin: 5px 0 0; font-size: 21px; font-weight: 580; letter-spacing: -.02em; }
+.today-hours { padding: 7px 11px; border-radius: 999px; background: var(--teal-soft); color: var(--teal-dark); font-size: 11px; font-weight: 720; }
+.today-form { display: grid; grid-template-columns: minmax(220px, 1.2fr) minmax(210px, 1fr) 110px auto; align-items: end; gap: 16px; padding: 22px 24px; }
+.selected-milestone, .fixed-hours { min-height: 57px; display: grid; align-content: center; gap: 5px; padding: 0 14px; border-left: 1px solid var(--line); }
+.selected-milestone > span, .fixed-hours span { color: var(--muted); font-size: 9px; text-transform: uppercase; letter-spacing: .06em; }
+.selected-milestone strong, .fixed-hours strong { font-size: 12px; }
+.selected-milestone .badge { width: fit-content; }
+.today-rule { padding: 10px 24px; border-top: 1px solid var(--line); background: var(--soft); color: var(--muted); font-size: 10px; }
+.today-success, .today-unavailable { display: flex; align-items: center; gap: 14px; padding: 24px; }
+.today-success > span { width: 44px; height: 44px; display: grid; place-items: center; border-radius: 50%; background: var(--green-soft); color: var(--green); }
+.today-success > div, .today-unavailable > div { display: grid; gap: 5px; }
+.today-success strong, .today-unavailable strong { font-size: 14px; }
+.today-success p { display: flex; align-items: center; gap: 4px; margin: 0; color: var(--ink); font-size: 11px; }
+.today-success small, .today-unavailable p { margin: 0; color: var(--muted); font-size: 10px; }
+.today-unavailable { color: var(--amber); background: var(--amber-soft); }
+
+@media (max-width: 1180px) {
+  .today-form { grid-template-columns: 1fr 1fr; }
+}
+
+@media (max-width: 560px) {
+  .today-card-head { align-items: flex-start; flex-direction: column; }
+  .today-form { grid-template-columns: 1fr; }
+  .selected-milestone, .fixed-hours { border-top: 1px solid var(--line); border-left: 0; padding: 12px 0; }
+}

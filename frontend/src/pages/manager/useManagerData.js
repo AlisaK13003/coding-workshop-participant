@@ -3,8 +3,8 @@ import {
   employeesSeed,
   loadManagerLogs,
   loadManagerMilestones,
+  loadManagerNotices,
   loadManagerProjects,
-  noticesSeed,
 } from '../../data/managerData.js'
 import { useNotifications } from '../../hooks/useNotifications.js'
 import {
@@ -39,7 +39,7 @@ export function useManagerData() {
   const [milestones, setMilestones] = useState(loadManagerMilestones)
   const [logs] = useState(loadManagerLogs)
   const [employees, setEmployees] = useState(employeesSeed)
-  const notices = useNotifications(noticesSeed)
+  const notices = useNotifications(loadManagerNotices)
 
   const visibleProjects = projects.filter((project) => !project.closed)
   const visibleIds = new Set(visibleProjects.map((project) => project.id))

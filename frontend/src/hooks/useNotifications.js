@@ -3,6 +3,7 @@ import { useCallback, useState } from 'react'
 /**
  * Notification list state. Items look like { id, title, detail, read }
  * plus any extra fields a role needs (e.g. projectId).
+ * initialItems may be an array or a function returning one (run once).
  */
 export function useNotifications(initialItems) {
   const [notifications, setNotifications] = useState(initialItems)

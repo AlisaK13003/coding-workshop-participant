@@ -1,0 +1,15 @@
+.employee-stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; margin-bottom: 20px; }
+.employee-review-list { padding: 5px 20px 12px; }
+.employee-review-list > button { width: 100%; display: flex; align-items: center; gap: 12px; padding: 14px 0; border: 0; border-bottom: 1px solid var(--line); background: transparent; color: var(--muted); text-align: left; }
+.employee-review-list p { flex: 1; display: grid; gap: 4px; margin: 0; }
+.employee-review-list strong { color: var(--ink); font-size: 12px; }
+.employee-review-list p span { font-size: 10px; }
+.scope-footnote { display: flex; align-items: center; gap: 7px; color: var(--muted); font-size: 10px; }
+
+@media (max-width: 820px) {
+  .employee-stats { grid-template-columns: 1fr; }
+}
+
+@media (max-width: 560px) {
+  .employee-review-list .badge { display: none; }
+}

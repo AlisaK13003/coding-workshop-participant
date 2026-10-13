@@ -1,0 +1,8 @@
+.employee-notification-list { padding: 5px 20px 12px; }
+.employee-notification-list > div { display: flex; align-items: flex-start; gap: 10px; padding: 14px 0; border-bottom: 1px solid var(--line); }
+.employee-notification-list > div:last-child { border: 0; }
+.employee-notification-list > div > span { width: 7px; height: 7px; margin-top: 4px; border-radius: 50%; background: var(--line-dark); }
+.employee-notification-list > div > span.unread-dot { background: var(--teal); }
+.employee-notification-list p { display: grid; gap: 4px; margin: 0; }
+.employee-notification-list strong { font-size: 11px; }
+.employee-notification-list small { color: var(--muted); font-size: 9px; line-height: 1.45; }

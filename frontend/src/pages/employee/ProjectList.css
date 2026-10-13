@@ -1,0 +1,21 @@
+.employee-project-list > button { width: 100%; display: grid; grid-template-columns: minmax(240px, 1.35fr) .7fr 1fr .9fr .5fr auto; align-items: center; gap: 16px; padding: 16px 18px; border: 0; border-bottom: 1px solid var(--line); background: var(--surface); color: var(--muted); text-align: left; }
+.employee-project-list > button:hover { background: #fafbfb; }
+.employee-project-list > button > div:not(.project-list-main) { display: grid; gap: 5px; }
+.employee-project-list > button > div > span { font-size: 8px; text-transform: uppercase; letter-spacing: .05em; }
+.employee-project-list > button > div > strong { color: var(--ink); font-size: 10px; }
+.employee-project-list > button > div > small { font-size: 9px; }
+.project-list-main { display: flex; align-items: center; gap: 11px; }
+.project-list-main p { display: grid; gap: 4px; margin: 0; }
+.project-list-main strong { color: var(--ink); font-size: 12px; }
+.project-list-main small { font-size: 9px; }
+.project-list-icon { width: 34px; height: 34px; display: grid; place-items: center; border-radius: 9px; background: var(--teal-soft); color: var(--teal-dark); }
+
+@media (max-width: 1180px) {
+  .employee-project-list > button { grid-template-columns: 1.3fr .7fr 1fr .8fr auto; }
+  .employee-project-list > button > div:nth-of-type(5) { display: none; }
+}
+
+@media (max-width: 820px) {
+  .employee-project-list > button { grid-template-columns: 1fr auto; }
+  .employee-project-list > button > div:not(.project-list-main) { display: none; }
+}

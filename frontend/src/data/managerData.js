@@ -8,13 +8,14 @@ import {
   readEmployeeLogs,
   readReviewRequests,
 } from '../services/demoSync.js'
+import { referenceToday } from './demoClock.js'
 
 /** The prototype's fixed "today", used for schedule phases and the calendar. */
-export const referenceToday = new Date('2025-06-18T12:00:00')
+export { referenceToday }
 
 export const MANAGER_NAME = 'Maya Chen'
 
-export const projectsSeed = [
+const projectsSeed = [
   {
     id: 1,
     name: 'Customer Portal Rebuild',
@@ -110,7 +111,7 @@ export const employeesSeed = [
   },
 ]
 
-export const milestonesSeed = [
+const milestonesSeed = [
   {
     id: 11,
     projectId: 1,
@@ -280,7 +281,7 @@ export const milestonesSeed = [
   },
 ]
 
-export const logsSeed = [
+const logsSeed = [
   {
     id: 1,
     date: '2025-06-17',
@@ -373,7 +374,7 @@ export const logsSeed = [
   },
 ]
 
-export const noticesSeed = [
+const noticesSeed = [
   {
     id: 1,
     title: 'Milestone review requested',
@@ -426,6 +427,30 @@ export function loadManagerMilestones() {
       ? { ...milestone, requester: 'Aisha Patel', requestDate: 'Today' }
       : milestone,
   )
+}
+
+/**
+ * Seed notifications plus one "review requested" notice for each employee
+ * request made in this browser that the seed doesn't already cover.
+ */
+export function loadManagerNotices() {
+  const requests = readReviewRequests().filter(
+    (request) =>
+      !noticesSeed.some((notice) => notice.milestoneId === request.milestoneId),
+  )
+  return [
+    ...requests.map((request) => ({
+      id: `review-${request.milestoneId}`,
+      title: 'Milestone review requested',
+      detail: `Aisha Patel · ${
+        milestonesSeed.find((item) => item.id === request.milestoneId)?.name
+      }`,
+      projectId: request.projectId,
+      milestoneId: request.milestoneId,
+      read: false,
+    })),
+    ...noticesSeed,
+  ]
 }
 
 /** Seed logs plus workdays the demo employee logged in this browser. */

@@ -1,0 +1,18 @@
+.employee-assignment-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; padding: 18px; }
+.employee-assignment-card { display: grid; gap: 12px; padding: 16px; border: 1px solid var(--line); border-radius: 12px; background: var(--surface); color: var(--ink); text-align: left; }
+.employee-assignment-card:hover { border-color: var(--teal); }
+.employee-assignment-card > div:first-child { display: flex; align-items: center; justify-content: space-between; color: var(--teal-dark); }
+.employee-assignment-card > strong { font-size: 13px; }
+.employee-assignment-card > span { overflow: hidden; color: var(--muted); text-overflow: ellipsis; white-space: nowrap; font-size: 10px; }
+.employee-assignment-card dl { display: grid; gap: 8px; margin: 0; padding-top: 10px; border-top: 1px solid var(--line); }
+.employee-assignment-card dl div { display: flex; justify-content: space-between; gap: 10px; }
+.employee-assignment-card dt { color: var(--muted); font-size: 9px; }
+.employee-assignment-card dd { margin: 0; font-size: 10px; font-weight: 650; }
+
+@media (max-width: 1180px) {
+  .employee-assignment-grid { grid-template-columns: repeat(2, 1fr); }
+}
+
+@media (max-width: 560px) {
+  .employee-assignment-grid { grid-template-columns: 1fr; }
+}

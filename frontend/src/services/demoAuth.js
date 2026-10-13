@@ -2,7 +2,7 @@
 // It checks nothing: any non-empty password is accepted for a known demo
 // username. Replace demoSignIn with a real API call and delete this file.
 
-export const DEMO_ACCOUNTS = [
+const DEMO_ACCOUNTS = [
   { username: 'aadmin1', path: '/admin' },
   { username: 'mmanager2', path: '/manager' },
   { username: 'eemployee3', path: '/employee' },
