@@ -135,3 +135,20 @@ CREATE TABLE work_logs (
     -- ISODOW: Monday = 1 ... Sunday = 7
     CONSTRAINT weekdays_only CHECK (EXTRACT(ISODOW FROM work_date) < 6)
 );
+
+-- A record of who did what. The backend writes an entry in the same transaction as each
+-- change made by an admin or manager, and when an employee flags a milestone for review.
+-- Valid action codes are kept in the backend. Only admins can see this log.
+CREATE TABLE activity_log (
+    id          INTEGER GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+    actor_id    INTEGER NOT NULL REFERENCES users (id),
+    -- the actor's role at the time, so later promotions don't change old entries
+    actor_role  TEXT NOT NULL CHECK (actor_role IN ('admin', 'manager', 'employee')),
+    action      TEXT NOT NULL,                    -- e.g. 'project.update', 'member.assign'
+    entity_type TEXT NOT NULL,                    -- e.g. 'project', 'user', 'milestone', 'work_log'
+    entity_id   INTEGER NOT NULL,
+    project_id  INTEGER REFERENCES projects (id), -- the related project, if any
+    summary     TEXT NOT NULL,                    -- the sentence shown on screen, as it read at the time
+    changes     JSONB,                            -- before and after values, e.g. {"budget": {"from": 220000, "to": 240000}}
+    created_at  TIMESTAMPTZ NOT NULL DEFAULT now()
+);

@@ -69,3 +69,37 @@ JOIN milestones m ON m.project_id = p.id AND m.name = 'Design'
 JOIN (VALUES (DATE '2026-10-01'), (DATE '2026-10-02')) AS d (work_date) ON true
 WHERE u.email = 'emery@example.com'
 ON CONFLICT (employee_id, work_date) DO NOTHING;
+
+-- Activity matching the sample data above.
+INSERT INTO activity_log (actor_id, actor_role, action, entity_type, entity_id, project_id, summary, created_at)
+SELECT actor.id, actor.role, a.action, a.entity_type, a.entity_id, a.project_id, a.summary, a.created_at
+FROM (
+    SELECT 'alex@example.com' AS actor_email, 'user.create' AS action, 'user' AS entity_type,
+           (SELECT id FROM users WHERE email = 'morgan@example.com') AS entity_id, NULL::integer AS project_id,
+           'Created manager Morgan Manager.' AS summary, TIMESTAMPTZ '2026-09-28 09:00-04' AS created_at
+    UNION ALL
+    SELECT 'alex@example.com', 'user.create', 'user',
+           (SELECT id FROM users WHERE email = 'emery@example.com'), NULL,
+           'Created employee Emery Employee, reporting to Morgan Manager.', '2026-09-28 09:05-04'
+    UNION ALL
+    SELECT 'alex@example.com', 'project.create', 'project',
+           (SELECT id FROM projects WHERE name = 'Customer Portal'),
+           (SELECT id FROM projects WHERE name = 'Customer Portal'),
+           'Created project Customer Portal, managed by Morgan Manager.', '2026-09-28 09:30-04'
+    UNION ALL
+    SELECT 'morgan@example.com', 'member.assign', 'project_member',
+           (SELECT pm.id FROM project_members pm JOIN projects p ON p.id = pm.project_id
+            WHERE p.name = 'Customer Portal' AND pm.employee_id = (SELECT id FROM users WHERE email = 'emery@example.com')),
+           (SELECT id FROM projects WHERE name = 'Customer Portal'),
+           'Emery Employee assigned to Design.', '2026-09-30 10:00-04'
+    UNION ALL
+    SELECT 'emery@example.com', 'review.request', 'milestone_review',
+           (SELECT r.id FROM milestone_reviews r JOIN milestones m ON m.id = r.milestone_id WHERE m.name = 'Design'),
+           (SELECT id FROM projects WHERE name = 'Customer Portal'),
+           'Requested review of Design.', '2026-10-02 16:30-04'
+) AS a
+JOIN users actor ON actor.email = a.actor_email
+WHERE NOT EXISTS (
+    SELECT 1 FROM activity_log l
+    WHERE l.action = a.action AND l.entity_type = a.entity_type AND l.entity_id = a.entity_id
+);
