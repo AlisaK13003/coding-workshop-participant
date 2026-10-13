@@ -4,8 +4,14 @@
 
 CREATE TABLE users (
     id            INTEGER GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
-    name          TEXT NOT NULL,
-    email         TEXT NOT NULL UNIQUE,
+    -- shown on screen, e.g. USR-0003; always matches id and can't be edited
+    display_id    TEXT GENERATED ALWAYS AS ('USR-' || lpad(id::text, 4, '0')) STORED,
+    first_name    TEXT NOT NULL,
+    last_name     TEXT NOT NULL,
+    -- filled in by set_username below when not given; can be edited later
+    username      TEXT NOT NULL,
+    email         TEXT NOT NULL,
+    job_title     TEXT NOT NULL,
     role          TEXT NOT NULL CHECK (role IN ('admin', 'manager', 'employee')),
     manager_id    INTEGER,
     -- always 'manager'; lets the foreign key below require that manager_id is a manager
@@ -20,6 +26,29 @@ CREATE TABLE users (
     -- employees must have a salary; admins and managers must not
     CONSTRAINT employee_has_salary  CHECK ((role = 'employee') = (annual_salary IS NOT NULL))
 );
+
+-- usernames and emails are unique ignoring capitals: Emery.E clashes with emery.e
+CREATE UNIQUE INDEX username_unique ON users (lower(username));
+CREATE UNIQUE INDEX email_unique    ON users (lower(email));
+
+-- Trigger: Postgres runs this function automatically just before each new user is saved.
+-- If no username was given, it builds one: first initial + last name + id, lowercase
+-- letters only (Emery Employee with id 3 -> eemployee3). The id already exists at this point.
+CREATE FUNCTION set_username() RETURNS trigger AS $$
+BEGIN
+    IF NEW.username IS NULL THEN
+        NEW.username := lower(
+            left(regexp_replace(NEW.first_name, '[^A-Za-z]', '', 'g'), 1)
+            || regexp_replace(NEW.last_name, '[^A-Za-z]', '', 'g')
+        ) || NEW.id;
+    END IF;
+    RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+CREATE TRIGGER set_username
+    BEFORE INSERT ON users
+    FOR EACH ROW EXECUTE FUNCTION set_username();
 
 CREATE TABLE projects (
     id           INTEGER GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
@@ -38,6 +67,9 @@ CREATE TABLE projects (
     CONSTRAINT manager_is_a_manager FOREIGN KEY (manager_id, manager_role) REFERENCES users (id, role),
     CONSTRAINT end_after_start CHECK (end_date >= start_date)
 );
+
+-- project names are unique ignoring capitals
+CREATE UNIQUE INDEX project_name_unique ON projects (lower(name));
 
 -- Status is worked out, not stored: completed (completed_at is set), awaiting review
 -- (open review request), blocked (a prerequisite is unfinished), or available.

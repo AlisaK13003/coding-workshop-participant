@@ -2,23 +2,23 @@
 --   psql -h localhost -U postgres -d project_tracker -f backend/db/seed.sql
 -- Safe to run more than once: rows that already exist are skipped.
 
-INSERT INTO users (name, email, role) VALUES
-    ('Alex Admin',     'alex@example.com',   'admin'),
-    ('Morgan Manager', 'morgan@example.com', 'manager')
-ON CONFLICT (email) DO NOTHING;
+-- Usernames are left out so the set_username trigger generates them.
+INSERT INTO users (first_name, last_name, email, job_title, role) VALUES
+    ('Alex',   'Admin',   'alex@example.com',   'Operations Director', 'admin'),
+    ('Morgan', 'Manager', 'morgan@example.com', 'Engineering Manager', 'manager')
+ON CONFLICT ((lower(email))) DO NOTHING;
 
 -- Employees are added after managers so their manager's id can be looked up by email.
-INSERT INTO users (name, email, role, manager_id, annual_salary) VALUES
-    ('Emery Employee', 'emery@example.com', 'employee',
+INSERT INTO users (first_name, last_name, email, job_title, role, manager_id, annual_salary) VALUES
+    ('Emery', 'Employee', 'emery@example.com', 'Software Engineer', 'employee',
         (SELECT id FROM users WHERE email = 'morgan@example.com'), 83200.00)
-ON CONFLICT (email) DO NOTHING;
+ON CONFLICT ((lower(email))) DO NOTHING;
 
--- Projects have no unique column like email, so skip by name instead of ON CONFLICT.
 INSERT INTO projects (name, manager_id, start_date, end_date, budget)
 SELECT 'Customer Portal', id, '2026-10-01', '2026-12-31', 50000.00
 FROM users
 WHERE email = 'morgan@example.com'
-  AND NOT EXISTS (SELECT 1 FROM projects WHERE name = 'Customer Portal');
+ON CONFLICT ((lower(name))) DO NOTHING;
 
 INSERT INTO milestones (project_id, name, start_date, end_date)
 SELECT p.id, m.name, m.start_date, m.end_date
