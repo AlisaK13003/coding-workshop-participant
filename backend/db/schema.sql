@@ -66,5 +66,21 @@ CREATE TABLE milestones (
     end_date     DATE NOT NULL,
     completed_at TIMESTAMPTZ,  -- empty = not completed
 
+    -- lets milestone_dependencies require both milestones to be in the same project
+    UNIQUE (id, project_id),
     CONSTRAINT milestone_end_after_start CHECK (end_date >= start_date)
+);
+
+-- Each row means: milestone_id can't start until prerequisite_id is completed.
+-- Removing a dependency deletes its row; the activity log records the change.
+-- The backend rejects circular dependencies and changes involving completed milestones.
+CREATE TABLE milestone_dependencies (
+    milestone_id    INTEGER NOT NULL,
+    prerequisite_id INTEGER NOT NULL,
+    project_id      INTEGER NOT NULL,
+
+    PRIMARY KEY (milestone_id, prerequisite_id),
+    CONSTRAINT not_its_own_prerequisite CHECK (milestone_id <> prerequisite_id),
+    CONSTRAINT milestone_in_project     FOREIGN KEY (milestone_id, project_id)    REFERENCES milestones (id, project_id),
+    CONSTRAINT prerequisite_in_project  FOREIGN KEY (prerequisite_id, project_id) REFERENCES milestones (id, project_id)
 );

@@ -36,3 +36,15 @@ FROM projects p,
 WHERE p.name = 'Customer Portal'
   AND NOT EXISTS (SELECT 1 FROM milestones WHERE project_id = p.id AND name = m.name)
 ORDER BY m.position;
+
+INSERT INTO milestone_dependencies (milestone_id, prerequisite_id, project_id)
+SELECT m.id, pre.id, p.id
+FROM projects p
+JOIN (VALUES ('Backend API', 'Design'),
+             ('Frontend',    'Design'),
+             ('Launch',      'Backend API'),
+             ('Launch',      'Frontend')) AS d (milestone, prerequisite) ON true
+JOIN milestones m   ON m.project_id = p.id   AND m.name = d.milestone
+JOIN milestones pre ON pre.project_id = p.id AND pre.name = d.prerequisite
+WHERE p.name = 'Customer Portal'
+ON CONFLICT DO NOTHING;
