@@ -1,0 +1,14 @@
+.table-scroll { overflow-x: auto; }
+table { width: 100%; border-collapse: collapse; white-space: nowrap; }
+th { padding: 11px 16px; background: var(--soft); color: var(--muted); text-align: left; font-size: 9px; font-weight: 720; letter-spacing: .07em; text-transform: uppercase; }
+td { padding: 14px 16px; border-top: 1px solid var(--line); color: var(--muted); font-size: 11px; }
+td strong { color: var(--ink); font-size: 12px; }
+td:last-child { width: 42px; }
+.clickable-row { cursor: pointer; }
+.clickable-row:hover td { background: #fafbfb; }
+
+/* Cell helpers */
+.table-note { display: block; margin-top: 4px; color: var(--orange); font-size: 9px; }
+.table-link { padding: 0; border: 0; background: transparent; color: var(--ink); font-size: 12px; font-weight: 680; }
+.row-actions { display: flex; align-items: center; gap: 2px; }
+.closed-label { display: inline-flex; align-items: center; gap: 4px; color: var(--teal-dark); font-size: 10px; }

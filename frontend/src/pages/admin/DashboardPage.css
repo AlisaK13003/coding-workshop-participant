@@ -1,0 +1,9 @@
+.panel.attention-panel { display: flex; align-items: center; justify-content: space-between; padding: 14px 18px; background: var(--teal-soft); border-color: #bfe1df; }
+.attention-panel > div { display: flex; align-items: center; gap: 12px; }
+.attention-icon { width: 35px; height: 35px; display: grid; place-items: center; background: var(--surface); border-radius: 50%; color: var(--teal-dark); }
+.attention-panel p { display: grid; gap: 4px; margin: 0; font-size: 12px; }
+.attention-panel p span { color: var(--muted); }
+
+@media (max-width: 560px) {
+  .panel.attention-panel { align-items: flex-start; flex-direction: column; }
+}

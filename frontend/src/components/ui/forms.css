@@ -1,0 +1,14 @@
+.control { height: 38px; min-width: 145px; padding: 0 11px; border: 1px solid var(--line); border-radius: 9px; outline: none; background: var(--surface); color: var(--ink); font-size: 11px; }
+.control:focus { border-color: var(--teal); box-shadow: 0 0 0 3px var(--teal-soft); }
+.textarea-control { min-height: 100px; padding: 10px; resize: vertical; }
+.multi-select { min-height: 100px; padding: 8px; }
+.inline-select { min-width: 190px; }
+.field { display: grid; gap: 7px; color: var(--ink); font-size: 11px; font-weight: 620; }
+.field .control { width: 100%; }
+.field small { color: var(--muted); font-size: 9px; font-weight: 450; line-height: 1.5; }
+.form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; padding: 20px 0; }
+.form-single { padding: 20px 0; }
+
+@media (max-width: 560px) {
+  .form-grid { grid-template-columns: 1fr; }
+}

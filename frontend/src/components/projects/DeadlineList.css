@@ -1,0 +1,8 @@
+.deadline-list { padding: 6px 20px 12px; }
+.deadline-list > div { display: flex; align-items: center; gap: 13px; padding: 14px 0; border-bottom: 1px solid var(--line); }
+.deadline-list > div:last-child { border: 0; }
+.date-tile { width: 43px; height: 46px; display: grid; place-items: center; padding: 5px; border: 1px solid var(--line); border-radius: 8px; color: var(--muted); font-size: 8px; }
+.date-tile b { color: var(--ink); font-size: 16px; line-height: 1; }
+.deadline-list p { flex: 1; display: grid; gap: 4px; margin: 0; }
+.deadline-list strong { font-size: 12px; }
+.deadline-list p span { color: var(--muted); font-size: 10px; }

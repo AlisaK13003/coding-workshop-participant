@@ -1,0 +1,7 @@
+.button { min-height: 38px; display: inline-flex; align-items: center; justify-content: center; gap: 7px; padding: 0 15px; border: 1px solid transparent; border-radius: 999px; font-size: 12px; font-weight: 680; white-space: nowrap; }
+.button-primary { background: var(--ink); color: var(--surface); }
+.button-primary:hover { background: #353a38; }
+.button-secondary { background: var(--surface); color: var(--ink); border-color: var(--line-dark); }
+.button-secondary:hover, .button-ghost:hover { background: var(--soft); }
+.button-ghost { min-height: 34px; padding: 0 8px; background: transparent; color: var(--muted); }
+.button-danger { background: var(--red); color: var(--surface); }

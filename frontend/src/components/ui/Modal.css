@@ -1,0 +1,8 @@
+.modal-backdrop { position: fixed; inset: 0; z-index: 50; display: grid; place-items: center; padding: 20px; background: rgb(20 24 23 / 42%); backdrop-filter: blur(3px); }
+.modal { width: min(560px, 100%); max-height: min(760px, calc(100vh - 40px)); overflow: auto; border: 1px solid var(--line); border-radius: 18px; background: var(--surface); box-shadow: 0 30px 80px rgb(20 24 23 / 22%); }
+.modal-wide { width: min(680px, 100%); }
+.modal > header { display: flex; justify-content: space-between; align-items: flex-start; padding: 22px 22px 17px; border-bottom: 1px solid var(--line); }
+.modal h2 { margin: 0 0 6px; font-size: 18px; font-weight: 600; }
+.modal header p { margin: 0; color: var(--muted); font-size: 11px; }
+/* Horizontal padding for content placed directly inside a modal */
+.modal form, .modal > .field, .modal > .confirmation-block, .modal > .validation-note, .modal > .info-strip { margin-left: 22px; margin-right: 22px; }

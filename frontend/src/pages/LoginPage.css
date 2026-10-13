@@ -1,9 +1,15 @@
+/* Sign-in page. */
+
 .welcome-page {
   min-height: 100vh;
   min-height: 100svh;
   display: grid;
   place-items: center;
   padding: 24px;
+  font-weight: 400;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
 }
 
 .welcome-panel {
@@ -100,4 +106,9 @@
 
 .login-message:empty {
   display: none;
+}
+
+.welcome-panel .login-hint {
+  margin-top: 20px;
+  font-size: 13px;
 }

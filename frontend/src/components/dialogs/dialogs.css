@@ -1,0 +1,10 @@
+.modal-actions { display: flex; justify-content: flex-end; gap: 9px; padding: 16px 0 20px; border-top: 1px solid var(--line); }
+.modal > .modal-actions { margin: 20px 22px 0; }
+.validation-note { display: flex; gap: 9px; margin-top: 20px; padding: 12px; border-radius: 9px; background: var(--amber-soft); color: var(--amber); font-size: 10px; line-height: 1.5; }
+.validation-note svg { flex: 0 0 auto; }
+.danger-note { background: var(--red-soft); color: var(--red); }
+.confirmation-block { display: flex; gap: 13px; padding: 22px 0; }
+.confirmation-block svg { flex: 0 0 auto; color: var(--teal-dark); }
+.confirmation-block p { display: grid; gap: 7px; margin: 0; }
+.confirmation-block strong { font-size: 12px; }
+.confirmation-block span { color: var(--muted); font-size: 11px; line-height: 1.55; }

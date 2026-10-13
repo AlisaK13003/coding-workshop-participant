@@ -1,0 +1,4 @@
+.empty-state { min-height: 290px; display: grid; place-items: center; align-content: center; gap: 8px; padding: 30px; text-align: center; }
+.empty-icon { width: 45px; height: 45px; display: grid; place-items: center; border-radius: 50%; background: var(--soft); color: var(--muted); }
+.empty-state strong { font-size: 14px; }
+.empty-state p { max-width: 360px; margin: 0; color: var(--muted); font-size: 11px; line-height: 1.6; }

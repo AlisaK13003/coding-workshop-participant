@@ -1,0 +1,9 @@
+.timeline { padding: 8px 22px 18px; }
+.timeline > div { position: relative; display: flex; align-items: center; gap: 11px; min-height: 52px; }
+.timeline > div:not(:last-child)::after { content: ""; position: absolute; top: 38px; bottom: -14px; left: 13px; width: 1px; background: var(--line); }
+.timeline-node { width: 27px; height: 27px; z-index: 1; display: grid; place-items: center; flex: 0 0 auto; border: 1px solid var(--line-dark); border-radius: 50%; background: var(--surface); color: var(--muted); font-size: 10px; }
+.timeline-node.done { border-color: var(--teal); background: var(--teal); color: var(--surface); }
+.timeline-node.review { border-color: var(--orange); color: var(--orange); }
+.timeline p { flex: 1; display: grid; gap: 3px; margin: 0; }
+.timeline strong { font-size: 11px; }
+.timeline small { color: var(--muted); font-size: 9px; }

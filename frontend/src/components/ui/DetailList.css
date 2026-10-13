@@ -1,0 +1,5 @@
+.detail-list { margin: 0; padding: 8px 22px 20px; }
+.detail-list div { display: flex; justify-content: space-between; gap: 22px; padding: 13px 0; border-bottom: 1px solid var(--line); font-size: 11px; }
+.detail-list div:last-child { border: 0; }
+.detail-list dt { color: var(--muted); }
+.detail-list dd { margin: 0; color: var(--ink); font-weight: 620; text-align: right; }

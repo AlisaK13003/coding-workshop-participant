@@ -1,0 +1,7 @@
+.tabs { display: flex; gap: 26px; margin-bottom: 18px; border-bottom: 1px solid var(--line); }
+.tabs button { padding: 0 0 11px; border: 0; border-bottom: 2px solid transparent; background: transparent; color: var(--muted); font-size: 12px; }
+.tabs button.active { border-color: var(--teal); color: var(--ink); font-weight: 700; }
+
+@media (max-width: 560px) {
+  .tabs { gap: 18px; overflow-x: auto; }
+}

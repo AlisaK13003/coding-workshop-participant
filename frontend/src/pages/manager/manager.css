@@ -1,0 +1,93 @@
+/* Manager-only styles from the prototype, kept for phase 2.
+   NOT imported yet: when porting ManagerApp, move each block next to the
+   component that uses it (e.g. ReviewQueue.css, CalendarPage.css) and import it there.
+   Already shared (do not copy again): notifications, profile summary, view toggle,
+   dependency map (.manager-map), row actions, closed label, inline select,
+   phase backgrounds, form-single, textarea and multi-select controls. */
+
+.milestone-progress { min-width: 82px; display: grid; gap: 6px; }
+.review-queue { padding: 4px 20px 12px; }
+.review-queue > div { display: flex; align-items: center; gap: 14px; padding: 15px 0; border-bottom: 1px solid var(--line); }
+.review-queue > div:last-child { border: 0; }
+.review-icon { width: 34px; height: 34px; display: grid; place-items: center; border-radius: 50%; background: var(--amber-soft); color: var(--amber); }
+.review-queue p { flex: 1; display: grid; gap: 4px; margin: 0; }
+.review-queue p strong, .review-requester strong { font-size: 12px; }
+.review-queue p span, .review-requester span, .review-queue time { color: var(--muted); font-size: 10px; }
+.review-requester { min-width: 120px; display: grid; gap: 3px; }
+.attention-list { padding: 4px 20px 12px; }
+.attention-list > button { width: 100%; display: flex; align-items: center; gap: 12px; padding: 14px 0; border: 0; border-bottom: 1px solid var(--line); background: transparent; color: var(--muted); text-align: left; }
+.attention-list > button:last-child { border: 0; }
+.attention-list p { flex: 1; display: grid; gap: 4px; margin: 0; }
+.attention-list strong { color: var(--ink); font-size: 12px; }
+.attention-list p span { font-size: 10px; }
+.project-card-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; padding: 18px; }
+.project-card { display: grid; gap: 15px; padding: 19px; border: 1px solid var(--line); border-radius: 13px; background: var(--surface); color: var(--ink); text-align: left; }
+.project-card:hover { border-color: var(--line-dark); box-shadow: 0 10px 24px rgb(28 34 32 / 7%); }
+.project-card > div:first-child { display: flex; justify-content: space-between; }
+.project-card > strong { font-size: 15px; }
+.project-card > span { color: var(--muted); font-size: 10px; }
+.project-card dl { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin: 0; }
+.project-card dl div { display: grid; gap: 5px; }
+.project-card dt { color: var(--muted); font-size: 9px; }
+.project-card dd { margin: 0; font-size: 11px; font-weight: 650; }
+.card-budget { display: grid; gap: 8px; padding-top: 13px; border-top: 1px solid var(--line); }
+.card-budget > span { display: flex; justify-content: space-between; color: var(--muted); font-size: 10px; }
+.card-budget b { color: var(--ink); }
+.calendar-toolbar { min-height: 76px; display: flex; align-items: center; gap: 16px; padding: 15px 18px; border-bottom: 1px solid var(--line); }
+.calendar-nav { display: flex; align-items: center; gap: 7px; }
+.calendar-nav > button:not(.button) { width: 34px; height: 34px; display: grid; place-items: center; border: 1px solid var(--line); border-radius: 8px; background: var(--surface); color: var(--ink); }
+.calendar-nav strong { min-width: 140px; margin-left: 5px; font-size: 13px; }
+.calendar-toolbar .search-box { margin-left: auto; }
+.schedule-legend { display: flex; align-items: center; gap: 18px; padding: 11px 18px; border-bottom: 1px solid var(--line); color: var(--muted); font-size: 10px; }
+.schedule-legend span { display: flex; align-items: center; gap: 6px; }
+.schedule-legend small { margin-left: auto; }
+.month-calendar { display: grid; grid-template-columns: repeat(7, minmax(110px, 1fr)); overflow-x: auto; }
+.calendar-weekday { padding: 10px; border-bottom: 1px solid var(--line); color: var(--muted); font-size: 9px; font-weight: 700; text-align: center; }
+.calendar-day { min-height: 112px; padding: 8px 5px; border-right: 1px solid var(--line); border-bottom: 1px solid var(--line); }
+.calendar-day.outside { background: var(--soft); opacity: .62; }
+.calendar-day > span { display: block; margin: 0 4px 7px; color: var(--muted); font-size: 10px; }
+.calendar-day > div { display: grid; gap: 4px; }
+.calendar-bar { width: 100%; min-height: 20px; overflow: hidden; padding: 3px 5px; border: 0; border-radius: 4px; color: var(--ink); text-align: left; text-overflow: ellipsis; white-space: nowrap; font-size: 8px; }
+.timeline-calendar { min-width: 860px; padding: 18px; overflow-x: auto; }
+.timeline-scale { display: grid; grid-template-columns: repeat(11, 1fr); margin: 0 0 8px 210px; color: var(--muted); font-size: 8px; }
+.timeline-row { display: grid; grid-template-columns: 195px 1fr; gap: 15px; align-items: center; min-height: 52px; border-top: 1px solid var(--line); }
+.timeline-row > strong { font-size: 11px; }
+.timeline-row > div { position: relative; height: 30px; background-image: repeating-linear-gradient(to right, var(--line) 0, var(--line) 1px, transparent 1px, transparent 9.09%); }
+.timeline-bar { position: absolute; top: 4px; height: 23px; overflow: hidden; padding: 0 8px; border: 0; border-radius: 5px; color: var(--ink); text-align: left; white-space: nowrap; font-size: 8px; }
+.scope-note { display: flex; align-items: center; gap: 6px; color: var(--muted); font-size: 10px; }
+.profile-cost-note { display: flex; gap: 8px; margin: 0 22px 20px; padding: 11px; border-radius: 8px; background: var(--teal-soft); color: var(--teal-dark); font-size: 10px; line-height: 1.5; }
+.info-strip.manager-log-note { margin: 14px 18px; }
+.review-detail { display: grid; grid-template-columns: 1fr 1fr; gap: 1px; margin: 20px 22px; overflow: hidden; border: 1px solid var(--line); border-radius: 10px; background: var(--line); }
+.review-detail > div { display: grid; gap: 6px; padding: 13px; background: var(--surface); }
+.review-detail span { color: var(--muted); font-size: 9px; text-transform: uppercase; letter-spacing: .06em; }
+.review-detail strong { font-size: 11px; }
+.employee-picker { padding: 10px 22px 20px; }
+.employee-picker button { width: 100%; display: flex; align-items: center; gap: 10px; padding: 13px 0; border: 0; border-bottom: 1px solid var(--line); background: transparent; color: var(--muted); text-align: left; }
+.employee-picker p { flex: 1; display: grid; gap: 4px; margin: 0; }
+.employee-picker strong { color: var(--ink); font-size: 12px; }
+.employee-picker span { font-size: 10px; }
+
+@media (max-width: 1180px) {
+  .project-card-grid { grid-template-columns: repeat(2, 1fr); }
+  .calendar-toolbar { flex-wrap: wrap; }
+  .calendar-toolbar .search-box { margin-left: 0; }
+}
+
+@media (max-width: 820px) {
+  .review-queue > div { align-items: flex-start; flex-wrap: wrap; }
+  .review-queue p { min-width: 50%; }
+  .project-card-grid { grid-template-columns: 1fr; }
+  .calendar-toolbar { align-items: stretch; flex-direction: column; }
+  .calendar-nav { flex-wrap: wrap; }
+  .calendar-toolbar .search-box { width: 100%; }
+  .schedule-legend { align-items: flex-start; flex-direction: column; gap: 8px; }
+  .schedule-legend small { margin-left: 0; }
+}
+
+@media (max-width: 560px) {
+  .review-requester, .review-queue time { display: none; }
+  .attention-list > button { flex-wrap: wrap; }
+  .attention-list p { min-width: 60%; }
+  .project-card-grid { padding: 12px; }
+  .review-detail { grid-template-columns: 1fr; }
+}

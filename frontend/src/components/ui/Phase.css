@@ -1,0 +1,10 @@
+.phase { display: inline-flex; align-items: center; gap: 6px; font-size: 11px; }
+.phase-dot { width: 7px; height: 7px; border-radius: 50%; }
+.phase-green { background: var(--green); }
+.phase-amber { background: var(--orange); }
+.phase-red { background: var(--red); }
+
+/* Phase-tinted backgrounds for calendar and timeline bars */
+.phase-bg-green { background: var(--green-soft); box-shadow: inset 3px 0 var(--green); }
+.phase-bg-amber { background: var(--amber-soft); box-shadow: inset 3px 0 var(--orange); }
+.phase-bg-red { background: var(--red-soft); box-shadow: inset 3px 0 var(--red); }

@@ -1,0 +1,11 @@
+.detail-hero { display: flex; justify-content: space-between; align-items: end; gap: 22px; margin-bottom: 22px; }
+.detail-hero h1 { margin: 4px 0 7px; font-size: clamp(28px, 3vw, 38px); font-weight: 540; letter-spacing: -.035em; line-height: 1.12; }
+.detail-hero p { margin: 0; color: var(--muted); font-size: 14px; }
+.detail-badges { display: flex; align-items: center; gap: 8px; margin-bottom: 10px; }
+.user-hero { display: flex; align-items: center; gap: 9px; }
+.user-hero .avatar { width: 52px; height: 52px; }
+.user-hero h1 { margin-bottom: 3px; }
+
+@media (max-width: 820px) {
+  .detail-hero { align-items: flex-start; flex-direction: column; }
+}

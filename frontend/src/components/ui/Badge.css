@@ -1,0 +1,6 @@
+.badge { display: inline-flex; align-items: center; padding: 4px 8px; border: 1px solid var(--line); border-radius: 999px; background: var(--soft); color: var(--muted); font-size: 9px; font-weight: 720; line-height: 1.2; }
+.badge-in-progress, .badge-available, .badge-green, .badge-employee { color: var(--green); background: var(--green-soft); border-color: #cce4d6; }
+.badge-completed, .badge-admin { color: var(--teal-dark); background: var(--teal-soft); border-color: #c5e4e2; }
+.badge-abandoned, .badge-red { color: var(--red); background: var(--red-soft); border-color: #eccdca; }
+.badge-amber, .badge-awaiting-review, .badge-manager { color: var(--amber); background: var(--amber-soft); border-color: #eadab3; }
+.badge-blocked { color: var(--muted); background: var(--soft); }

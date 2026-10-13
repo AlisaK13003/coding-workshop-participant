@@ -1,0 +1,5 @@
+.assignment-list { padding: 5px 20px 16px; }
+.assignment-list > div { display: flex; align-items: center; gap: 12px; padding: 16px 0; border-bottom: 1px solid var(--line); color: var(--muted); }
+.assignment-list p { flex: 1; display: grid; gap: 4px; margin: 0; }
+.assignment-list strong { color: var(--ink); font-size: 12px; }
+.assignment-list span { font-size: 10px; }

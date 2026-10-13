@@ -1,0 +1,12 @@
+.activity-list { padding: 2px 22px 12px; }
+.activity-list > div { display: flex; align-items: flex-start; gap: 12px; padding: 15px 0; border-bottom: 1px solid var(--line); }
+.activity-list > div:last-child { border: 0; }
+.activity-list p { flex: 1; display: grid; gap: 4px; margin: 0; }
+.activity-list strong { font-size: 12px; }
+.activity-list p span, .activity-list small, .activity-list time { color: var(--muted); font-size: 10px; }
+.activity-list small { line-height: 1.5; }
+.activity-list time { white-space: nowrap; }
+
+@media (max-width: 560px) {
+  .activity-list time { display: none; }
+}

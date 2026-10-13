@@ -1,0 +1,18 @@
+.profile-button { display: flex; align-items: center; gap: 9px; border: 0; background: transparent; color: var(--ink); text-align: left; }
+.profile-button > span { display: grid; gap: 2px; }
+.profile-button strong { font-size: 12px; }
+.profile-button small { color: var(--muted); font-size: 10px; }
+.popover.profile-popover { width: 200px; padding: 7px; }
+.profile-popover button { width: 100%; display: flex; gap: 9px; align-items: center; padding: 10px; border: 0; border-radius: 7px; background: transparent; color: var(--ink); font-size: 12px; }
+.profile-popover button:hover { background: var(--soft); }
+.manager-profile-summary { display: grid; gap: 4px; padding: 9px; }
+.manager-profile-summary strong { font-size: 12px; }
+.manager-profile-summary span { color: var(--muted); font-size: 10px; }
+
+@media (max-width: 820px) {
+  .profile-button > span, .profile-button > svg { display: none; }
+}
+
+@media (max-width: 560px) {
+  .profile-button { padding: 0; }
+}

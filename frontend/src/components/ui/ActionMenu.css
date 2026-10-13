@@ -1,0 +1,5 @@
+.action-menu { position: relative; }
+.action-menu-pop { display: none; position: absolute; right: 0; top: calc(100% + 6px); z-index: 5; width: 180px; padding: 6px; border: 1px solid var(--line); border-radius: 10px; background: var(--surface); box-shadow: 0 12px 25px rgb(28 34 32 / 10%); }
+.action-menu:hover .action-menu-pop { display: grid; }
+.action-menu-pop button { padding: 9px; border: 0; border-radius: 6px; background: transparent; color: var(--ink); text-align: left; font-size: 11px; }
+.action-menu-pop button:hover { background: var(--soft); }

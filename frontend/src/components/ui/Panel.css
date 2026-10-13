@@ -1,0 +1,4 @@
+.panel { margin-bottom: 20px; overflow: hidden; border: 1px solid var(--line); border-radius: 16px; background: var(--surface); }
+.section-head { min-height: 76px; display: flex; align-items: center; justify-content: space-between; gap: 18px; padding: 18px 22px; border-bottom: 1px solid var(--line); }
+.section-head h2 { margin: 0 0 5px; font-size: 15px; font-weight: 680; }
+.section-head p { margin: 0; color: var(--muted); font-size: 12px; }

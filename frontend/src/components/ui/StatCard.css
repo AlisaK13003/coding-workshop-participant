@@ -1,0 +1,10 @@
+.stat-card { min-height: 148px; padding: 20px; border: 1px solid var(--line); border-radius: 15px; background: var(--surface); }
+.stat-card.stat-accent { border-top: 3px solid var(--teal); }
+.stat-top { display: flex; justify-content: space-between; color: var(--muted); font-size: 12px; }
+.stat-card > strong { display: block; margin-top: 20px; font-size: 25px; font-weight: 570; letter-spacing: -.03em; }
+.stat-card p { margin: 7px 0 0; color: var(--muted); font-size: 11px; }
+
+@media (max-width: 560px) {
+  .stat-card { min-height: 122px; }
+  .stat-card > strong { margin-top: 15px; }
+}
