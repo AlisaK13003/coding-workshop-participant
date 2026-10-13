@@ -20,3 +20,21 @@ CREATE TABLE users (
     -- employees must have a salary; admins and managers must not
     CONSTRAINT employee_has_salary  CHECK ((role = 'employee') = (annual_salary IS NOT NULL))
 );
+
+CREATE TABLE projects (
+    id           INTEGER GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+    name         TEXT NOT NULL,
+    -- empty after unarchiving, until an admin assigns a new manager
+    manager_id   INTEGER,
+    manager_role TEXT NOT NULL DEFAULT 'manager' CHECK (manager_role = 'manager'),
+    start_date   DATE NOT NULL,
+    end_date     DATE NOT NULL,  -- predicted end date
+    budget       NUMERIC(12, 2) NOT NULL CHECK (budget >= 0),
+    status       TEXT NOT NULL DEFAULT 'in_progress'
+                 CHECK (status IN ('in_progress', 'completed', 'abandoned')),
+    archived_at  TIMESTAMPTZ,
+    created_at   TIMESTAMPTZ NOT NULL DEFAULT now(),
+
+    CONSTRAINT manager_is_a_manager FOREIGN KEY (manager_id, manager_role) REFERENCES users (id, role),
+    CONSTRAINT end_after_start CHECK (end_date >= start_date)
+);
