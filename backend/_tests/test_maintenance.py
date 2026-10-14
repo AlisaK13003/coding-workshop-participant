@@ -42,8 +42,15 @@ def test_a_web_request_can_never_run_a_task():
     assert counts() == {"users": 3, "projects": 1}
 
 
-def test_reset_forgets_the_cached_signing_key():
-    shared_auth = load_service("auth").auth
-    shared_auth._stored_secret = "old-key"
+def test_reset_keeps_the_signing_key():
+    # Running Lambdas cache the key, so a reset must not replace it.
+    sql("INSERT INTO app_settings (name, value) VALUES ('jwt_secret', 'kept-key')")
+    run_task("reset")
     run_task("reset_empty")
-    assert shared_auth._stored_secret is None
+    assert sql("SELECT value FROM app_settings WHERE name = 'jwt_secret'") == [{"value": "kept-key"}]
+
+
+def test_reset_works_without_a_stored_key():
+    sql("DELETE FROM app_settings")
+    assert run_task("reset")["ok"] is True
+    assert sql("SELECT count(*) AS n FROM app_settings")[0]["n"] == 0

@@ -13,7 +13,7 @@ import os
 
 import pg8000.native
 
-from . import auth, db
+from . import db
 
 SQL_DIR = os.path.dirname(os.path.abspath(__file__))
 
@@ -32,6 +32,14 @@ def is_task(event):
     return isinstance(event, dict) and "db_task" in event and "requestContext" not in event
 
 
+def _saved_signing_key(conn):
+    """The stored JWT signing key, or None (no app_settings table yet, or no key in it)."""
+    if conn.run("SELECT to_regclass('public.app_settings')")[0][0] is None:
+        return None
+    rows = conn.run("SELECT value FROM app_settings WHERE name = 'jwt_secret'")
+    return rows[0][0] if rows else None
+
+
 def _read_sql(name):
     with open(os.path.join(SQL_DIR, name), encoding="utf-8") as file:
         return file.read()
@@ -48,8 +56,13 @@ def run(event):
     try:
         conn.execute_simple("BEGIN; SET LOCAL client_min_messages = warning;")
         if rebuild:
+            # Every Lambda caches the signing key, so a rebuild keeps it: a new key would make
+            # the already-running Lambdas reject every new sign-in until AWS replaces them.
+            signing_key = _saved_signing_key(conn)
             conn.execute_simple("DROP SCHEMA public CASCADE; CREATE SCHEMA public;")
             conn.execute_simple(_read_sql("schema.sql"))
+            if signing_key is not None:
+                conn.run("INSERT INTO app_settings (name, value) VALUES ('jwt_secret', :key)", key=signing_key)
         for name in files:
             conn.execute_simple(_read_sql(name))
         conn.execute_simple("COMMIT;")
@@ -60,7 +73,4 @@ def run(event):
     finally:
         conn.close()
 
-    if rebuild:
-        # The rebuilt app_settings table no longer holds the signing key this Lambda cached.
-        auth._stored_secret = None
     return {"ok": True, "task": task, "users": counts[0], "projects": counts[1]}
