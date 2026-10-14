@@ -77,6 +77,8 @@ export function MyProfilePage({ profile }) {
           actions={<LockKeyhole size={19} />}
         >
           <form onSubmit={handleSubmit} noValidate>
+            {/* Tells the browser's password manager whose saved password this updates. */}
+            <input type="text" name="username" autoComplete="username" value={profile.username} readOnly hidden />
             <Field label="Current password" error={fieldErrors.current_password}>
               <Input
                 type="password"
