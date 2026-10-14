@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { Link, Navigate, useNavigate } from 'react-router-dom'
 import { useSession } from '../hooks/useSession.js'
 import { HOME_BY_ROLE, getSetupStatus, signup } from '../services/authApi.js'
+import { passwordProblem } from '../utils/password.js'
 import './LoginPage.css'
 
 const FIELDS = [
@@ -19,7 +20,7 @@ function validate(values) {
   FIELDS.forEach(({ name, label }) => {
     if (!values[name]?.trim()) errors[name] = `Enter your ${label.toLowerCase()}.`
   })
-  if (values.password && values.password.length < 8) errors.password = 'Use at least 8 characters.'
+  if (values.password && passwordProblem(values.password)) errors.password = passwordProblem(values.password)
   if (values.confirm_password && values.confirm_password !== values.password) {
     errors.confirm_password = "Passwords don't match."
   }

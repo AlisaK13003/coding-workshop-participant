@@ -6,6 +6,7 @@ import { useMutation } from '../../../hooks/useMutation.js'
 import { useCurrentUser } from '../../../hooks/useSession.js'
 import { createUser, listUsers, updateUser } from '../../../services/usersApi.js'
 import { ROLES, roleLabel } from '../../../utils/users.js'
+import { PASSWORD_HINT } from '../../../utils/password.js'
 
 /**
  * Create a user (admins only) or edit `user`. Admins can change anything except
@@ -119,7 +120,7 @@ export function UserFormDialog({ user, onClose }) {
           </Field>
         )}
         {!user && (
-          <Field label="Initial password" hint="At least 8 characters." error={errors.password}>
+          <Field label="Initial password" hint={PASSWORD_HINT} error={errors.password}>
             <Input name="password" type="password" autoComplete="new-password" minLength={8} required />
           </Field>
         )}

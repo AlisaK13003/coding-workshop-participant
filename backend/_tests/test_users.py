@@ -3,7 +3,7 @@ from conftest import SEED_PASSWORD, call, sign_in, sql
 # Seed data: 1 Alex Admin, 2 Morgan Manager, 3 Emery Employee (reports to Morgan, on Customer Portal).
 
 NEW_EMPLOYEE = {"first_name": "Jordan", "last_name": "Lee", "email": "jordan@example.com", "job_title": "Analyst",
-                "role": "employee", "password": "longenough", "manager_id": 2, "annual_salary": 62400}
+                "role": "employee", "password": "longenough1", "manager_id": 2, "annual_salary": 62400}
 
 
 def add_user(first_name, role, manager_id=None, salary=None):
@@ -104,7 +104,7 @@ def test_admin_creates_employee(admin_token):
     assert r.json["manager"] == {"id": 2, "name": "Morgan Manager"}
     assert r.json["annual_salary"] == 62400.0
     assert r.json["project_count"] == 0
-    assert sign_in(r.json["username"], "longenough")
+    assert sign_in(r.json["username"], "longenough1")
     entry = last_activity()
     assert entry["action"] == "user.create"
     assert entry["summary"] == "Created employee Jordan Lee, reporting to Morgan Manager."

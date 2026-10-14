@@ -384,9 +384,9 @@ def test_remove_member(manager_token, employee_token):
 
 def test_new_member_can_sign_in_and_see_project(admin_token):
     r = call("users", "POST", "/", {"first_name": "Kai", "last_name": "New", "email": "kai@example.com",
-                                    "job_title": "Engineer", "role": "employee", "password": "longenough",
+                                    "job_title": "Engineer", "role": "employee", "password": "longenough1",
                                     "manager_id": 2, "annual_salary": 50000}, token=admin_token)
     kai = r.json["id"]
     call("projects", "POST", "/1/members", {"employee_id": kai}, token=admin_token)
-    token = sign_in(r.json["username"], "longenough")
+    token = sign_in(r.json["username"], "longenough1")
     assert [p["id"] for p in call("projects", "GET", "/", token=token).json] == [1]

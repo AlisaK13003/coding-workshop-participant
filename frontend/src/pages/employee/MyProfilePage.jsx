@@ -12,7 +12,7 @@ import {
 } from '../../components/ui'
 import { useMutation } from '../../hooks/useMutation.js'
 import { changePassword } from '../../services/authApi.js'
-import { validatePasswordChange } from '../../utils/password.js'
+import { PASSWORD_HINT, validatePasswordChange } from '../../utils/password.js'
 import './MyProfilePage.css'
 
 const EMPTY_FORM = { current: '', next: '', confirm: '' }
@@ -87,7 +87,7 @@ export function MyProfilePage({ profile }) {
                 autoComplete="current-password"
               />
             </Field>
-            <Field label="New password" hint="8 to 72 characters." error={fieldErrors.new_password}>
+            <Field label="New password" hint={PASSWORD_HINT} error={fieldErrors.new_password}>
               <Input
                 type="password"
                 value={form.next}

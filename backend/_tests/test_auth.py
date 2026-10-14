@@ -69,7 +69,7 @@ def test_token_stops_working_once_user_is_archived(employee_token):
 def test_signup_is_closed_once_users_exist():
     assert call("auth", "GET", "/setup").json == {"signup_open": False}
     r = call("auth", "POST", "/signup", {"first_name": "A", "last_name": "B", "email": "a@b.com",
-                                         "job_title": "Owner", "password": "longenough"})
+                                         "job_title": "Owner", "password": "longenough1"})
     assert r.status == 409
 
 
@@ -77,11 +77,11 @@ def test_signup_creates_first_admin_when_empty():
     sql("TRUNCATE users RESTART IDENTITY CASCADE")
     assert call("auth", "GET", "/setup").json == {"signup_open": True}
     r = call("auth", "POST", "/signup", {"first_name": "Riley", "last_name": "Owner", "email": "riley@example.com",
-                                         "job_title": "Founder", "password": "longenough"})
+                                         "job_title": "Founder", "password": "longenough1"})
     assert r.status == 201
     assert r.json["user"]["role"] == "admin"
     assert r.json["user"]["username"] == "rowner1"
-    assert sign_in("rowner1", "longenough")
+    assert sign_in("rowner1", "longenough1")
 
 
 def test_signup_validates_fields():
@@ -127,3 +127,11 @@ def test_without_a_configured_key_a_random_one_is_stored_in_the_database(monkeyp
     monkeypatch.setattr(service.auth, "_stored_secret", None)
     assert call("auth", "GET", "/me", token=token).status == 200
     assert len(sql("SELECT value FROM app_settings")) == 1
+
+
+def test_new_passwords_need_a_letter_and_a_number(employee_token):
+    for weak in ("onlyletters", "12345678"):
+        r = call("auth", "PUT", "/me/password", {"current_password": SEED_PASSWORD, "new_password": weak},
+                 token=employee_token)
+        assert r.status == 400
+        assert r.json["error"]["fields"]["new_password"] == "Must include at least one letter and one number."
