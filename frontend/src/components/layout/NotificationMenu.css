@@ -1,7 +1,7 @@
 .notification-popover > strong { display: block; margin: 2px 4px 12px; font-size: 13px; }
 .notice { display: flex; gap: 9px; padding: 11px 4px; border-top: 1px solid var(--line); }
 .notification-popover button.notice { width: 100%; border-right: 0; border-bottom: 0; border-left: 0; background: transparent; text-align: left; }
-.notice > span { width: 7px; height: 7px; margin-top: 4px; border-radius: 50%; background: var(--line-dark); }
+.notice > span { flex: none; width: 7px; height: 7px; margin-top: 4px; border-radius: 50%; background: var(--line-dark); }
 .notice.unread > span { background: var(--teal); }
 .notice p { display: grid; gap: 4px; margin: 0; color: var(--muted); font-size: 11px; }
 .notice b { color: var(--ink); font-size: 12px; }
@@ -9,3 +9,4 @@
 .notice-header strong { font-size: 13px; }
 .notice-header button { border: 0; background: transparent; color: var(--teal-dark); font-size: 10px; }
 .notification-empty { margin: 18px 4px; color: var(--muted); font-size: 11px; text-align: center; }
+.notice-header button:disabled { color: var(--muted); cursor: not-allowed; }

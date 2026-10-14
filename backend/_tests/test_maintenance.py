@@ -18,13 +18,13 @@ def test_reset_empty_leaves_tables_without_data():
 
 def test_seed_adds_sample_data_and_is_safe_to_repeat():
     run_task("reset_empty")
-    assert run_task("seed") == {"ok": True, "task": "seed", "users": 12, "projects": 7}
-    assert run_task("seed") == {"ok": True, "task": "seed", "users": 12, "projects": 7}
+    assert run_task("seed") == {"ok": True, "task": "seed", "users": 12, "projects": 8}
+    assert run_task("seed") == {"ok": True, "task": "seed", "users": 12, "projects": 8}
 
 
 def test_reset_variants():
     assert run_task("reset_seed_only")["users"] == 3
-    assert run_task("reset") == {"ok": True, "task": "reset", "users": 12, "projects": 7}
+    assert run_task("reset") == {"ok": True, "task": "reset", "users": 12, "projects": 8}
 
 
 def test_unknown_task_changes_nothing():

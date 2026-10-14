@@ -11,11 +11,11 @@ import { useToast } from './useToast.js'
 const POLL_MS = 30000
 
 /**
- * The signed-in user's notifications from the API, shared by every workspace.
- * Items look like { id, title, detail, project_id, milestone_id, created_at, read }.
+ * The signed-in user's unread notifications from the API, shared by every workspace; once
+ * read they drop out of the list. Items look like { id, title, detail, project_id, milestone_id, created_at, read }.
  */
 export function useNotifications() {
-  const query = useApiQuery(listNotifications, [])
+  const query = useApiQuery(() => listNotifications({ unread: true }), [])
   const { showToast } = useToast()
   const { reload } = query
 

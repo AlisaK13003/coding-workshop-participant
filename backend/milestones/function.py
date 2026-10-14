@@ -320,6 +320,15 @@ def decide_review(request):
                 f"Kept {milestone['name']} open after review."
 
         notify(conn, review["requested_by"], title, feedback, project["id"], milestone["id"])
+        if project["manager_id"] not in (None, request.user["id"]):
+            # An admin decided on the manager's behalf; let the manager know.
+            requester = conn.execute(
+                "SELECT first_name, last_name FROM users WHERE id = %s", (review["requested_by"],)
+            ).fetchone()
+            verb = "accepted" if decision == "accepted" else "kept open"
+            notify(conn, project["manager_id"], f"Review {verb} by an admin",
+                   f"{full_name(request.user)} {verb} {full_name(requester)}'s review of {milestone['name']} "
+                   "on your behalf.", project["id"], milestone["id"])
         log_activity(conn, request.user, action, "milestone_review", review["id"], summary,
                      project_id=project["id"], changes={"decision": {"from": None, "to": decision}})
         return milestone_json.review(conn, review["id"])

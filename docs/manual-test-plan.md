@@ -336,9 +336,9 @@ Everyone's password is `Password123!`.
 
 ## 10. Notifications
 
-- [ ] **The bell's dot and count** match unread notifications.
-- [ ] **Click one** → it's marked read and opens the related project or milestone.
-- [ ] **Mark all read** → 0, and it stays 0 after refresh.
+- [ ] **The bell's dot and count** match unread notifications. The list shows **unread ones only**.
+- [ ] **Click one** → it's marked read, drops out of the list and opens the related project or milestone.
+- [ ] **Mark all read** → the list empties to "You’re all caught up", the link is greyed out (disabled while nothing is unread), and it stays that way after refresh.
 - [ ] **Each person sees only their own.**
 
 | Event | Who's notified | Title |
@@ -348,6 +348,7 @@ Everyone's password is `Password123!`.
 | Milestone assignment changed | the employee | Milestone assignment changed |
 | Review requested | the project's manager | Milestone review requested |
 | Review decided | the requester | Review accepted / Milestone kept open |
+| Review decided by an admin | the project's manager too | Review accepted by an admin / Review kept open by an admin ("Priya Shah accepted Emery Employee's review of Design on your behalf.") |
 | Milestone completed | everyone on it | Moved to … / Milestone completed: assignment needed |
 | Manager changed | the employee | Reporting manager changed |
 | Work log corrected | the employee | Work log corrected |

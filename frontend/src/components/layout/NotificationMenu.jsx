@@ -8,7 +8,7 @@ import './NotificationMenu.css'
  * Bell button with an unread dot and a dropdown list.
  * items: [{ id, title, detail, read }].
  * onSelect (optional): makes each item clickable; the menu closes afterwards.
- * onMarkAllRead (optional): adds a "Mark all read" link to the header.
+ * onMarkAllRead (optional): adds a "Mark all read" link to the header (disabled with nothing unread).
  */
 export function NotificationMenu({ items, onSelect, onMarkAllRead }) {
   const menu = useDisclosure()
@@ -30,7 +30,9 @@ export function NotificationMenu({ items, onSelect, onMarkAllRead }) {
           {onMarkAllRead ? (
             <div className="notice-header">
               <strong>Notifications</strong>
-              <button onClick={onMarkAllRead}>Mark all read</button>
+              <button onClick={onMarkAllRead} disabled={!unread}>
+                Mark all read
+              </button>
             </div>
           ) : (
             <strong>Notifications</strong>

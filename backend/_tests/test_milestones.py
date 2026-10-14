@@ -461,6 +461,16 @@ def test_accept_review_completes_the_milestone(manager_token):
     titles = [(n["title"], n["detail"]) for n in notifications(3)]
     assert titles == [("Moved to Frontend", "Customer Portal · Design completed"), ("Review accepted", "Great work")]
     assert len(activity("review.accept")) == 1 and len(activity("milestone.complete")) == 1
+    assert not [n for n in notifications(2) if "by an admin" in n["title"]]  # deciding your own review
+
+
+def test_admin_decision_notifies_the_manager(admin_token):
+    assert decide(admin_token, {"decision": "accepted", "destination_milestone_id": FRONTEND}).status == 200
+    assert notifications(2)[-1] == {
+        "title": "Review accepted by an admin",
+        "detail": "Alex Admin accepted Emery Employee's review of Design on your behalf.",
+        "milestone_id": DESIGN,
+    }
 
 
 def test_keep_review_open(admin_token):
@@ -472,6 +482,7 @@ def test_keep_review_open(admin_token):
     assert notifications(3) == [{"title": "Milestone kept open", "detail": "Needs tests", "milestone_id": DESIGN}]
     [entry] = activity("review.keep_open")
     assert entry["changes"] == {"decision": {"from": None, "to": "kept_open"}}
+    assert notifications(2)[-1]["title"] == "Review kept open by an admin"
     status = call("milestones", "GET", f"/{DESIGN}", token=admin_token).json["status"]
     assert status == "available"
 
