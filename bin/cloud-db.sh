@@ -23,15 +23,14 @@ esac
 "$SCRIPT_DIR/setup-participant.sh" > /dev/null
 source "$PROJECT_ROOT/ENVIRONMENT.config"
 
-export AWS_REGION="${AWS_REGION:-us-east-1}"
-FUNCTION=$(aws lambda list-functions \
-    --query "Functions[?starts_with(FunctionName, '${TF_VAR_aws_project:-coding-workshop}-auth-')].FunctionName | [0]" \
-    --output text 2>/dev/null || true)
-if [ -z "$FUNCTION" ] || [ "$FUNCTION" = "None" ]; then
-    echo "ERROR: The auth Lambda wasn't found. Deploy the backend first: ./bin/deploy-backend.sh"
+# Lambdas are named <project>-<service>-<app code> (see infra/locals.tf); workshop
+# credentials can read one function's settings but not list them all.
+FUNCTION="${TF_VAR_aws_project:-coding-workshop}-auth-${TF_VAR_aws_app_code:-}"
+if ! SETTINGS=$(aws lambda get-function-configuration --function-name "$FUNCTION" \
+        --query 'Environment.Variables' --output json 2>/dev/null); then
+    echo "ERROR: Couldn't read the $FUNCTION Lambda. Deploy the backend first: ./bin/deploy-backend.sh"
     exit 1
 fi
-SETTINGS=$(aws lambda get-function-configuration --function-name "$FUNCTION" --query 'Environment.Variables' --output json)
 read_setting() { echo "$SETTINGS" | jq -r ".$1 // empty"; }
 export POSTGRES_HOST="$(read_setting POSTGRES_HOST)" POSTGRES_PORT="$(read_setting POSTGRES_PORT)"
 export POSTGRES_NAME="$(read_setting POSTGRES_NAME)" POSTGRES_USER="$(read_setting POSTGRES_USER)"
