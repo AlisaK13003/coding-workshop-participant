@@ -33,6 +33,10 @@ export function ProjectCalendar({ projects, onOpenProject, filters = null }) {
   const [view, setView] = useState('month')
   const [search, setSearch] = useState('')
   const visible = projects.filter((project) => includesText(project.name, search))
+  // The month grid steps a month at a time; the year timeline steps a year.
+  const isTimeline = view === 'timeline'
+  const step = isTimeline ? 12 : 1
+  const unit = isTimeline ? 'year' : 'month'
 
   return (
     <>
@@ -51,18 +55,18 @@ export function ProjectCalendar({ projects, onOpenProject, filters = null }) {
               Today
             </Button>
             <button
-              onClick={() => setCursor(addMonths(cursor, -1))}
-              aria-label="Previous month"
+              onClick={() => setCursor(addMonths(cursor, -step))}
+              aria-label={`Previous ${unit}`}
             >
               <ChevronLeft size={18} />
             </button>
             <button
-              onClick={() => setCursor(addMonths(cursor, 1))}
-              aria-label="Next month"
+              onClick={() => setCursor(addMonths(cursor, step))}
+              aria-label={`Next ${unit}`}
             >
               <ChevronRight size={18} />
             </button>
-            <strong>{formatMonthYear(cursor)}</strong>
+            <strong>{isTimeline ? cursor.getFullYear() : formatMonthYear(cursor)}</strong>
           </div>
           <SearchBox
             value={search}
