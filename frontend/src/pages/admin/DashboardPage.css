@@ -7,3 +7,4 @@
 @media (max-width: 560px) {
   .panel.attention-panel { align-items: flex-start; flex-direction: column; }
 }
+.chart-totals { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: 6px; }

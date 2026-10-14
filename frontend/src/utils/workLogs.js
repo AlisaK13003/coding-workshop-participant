@@ -9,6 +9,11 @@ export function sumHours(logs, predicate = () => true) {
   return sumBy(logs.filter(predicate), (log) => log.hours)
 }
 
+/** Labor cost across logs (admins and the employee's manager receive `cost` from the API). */
+export function sumCost(logs) {
+  return sumBy(logs, (log) => log.cost ?? 0)
+}
+
 /** Hours logged this week (Monday to Sunday), optionally for one employee. */
 export function getWeekHours(logs, employeeId) {
   const { start, end } = getWeekRange()
@@ -51,7 +56,7 @@ export function getMonthlyTotals(logs, count = 6, today = new Date()) {
       key,
       month: parseDate(`${key}-01`).toLocaleString('en-US', { month: 'short' }),
       hours: sumHours(inMonth),
-      cost: sumBy(inMonth, (log) => log.cost),
+      cost: sumCost(inMonth),
     }
   })
 }

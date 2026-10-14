@@ -25,7 +25,7 @@ import { listUsers } from '../../services/usersApi.js'
 import { listWorkLogs } from '../../services/workLogsApi.js'
 import { toActivityItem } from '../../utils/activity.js'
 import { daysBetween, toIsoDate, todayIso } from '../../utils/calendar.js'
-import { formatHours, greeting } from '../../utils/format.js'
+import { formatHours, formatMoney, greeting } from '../../utils/format.js'
 import { getPendingReviews } from '../../utils/milestones.js'
 import {
   isEndingSoon,
@@ -35,7 +35,7 @@ import {
 } from '../../utils/projects.js'
 import { listWords, pluralize } from '../../utils/text.js'
 import { ROLES } from '../../utils/users.js'
-import { getMonthlyTotals, sumHours } from '../../utils/workLogs.js'
+import { getMonthlyTotals, sumCost, sumHours } from '../../utils/workLogs.js'
 import { ADMIN_PAGES, DASHBOARD_VIEWS } from './adminConfig.js'
 import { DashboardFocusPanel } from './DashboardFocusPanel.jsx'
 import { HoursChart } from './HoursChart.jsx'
@@ -189,7 +189,14 @@ export function DashboardPage({ projects, onOpenProject, onOpenUser, onNavigate,
         <Panel
           title="Hours & labor spending"
           description={`Last ${CHART_MONTHS} months, all projects`}
-          actions={logs.data && <Badge>{formatHours(sumHours(logs.data))} total</Badge>}
+          actions={
+            logs.data && (
+              <div className="chart-totals">
+                <Badge>{formatHours(sumHours(logs.data))} total</Badge>
+                <Badge>{formatMoney(sumCost(logs.data))} spent</Badge>
+              </div>
+            )
+          }
         >
           <QueryContent query={logs} loadingLabel="Loading work logs…">
             {(rows) => <HoursChart data={getMonthlyTotals(rows, CHART_MONTHS)} />}
