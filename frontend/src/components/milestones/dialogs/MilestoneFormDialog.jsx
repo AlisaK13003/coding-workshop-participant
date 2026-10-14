@@ -1,5 +1,5 @@
 import { FormDialog } from '../../dialogs'
-import { Field, Input, LoadingState, Select } from '../../ui'
+import { CheckboxList, Field, Input, LoadingState, Select } from '../../ui'
 import { useApiQuery } from '../../../hooks/useApiQuery.js'
 import { useMutation } from '../../../hooks/useMutation.js'
 import {
@@ -8,10 +8,11 @@ import {
   setPrerequisites,
   updateMilestone,
 } from '../../../services/milestonesApi.js'
+import { assignMember, listMembers } from '../../../services/projectsApi.js'
 import { dependsOn, isCompleted } from '../../../utils/milestones.js'
 
-/** Saves the form: one request to create, or an update plus a prerequisites change to edit. */
-async function saveMilestone({ project, milestone, values, prerequisiteIds }) {
+/** Saves the milestone itself: one request to create, or an update plus a prerequisites change to edit. */
+async function saveDetails({ project, milestone, values, prerequisiteIds }) {
   if (!milestone) {
     return createMilestone({ project_id: project.id, ...values, prerequisite_ids: prerequisiteIds })
   }
@@ -23,12 +24,38 @@ async function saveMilestone({ project, milestone, values, prerequisiteIds }) {
 }
 
 /**
- * Add a milestone to `project`, or edit `milestone`. Prerequisite choices leave out
- * the milestone itself, anything that already depends on it, and completed
- * milestones (the API doesn't allow adding or removing those as prerequisites).
+ * Puts the checked members on the milestone and takes unchecked ones off it. Each employee
+ * has one milestone per project, so checking someone moves them here from wherever they were.
+ */
+async function saveAssignments(project, milestoneId, members, checkedIds) {
+  for (const member of members) {
+    const isHere = member.milestone?.id === milestoneId
+    const wantHere = checkedIds.includes(member.id)
+    if (wantHere !== isHere) await assignMember(project.id, member.id, wantHere ? milestoneId : null)
+  }
+}
+
+async function saveMilestone({ project, milestone, values, prerequisiteIds, members, checkedIds }) {
+  const saved = await saveDetails({ project, milestone, values, prerequisiteIds })
+  await saveAssignments(project, milestone?.id ?? saved.id, members, checkedIds)
+  return saved
+}
+
+/** "On Build", "No milestone" or "On this milestone", shown under each member's name. */
+function currentAssignment(member, milestone) {
+  if (!member.milestone) return 'No milestone yet'
+  if (milestone && member.milestone.id === milestone.id) return 'On this milestone'
+  return `Now on ${member.milestone.name}, so checking moves them here`
+}
+
+/**
+ * Add a milestone to `project`, or edit `milestone`, including which members work on it.
+ * Prerequisite choices leave out the milestone itself, anything that already depends on
+ * it, and completed milestones (the API doesn't allow adding or removing those as prerequisites).
  */
 export function MilestoneFormDialog({ project, milestone, onClose }) {
   const milestones = useApiQuery(() => listMilestones(project.id), [project.id])
+  const members = useApiQuery(() => listMembers(project.id), [project.id])
   const save = useMutation(saveMilestone, {
     success: milestone ? 'Milestone updated.' : 'Milestone added to the project plan.',
     onSuccess: onClose,
@@ -57,6 +84,8 @@ export function MilestoneFormDialog({ project, milestone, onClose }) {
         end_date: data.get('end_date'),
       },
       prerequisiteIds: [...keptIds, ...data.getAll('prerequisites').map(Number)],
+      members: members.data ?? [],
+      checkedIds: data.getAll('members').map(Number),
     })
 
   return (
@@ -67,7 +96,7 @@ export function MilestoneFormDialog({ project, milestone, onClose }) {
       onClose={onClose}
       onSubmit={handleSubmit}
       submitting={save.submitting}
-      submitDisabled={milestones.data === undefined}
+      submitDisabled={milestones.data === undefined || members.data === undefined}
       error={save.error}
     >
       <div className="form-grid">
@@ -120,6 +149,26 @@ export function MilestoneFormDialog({ project, milestone, onClose }) {
             </Select>
           )}
         </Field>
+        <div className="form-span">
+          {members.data === undefined ? (
+            <LoadingState label="Loading team…" />
+          ) : (
+            <CheckboxList
+              label="Assigned employees"
+              name="members"
+              options={members.data.map((member) => ({
+                value: member.id,
+                label: member.user.name,
+                detail: currentAssignment(member, milestone),
+              }))}
+              defaultValues={
+                milestone ? members.data.filter((member) => member.milestone?.id === milestone.id).map((m) => m.id) : []
+              }
+              hint="Each employee works on one milestone per project. Unchecking someone leaves them without a milestone."
+              emptyText="No one is on this project yet. Add people from the People tab first."
+            />
+          )}
+        </div>
       </div>
     </FormDialog>
   )

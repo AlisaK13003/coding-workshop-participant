@@ -180,6 +180,11 @@ Everyone's password is `Password123!`.
 - [ ] **Dates outside the project** → error.
 - [ ] **Circular dependency:** make Prototype need Testing → rejected.
 - [ ] **Assign an employee to Prototype** → they get "Milestone assignment changed".
+- [ ] **Assign from the milestone dialog** (Milestones tab → Edit, or Add milestone): the **Assigned employees** list shows every project member and where they are now ("On this milestone", "Now on Build, so checking moves them here", "No milestone yet").
+  - Check someone on another milestone → saved, they **move** here (one milestone per project) and get "Milestone assignment changed".
+  - Uncheck someone on this milestone → they're left **without a milestone** (and can't log until reassigned).
+  - Adding a milestone with people checked assigns them straight away.
+  - A project with no members shows "No one is on this project yet." 
 - [ ] **Delete Testing** (no history) → removed.
 - [ ] **Delete a milestone with history** (e.g. Mobile App Refresh's Build) → blocked, with the reason.
 

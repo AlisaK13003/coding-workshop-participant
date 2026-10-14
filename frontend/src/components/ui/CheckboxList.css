@@ -1,0 +1,9 @@
+.checkbox-list { margin: 0; padding: 0; border: 0; min-width: 0; }
+.checkbox-list legend { margin-bottom: 7px; padding: 0; }
+.checkbox-options { display: grid; max-height: 180px; overflow-y: auto; border: 1px solid var(--line); border-radius: 9px; }
+.checkbox-option { display: flex; align-items: flex-start; gap: 9px; padding: 9px 11px; border-bottom: 1px solid var(--line); font-weight: 560; cursor: pointer; }
+.checkbox-option:last-child { border-bottom: 0; }
+.checkbox-option:hover { background: var(--soft); }
+.checkbox-option input { margin-top: 2px; accent-color: var(--teal); }
+.checkbox-option span { display: grid; gap: 2px; }
+.field .checkbox-option small { font-size: 9px; }

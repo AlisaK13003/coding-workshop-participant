@@ -14,3 +14,4 @@
 }
 .field .field-error { color: var(--red); font-weight: 600; }
 .field:has(.field-error) .control { border-color: var(--red); }
+.form-span { grid-column: 1 / -1; }
