@@ -125,15 +125,6 @@ BEGIN
         (m_kb, m_discovery, support), (m_chatbot, m_discovery, support),
         (m_golive, m_kb, support), (m_golive, m_chatbot, support);
 
-    -- Payroll Integration: kicked off recently, ends within 60 days, nothing logged yet.
-    INSERT INTO projects (name, manager_id, start_date, end_date, budget, created_at)
-        VALUES ('Payroll Integration', morgan, d - 10, d + 45, 30000, d - 12) RETURNING id INTO payroll;
-    INSERT INTO milestones (project_id, name, start_date, end_date)
-        VALUES (payroll, 'Requirements', d - 10, d + 10) RETURNING id INTO m_payroll_requirements;
-    INSERT INTO milestones (project_id, name, start_date, end_date)
-        VALUES (payroll, 'Rollout', d + 11, d + 45) RETURNING id INTO m_payroll_rollout;
-    INSERT INTO milestone_dependencies VALUES (m_payroll_rollout, m_payroll_requirements, payroll);
-
     -- Vendor Onboarding: abandoned, not archived (only admins see it).
     INSERT INTO projects (name, manager_id, start_date, end_date, budget, status, created_at)
         VALUES ('Vendor Onboarding', morgan, d - 120, d - 30, 20000, 'abandoned', d - 122) RETURNING id INTO vendor;
@@ -161,6 +152,15 @@ BEGIN
     INSERT INTO milestones (project_id, name, start_date, end_date)
         VALUES (intranet, 'Build Pages', d - 20, d + 60) RETURNING id INTO m_pages;
     INSERT INTO milestone_dependencies VALUES (m_pages, m_requirements, intranet);
+
+    -- Payroll Integration: kicked off recently, ends within 60 days, nothing logged yet.
+    INSERT INTO projects (name, manager_id, start_date, end_date, budget, created_at)
+        VALUES ('Payroll Integration', morgan, d - 10, d + 45, 30000, d - 12) RETURNING id INTO payroll;
+    INSERT INTO milestones (project_id, name, start_date, end_date)
+        VALUES (payroll, 'Requirements', d - 10, d + 10) RETURNING id INTO m_payroll_requirements;
+    INSERT INTO milestones (project_id, name, start_date, end_date)
+        VALUES (payroll, 'Rollout', d + 11, d + 45) RETURNING id INTO m_payroll_rollout;
+    INSERT INTO milestone_dependencies VALUES (m_payroll_rollout, m_payroll_requirements, payroll);
 
     -- Memberships (each employee on one milestone per project) ----------------------------
     INSERT INTO project_members (project_id, employee_id, milestone_id, added_at) VALUES

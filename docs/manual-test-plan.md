@@ -50,11 +50,11 @@ Everyone's password is `Password123!`.
 | 1 | Customer Portal | Morgan | Dec 31 | 1% | On track | Emery → Design (**awaiting review**) |
 | 2 | Mobile App Refresh | Morgan | D+7 (Oct 21) | **94%** | **Needs attention** (Build 2 days overdue) | Emery, Casey → Build (available); Devon → Store Release (**blocked**) |
 | 3 | Data Warehouse Migration | Morgan | D+30 (Nov 13) | **118%** | **Urgent** (Data Load and Index Tuning overdue) | Emery, Devon → Data Load (**awaiting review**); Index Tuning unassigned |
-| 4 | Payroll Integration | Morgan | D+45 (Nov 28) | 0% (just started) | On track | Emery → Requirements (available) |
-| 4b | Support Portal | Riley | D+90 (Jan 12) | **35%** | **On track** | Avery → Knowledge Base, Blake → Chatbot (both available; Go Live needs both) |
+| 4 | Support Portal | Riley | D+90 (Jan 12) | **35%** | **On track** | Avery → Knowledge Base, Blake → Chatbot (both available; Go Live needs both) |
 | 5 | Vendor Onboarding | Morgan | ended | 27% | — | **abandoned**, not archived (admins only) |
 | 6 | Legacy Billing Cleanup | Morgan | ended | 88% | — | **completed and archived** |
 | 7 | Intranet Redesign | **none** | D+60 | 13% | — | **unarchived, needs a manager** (previously Riley) |
+| 8 | Payroll Integration | Morgan | D+45 (Nov 28) | 0% (just started) | On track | Emery → Requirements (available) |
 
 ### Starting notifications (unread)
 
@@ -367,7 +367,7 @@ See [api/README.md](api/README.md) for setup. Ids for reference:
 
 | Kind | Ids |
 |---|---|
-| Projects | 1 Customer Portal, 2 Mobile App Refresh, 3 Data Warehouse Migration, 4 Support Portal, 5 Vendor Onboarding, 6 Legacy Billing Cleanup, 7 Intranet Redesign |
+| Projects | 1 Customer Portal, 2 Mobile App Refresh, 3 Data Warehouse Migration, 4 Support Portal, 5 Vendor Onboarding, 6 Legacy Billing Cleanup, 7 Intranet Redesign, 8 Payroll Integration |
 | Users | 1 Alex, 2 Morgan, 3 Emery, 4 Priya, 5 Riley, 6 Jordan, 7 Casey, 8 Devon, 9 Avery, 10 Blake, 11 Quinn, 12 Taylor |
 
 - [ ] **As Riley,** `GET /api/projects/2` → **404** (not Riley's project).
