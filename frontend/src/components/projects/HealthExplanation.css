@@ -1,0 +1,6 @@
+.health-explanation { display: grid; gap: 6px; min-width: 240px; }
+.health-explanation-head { display: flex; align-items: center; gap: 8px; }
+.health-explanation-head strong { font-size: 12px; }
+.health-explanation-line { color: var(--ink); }
+.health-explanation-label { margin-top: 4px; color: var(--muted); font-size: 9px; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; }
+.health-explanation-foot { margin-top: 4px; padding-top: 7px; border-top: 1px solid var(--line); color: var(--muted); font-size: 10px; }

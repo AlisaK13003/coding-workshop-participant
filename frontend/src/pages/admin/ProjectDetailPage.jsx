@@ -22,10 +22,10 @@ import { ProjectWorkLogsTab } from '../../components/worklogs/ProjectWorkLogsTab
 import { useApiQuery } from '../../hooks/useApiQuery.js'
 import { listMilestones } from '../../services/milestonesApi.js'
 import { formatDateRange } from '../../utils/format.js'
-import { SCHEDULE_PHASE_HINT } from '../../utils/schedule.js'
 import { canCompleteProject, getProjectPhase, isOpenProject, needsManager } from '../../utils/projects.js'
 import { getAdminWorkLogColumns } from './adminWorkLogColumns.jsx'
 import { ActivityTab } from './tabs/ActivityTab.jsx'
+import { HealthExplanation } from '../../components/projects/HealthExplanation.jsx'
 
 const TABS = ['Overview', 'Milestones', 'People', 'Work Logs', 'Activity']
 
@@ -51,7 +51,9 @@ export function ProjectDetailPage({ project, onBack, onOpenDialog }) {
             {project.archived_at && <Badge>Archived</Badge>}
             <span>
               <Phase value={getProjectPhase(project)} />{' '}
-              <Tooltip text={SCHEDULE_PHASE_HINT} />
+              <Tooltip label="Why this health?">
+                <HealthExplanation project={project} milestones={milestones.data ?? []} />
+              </Tooltip>
             </span>
           </>
         }

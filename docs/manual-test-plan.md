@@ -295,6 +295,7 @@ Everyone's password is `Password123!`.
   - **Complete Data Load** (Data Warehouse Migration) → **Needs attention** (Index Tuning still overdue); complete Index Tuning too → **On track**.
   - **Edit a milestone's end date into the past** → health drops; move it back → recovers.
   - The Health filter on My Projects / Projects uses the same labels.
+- [ ] **The "?" beside a project's health** (project page, admin and manager) opens on hover, focus or click and explains *why*: e.g. Data Warehouse Migration → "Several milestones are running late", naming Data Load and Index Tuning with their due dates, plus "Also worth knowing: Over budget: 118% used". Mobile App Refresh also notes "Ends in 7 days". Escape or clicking elsewhere closes it. The "?" in table headers explains the rule in general.
 - [ ] **Calendar (month):** each project appears **only on its deadline**.
   - Morgan: Oct 21 (Mobile App Refresh), Nov 13 (Data Warehouse Migration), Dec 31 (Customer Portal).
   - Riley: Jan 12 (Support Portal).
