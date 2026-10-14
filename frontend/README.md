@@ -19,7 +19,7 @@ frontend/
 ├── public/                  # Static assets
 ├── src/
 │   ├── main.jsx             # Entry: BrowserRouter, ToastProvider, global styles
-│   ├── App.jsx              # Route table: /, /signup, /admin/*, /manager/*, /employee/*
+│   ├── App.jsx              # Route table: /, /signup, /admin/*, /manager/*, /employee/* (as #/ URLs)
 │   ├── index.css            # Design tokens, reset, shared layout helpers
 │   ├── services/            # The only code that talks to the API
 │   │   ├── apiClient.js     # request() and api.get/post/put/delete, ApiError, token refresh
@@ -92,9 +92,9 @@ password `Password123!`:
 
 | Username     | Role     | Opens       |
 |--------------|----------|-------------|
-| `aadmin1`    | admin    | `/admin`    |
-| `mmanager2`  | manager  | `/manager`  |
-| `eemployee3` | employee | `/employee` |
+| `aadmin1`    | admin    | `/#/admin`    |
+| `mmanager2`  | manager  | `/#/manager`  |
+| `eemployee3` | employee | `/#/employee` |
 
 ## Usage
 
