@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # Script: Sync shared backend code
-# Purpose: Copy backend/_shared into every Python service as backend/<service>/shared,
+# Purpose: Copy backend/_shared (and the db/*.sql files) into every Python service as backend/<service>/shared,
 #          because each Lambda is packaged from its own folder only.
 # Usage: ./bin/sync-backend-shared.sh
 # Called automatically by start-dev.sh and deploy-backend.sh. The copies are
@@ -11,6 +11,7 @@ set -euo pipefail
 SCRIPT_DIR="$(cd "$(dirname "$0")" > /dev/null 2>&1 || exit 1; pwd -P)"
 PROJECT_ROOT="$(cd "$SCRIPT_DIR/.." > /dev/null 2>&1 || exit 1; pwd -P)"
 SHARED_DIR="$PROJECT_ROOT/backend/_shared"
+DB_DIR="$PROJECT_ROOT/backend/db"
 
 shopt -s nullglob
 for function_file in "$PROJECT_ROOT"/backend/*/function.py; do
@@ -19,7 +20,8 @@ for function_file in "$PROJECT_ROOT"/backend/*/function.py; do
     target="$service_dir/shared"
     mkdir -p "$target"
     # Overwrite in place (no delete-then-copy gap), then drop files removed from _shared.
-    cp -f "$SHARED_DIR"/*.py "$target/"
+    # The SQL files go along so cloud database tasks can run them (see _shared/maintenance.py).
+    cp -f "$SHARED_DIR"/*.py "$DB_DIR"/schema.sql "$DB_DIR"/seed.sql "$DB_DIR"/demo.sql "$target/"
     for copied in "$target"/*.py; do
         [ -e "$SHARED_DIR/$(basename "$copied")" ] || rm -f "$copied"
     done

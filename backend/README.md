@@ -21,7 +21,7 @@ Other folders:
 - `db/` — `schema.sql` (tables and the rules the database enforces), `seed.sql` (the small sample data the tests use), `demo.sql` (extra people and projects for trying the app by hand, with dates relative to today).
   - `reset.sh` wipes and rebuilds a database: tables plus all sample data, or `--seed-only` (small sample) or `--empty` (tables only; sign-up then creates the first admin).
   - `seed.sh` adds the sample data to an existing database without deleting anything (safe to rerun).
-  - For the deployed AWS database, `bin/cloud-db.sh reset --empty`, `bin/cloud-db.sh seed` and `bin/cloud-db.sh psql` do the same there; they read the connection from the deployed auth Lambda, and reset asks you to type the database name to confirm.
+  - For the deployed AWS database, `bin/cloud-db.sh reset [--empty | --seed-only]` and `bin/cloud-db.sh seed` do the same there. Aurora isn't reachable from outside AWS, so they invoke the auth Lambda directly and it runs the SQL (`_shared/maintenance.py`); web requests can't trigger this. Reset asks you to confirm.
 - `_tests/` — pytest suite that calls each service's `handler()` against a throwaway database.
 
 The full API reference is [docs/api/openapi.yaml](../docs/api/openapi.yaml), and [docs/api/README.md](../docs/api/README.md) explains testing it with Swagger UI, Postman or curl.

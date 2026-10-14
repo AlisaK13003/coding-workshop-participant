@@ -91,12 +91,16 @@ class Connection:
         return Result(cursor)
 
 
-def _connect():
+def connection_options():
+    """pg8000 connection settings from config. AWS Aurora requires SSL; the local Postgres doesn't."""
     options = dict(config.POSTGRES, port=int(config.POSTGRES["port"]), timeout=15)
-    # AWS Aurora requires SSL; the local Postgres doesn't.
     if not config.IS_LOCAL and config.POSTGRES["host"] not in ("localhost", "127.0.0.1"):
         options["ssl_context"] = True
-    return Connection(pg8000.dbapi.connect(**options))
+    return options
+
+
+def _connect():
+    return Connection(pg8000.dbapi.connect(**connection_options()))
 
 
 def get_connection():

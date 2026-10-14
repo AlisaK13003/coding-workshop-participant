@@ -21,7 +21,7 @@ Usage in a service's function.py:
 import logging
 import re
 
-from . import auth
+from . import auth, maintenance
 from .http import ApiError, Request, error_response, response
 
 logger = logging.getLogger()
@@ -54,6 +54,9 @@ class Router:
 
     def handle(self, event):
         """Runs the matching handler for a Lambda event and returns the Lambda response."""
+        # Database tasks from bin/cloud-db.sh (direct AWS invoke only; see maintenance.py).
+        if maintenance.is_task(event):
+            return maintenance.run(event)
         request = Request(event)
         try:
             if request.method == "OPTIONS":
