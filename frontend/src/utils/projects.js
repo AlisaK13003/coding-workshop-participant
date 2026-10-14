@@ -10,6 +10,9 @@ export const PROJECT_STATUS = {
   abandoned: 'abandoned',
 }
 
+/** The statuses a project can be archived with (the backend only archives finished projects). */
+export const ARCHIVABLE_STATUSES = [PROJECT_STATUS.completed, PROJECT_STATUS.abandoned]
+
 const STATUS_LABELS = {
   in_progress: 'In progress',
   completed: 'Completed',

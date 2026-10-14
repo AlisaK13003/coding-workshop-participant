@@ -11,7 +11,7 @@ import {
 } from '../../components/ui'
 import { DIALOGS } from '../../components/workspace/dialogKinds.js'
 import { formatDateTime, formatHours, formatMoney } from '../../utils/format.js'
-import { PROJECT_STATUS, projectStatusLabel } from '../../utils/projects.js'
+import { ARCHIVABLE_STATUSES, projectStatusLabel } from '../../utils/projects.js'
 import { includesText } from '../../utils/text.js'
 
 /** Archived projects, kept for history, with an Unarchive action. */
@@ -63,7 +63,7 @@ export function ArchivePage({ projects, onOpenProject, onOpenDialog }) {
           <SearchBox value={search} onChange={setSearch} placeholder="Search archived projects" />
           <Select value={status} onChange={setStatus} aria-label="Status">
             <option value="">All statuses</option>
-            {Object.values(PROJECT_STATUS).map((value) => (
+            {ARCHIVABLE_STATUSES.map((value) => (
               <option key={value} value={value}>
                 {projectStatusLabel(value)}
               </option>
