@@ -1,7 +1,7 @@
 .chart { height: 230px; display: flex; align-items: end; justify-content: space-around; gap: 16px; padding: 30px 22px 16px; background-image: repeating-linear-gradient(to top, transparent, transparent 44px, var(--line) 45px); }
 .chart-group { height: 100%; flex: 1; display: grid; grid-template-rows: 1fr auto; gap: 10px; text-align: center; color: var(--muted); font-size: 10px; }
-.chart-group > div { display: flex; align-items: end; justify-content: center; gap: 5px; height: 100%; }
-.chart-group i { width: 12px; border-radius: 4px 4px 0 0; }
+.chart-group > .chart-bars { display: flex; align-items: end; justify-content: center; gap: 5px; height: 100%; }
+.chart-bars i { width: 12px; border-radius: 4px 4px 0 0; }
 .bar-hours { background: var(--teal); }
 .bar-cost { background: var(--ink); }
 .chart-legend { display: flex; gap: 18px; padding: 3px 22px 20px; color: var(--muted); font-size: 10px; }
@@ -9,3 +9,15 @@
 .chart-legend i { width: 8px; height: 8px; border-radius: 2px; }
 .legend-teal { background: var(--teal); }
 .legend-dark { background: var(--ink); }
+
+/* Hover / focus: the whole month column is the target; one tooltip shows both values. */
+.chart-group { position: relative; border-radius: 8px; outline: none; cursor: default; }
+.chart-group.active { background: var(--soft); }
+.chart-group:focus-visible { box-shadow: 0 0 0 2px var(--teal); }
+.chart-tooltip { position: absolute; top: 6px; left: 50%; z-index: 5; display: grid; gap: 5px; min-width: 150px; padding: 9px 11px; transform: translateX(-50%); border: 1px solid var(--line); border-radius: 9px; background: var(--surface); box-shadow: 0 8px 22px rgba(20, 30, 28, .12); color: var(--muted); font-size: 10px; text-align: left; white-space: nowrap; pointer-events: none; }
+.chart-tooltip small { font-size: 10px; font-weight: 650; color: var(--ink); }
+.chart-tooltip p { display: flex; align-items: center; gap: 7px; margin: 0; }
+.chart-tooltip strong { color: var(--ink); font-size: 12px; font-weight: 700; }
+.chart-tooltip i.tooltip-key { width: 10px; height: 2px; border-radius: 1px; }
+.chart-tooltip.align-start { left: 0; transform: none; }
+.chart-tooltip.align-end { left: auto; right: 0; transform: none; }
