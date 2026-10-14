@@ -112,3 +112,8 @@
   margin-top: 20px;
   font-size: 13px;
 }
+
+.sign-in-button:disabled {
+  opacity: 0.65;
+  cursor: wait;
+}

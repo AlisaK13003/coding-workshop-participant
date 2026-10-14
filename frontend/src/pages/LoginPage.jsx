@@ -1,20 +1,30 @@
-import { useState } from 'react'
-import { useNavigate } from 'react-router-dom'
-import { DEMO_USERNAMES, demoSignIn } from '../services/demoAuth.js'
+import { useEffect, useState } from 'react'
+import { Link, Navigate, useNavigate } from 'react-router-dom'
+import { useSession } from '../hooks/useSession.js'
+import { HOME_BY_ROLE, getSetupStatus, login } from '../services/authApi.js'
 import './LoginPage.css'
 
-const demoUsernameList = DEMO_USERNAMES.join(', ')
-
-/** Welcome page with the sign-in form. Signs in through the temporary demo auth. */
+/** Welcome page with the sign-in form. */
 export default function LoginPage() {
   const navigate = useNavigate()
+  const session = useSession()
   const [username, setUsername] = useState('')
   const [password, setPassword] = useState('')
   const [errors, setErrors] = useState({})
   const [message, setMessage] = useState('')
+  const [submitting, setSubmitting] = useState(false)
+  const [signupOpen, setSignupOpen] = useState(false)
 
-  /** Validate the fields, then sign in with a demo account. */
-  function handleSubmit(event) {
+  useEffect(() => {
+    getSetupStatus()
+      .then((status) => setSignupOpen(status.signup_open))
+      .catch(() => setSignupOpen(false))
+  }, [])
+
+  if (session) return <Navigate to={HOME_BY_ROLE[session.user.role] ?? '/'} replace />
+
+  /** Validate the fields, then sign in. */
+  async function handleSubmit(event) {
     event.preventDefault()
 
     const nextErrors = {}
@@ -30,12 +40,14 @@ export default function LoginPage() {
       return
     }
 
-    const destination = demoSignIn(username, password)
-    if (!destination) {
-      setMessage(`Unknown username. Use one of the demo accounts: ${demoUsernameList}.`)
-      return
+    setSubmitting(true)
+    try {
+      const user = await login(username.trim(), password)
+      navigate(HOME_BY_ROLE[user.role])
+    } catch (error) {
+      setMessage(error.message)
+      setSubmitting(false)
     }
-    navigate(destination)
   }
 
   return (
@@ -93,12 +105,21 @@ export default function LoginPage() {
               </p>
             )}
           </div>
-          <button className="sign-in-button" type="submit">Sign in</button>
+          <button className="sign-in-button" type="submit" disabled={submitting}>
+            {submitting ? 'Signing in…' : 'Sign in'}
+          </button>
           <p className="login-message" role="status">{message}</p>
         </form>
-        <p className="login-hint">
-          Demo usernames: {demoUsernameList}. Any password works.
-        </p>
+        {signupOpen && (
+          <p className="login-hint">
+            Setting up for the first time? <Link to="/signup">Create the admin account</Link>.
+          </p>
+        )}
+        {import.meta.env.DEV && (
+          <p className="login-hint">
+            Local sample accounts: aadmin1, mmanager2, eemployee3 (password Password123!).
+          </p>
+        )}
       </section>
     </main>
   )

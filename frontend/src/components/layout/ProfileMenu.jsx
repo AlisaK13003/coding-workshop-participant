@@ -1,12 +1,13 @@
 import { ChevronDown, LogOut } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
 import { useDisclosure } from '../../hooks/useDisclosure.js'
+import { logout } from '../../services/authApi.js'
 import { Avatar } from '../ui'
 import './Popover.css'
 import './ProfileMenu.css'
 
 /**
- * Avatar button with a dropdown. Always ends with "Sign out" (back to /).
+ * Avatar button with a dropdown. Always ends with "Sign out", which ends the session.
  * user: { name, subtitle }.
  * summary (optional): short line shown under the name, e.g. "5 direct reports".
  * actions (optional): [{ label, icon, onClick }] menu items above Sign out.
@@ -43,7 +44,12 @@ export function ProfileMenu({ user, summary, actions = [] }) {
               {label}
             </button>
           ))}
-          <button onClick={() => navigate('/')}>
+          <button
+            onClick={() => {
+              logout()
+              navigate('/')
+            }}
+          >
             <LogOut size={16} />
             Sign out
           </button>
