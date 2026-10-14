@@ -24,7 +24,7 @@ export function ProjectOverviewTab({ project, milestones, onEdit }) {
             { label: 'Manager', value: project.manager?.name ?? 'Unassigned' },
             { label: 'Start date', value: formatDate(project.start_date) },
             { label: 'Predicted end', value: formatDate(project.end_date) },
-            { label: 'Schedule phase', value: <Phase value={getProjectPhase(project)} /> },
+            { label: 'Health', value: <Phase value={getProjectPhase(project)} /> },
             { label: 'Estimated budget', value: formatMoney(project.budget) },
             { label: 'Project status', value: <ProjectStatusBadge status={project.status} /> },
           ]}

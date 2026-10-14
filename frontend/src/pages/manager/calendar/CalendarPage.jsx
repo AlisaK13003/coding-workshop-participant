@@ -70,16 +70,16 @@ export function CalendarPage({ projects, onOpenProject }) {
         </div>
         <div className="schedule-legend">
           <span>
-            <i className="phase-dot phase-green" /> On track · under 50%
+            <i className="phase-dot phase-green" /> On track · no overdue milestones
           </span>
           <span>
-            <i className="phase-dot phase-amber" /> Needs attention · 50–75%
+            <i className="phase-dot phase-amber" /> Needs attention · 1 overdue
           </span>
           <span>
-            <i className="phase-dot phase-red" /> Urgent · last 25%
+            <i className="phase-dot phase-red" /> Urgent · 2+ overdue or past the end date
           </span>
           <small>
-            Schedule phase reflects elapsed scheduled time, not performance.
+            Overdue means past a milestone’s end date and not completed.
           </small>
         </div>
         {view === 'month' ? (

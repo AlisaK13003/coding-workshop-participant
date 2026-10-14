@@ -1,7 +1,7 @@
-// Project health: schedule phase and budget usage.
+// Project health (On track / Needs attention / Urgent) and budget usage.
 import { parseDate } from './format.js'
 
-// Phases are 'Green' | 'Amber' | 'Red' internally (they pick the colour); people see these labels.
+// Health is 'Green' | 'Amber' | 'Red' internally (it picks the colour); people see these labels.
 export const SCHEDULE_PHASE_LABELS = {
   Green: 'On track',
   Amber: 'Needs attention',
@@ -12,12 +12,31 @@ export const SCHEDULE_PHASES = Object.keys(SCHEDULE_PHASE_LABELS)
 
 export const phaseLabel = (phase) => SCHEDULE_PHASE_LABELS[phase] ?? phase
 
+const DAY_MS = 24 * 60 * 60 * 1000
+
 export const SCHEDULE_PHASE_HINT =
-  'Based on how much of the schedule has passed. On track: under 50%. Needs attention: 50–75%. ' +
-  'Urgent: the last 25%, or past the end date.'
+  'Compares milestones with their own end dates. On track: none overdue. Needs attention: 1 milestone ' +
+  'past its end date and not completed. Urgent: 2 or more, or the project is past its end date with work ' +
+  'left. Projects without milestones go by how much of the schedule has passed.'
 
 /**
- * Schedule phase from elapsed scheduled time (not performance or budget).
+ * Project health from its milestones: how many are past their end date but not completed
+ * (`milestones.overdue`, from the API). A finished project is always on track; one past its
+ * own end date with work left is urgent. Without milestones, falls back to elapsed time.
+ * project: { start_date, end_date, milestones: { completed, total, overdue } }.
+ */
+export function getProjectHealth(project, today = new Date()) {
+  const { completed = 0, total = 0, overdue = 0 } = project.milestones ?? {}
+  if (!total) return getSchedulePhase(project.start_date, project.end_date, today)
+  if (completed === total) return 'Green'
+  if (today.getTime() > parseDate(project.end_date).getTime() + DAY_MS) return 'Red'
+  if (overdue === 0) return 'Green'
+  return overdue === 1 ? 'Amber' : 'Red'
+}
+
+/**
+ * Time-only phase from how much of the scheduled time has passed: under 50% green,
+ * 50–75% amber, the rest red. Used for projects that have no milestones yet.
  * start and end are ISO dates; today defaults to the current date.
  */
 export function getSchedulePhase(start, end, today = new Date()) {

@@ -77,8 +77,8 @@ export function ProjectsPage({ projects, onOpenProject, onOpenDialog }) {
                 </option>
               ))}
             </Select>
-            <Select value={phase} onChange={setPhase} aria-label="Schedule phase">
-              <option value={ALL}>All phases</option>
+            <Select value={phase} onChange={setPhase} aria-label="Health">
+              <option value={ALL}>All health</option>
               {SCHEDULE_PHASES.map((value) => (
                 <option key={value} value={value}>
                   {phaseLabel(value)}

@@ -22,6 +22,7 @@ import { ProjectWorkLogsTab } from '../../components/worklogs/ProjectWorkLogsTab
 import { useApiQuery } from '../../hooks/useApiQuery.js'
 import { listMilestones } from '../../services/milestonesApi.js'
 import { formatDateRange } from '../../utils/format.js'
+import { SCHEDULE_PHASE_HINT } from '../../utils/schedule.js'
 import { canCompleteProject, getProjectPhase, isOpenProject } from '../../utils/projects.js'
 import { getAdminWorkLogColumns } from './adminWorkLogColumns.jsx'
 import { ActivityTab } from './tabs/ActivityTab.jsx'
@@ -50,7 +51,7 @@ export function ProjectDetailPage({ project, onBack, onOpenDialog }) {
             {project.archived_at && <Badge>Archived</Badge>}
             <span>
               <Phase value={getProjectPhase(project)} />{' '}
-              <Tooltip text="Schedule phase reflects elapsed scheduled time, not performance or budget." />
+              <Tooltip text={SCHEDULE_PHASE_HINT} />
             </span>
           </>
         }

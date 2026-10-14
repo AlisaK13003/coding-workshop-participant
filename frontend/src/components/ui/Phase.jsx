@@ -1,7 +1,7 @@
 import { phaseLabel } from '../../utils/schedule.js'
 import './Phase.css'
 
-/** Schedule phase dot and label ("On track", …). value: 'Green' | 'Amber' | 'Red'. */
+/** Health dot and label ("On track", …). value: 'Green' | 'Amber' | 'Red'. */
 export function Phase({ value }) {
   return (
     <span className="phase">

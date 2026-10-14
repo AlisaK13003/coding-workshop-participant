@@ -17,9 +17,9 @@
 --   Taylor Reed    employee (Riley), archived
 --
 -- Projects (D = the reset date)
---   Mobile App Refresh        Morgan  ends D+7    budget nearly used (~94%)
---   Data Warehouse Migration  Morgan  ends D+30   over budget (~118%)
---   Support Portal            Riley   ends D+90   under budget (~35%)
+--   Mobile App Refresh        Morgan  ends D+7    budget nearly used (~94%)   needs attention (1 milestone overdue)
+--   Data Warehouse Migration  Morgan  ends D+30   over budget (~118%)         urgent (2 milestones overdue)
+--   Support Portal            Riley   ends D+90   under budget (~35%)         on track
 --   Vendor Onboarding         Morgan  abandoned (admins only)
 --   Legacy Billing Cleanup    Morgan  completed and archived (Archive page)
 --   Intranet Redesign         none    unarchived, waiting for a new manager (previously Riley)
@@ -53,7 +53,7 @@ DECLARE
     priya INT; riley INT; jordan INT; casey INT; devon INT; avery INT; blake INT; quinn INT; taylor INT;
     mobile INT; warehouse INT; support INT; vendor INT; legacy INT; intranet INT;
     m_ux INT; m_build INT; m_release INT;
-    m_schema INT; m_load INT; m_validation INT;
+    m_schema INT; m_load INT; m_tuning INT; m_validation INT;
     m_discovery INT; m_kb INT; m_chatbot INT; m_golive INT;
     m_research INT; m_integration INT; m_audit INT; m_cleanup INT; m_requirements INT; m_pages INT;
 BEGIN
@@ -84,27 +84,30 @@ BEGIN
         RETURNING id INTO taylor;
 
     -- Projects and milestones -------------------------------------------------------------
-    -- Mobile App Refresh: ends in a week, budget nearly used.
+    -- Mobile App Refresh: ends in a week, budget nearly used, Build is 2 days overdue.
     INSERT INTO projects (name, manager_id, start_date, end_date, budget, created_at)
         VALUES ('Mobile App Refresh', morgan, d - 77, d + 7, 1, d - 80) RETURNING id INTO mobile;
     INSERT INTO milestones (project_id, name, start_date, end_date, completed_at)
         VALUES (mobile, 'UX Design', d - 77, d - 50, d - 50) RETURNING id INTO m_ux;
     INSERT INTO milestones (project_id, name, start_date, end_date)
-        VALUES (mobile, 'Build', d - 49, d + 2) RETURNING id INTO m_build;
+        VALUES (mobile, 'Build', d - 49, d - 2) RETURNING id INTO m_build;
     INSERT INTO milestones (project_id, name, start_date, end_date)
-        VALUES (mobile, 'Store Release', d + 3, d + 7) RETURNING id INTO m_release;
+        VALUES (mobile, 'Store Release', d - 1, d + 7) RETURNING id INTO m_release;
     INSERT INTO milestone_dependencies VALUES (m_build, m_ux, mobile), (m_release, m_build, mobile);
 
-    -- Data Warehouse Migration: ends in a month, over budget.
+    -- Data Warehouse Migration: ends in a month, over budget, Data Load and Index Tuning overdue.
     INSERT INTO projects (name, manager_id, start_date, end_date, budget, created_at)
         VALUES ('Data Warehouse Migration', morgan, d - 60, d + 30, 1, d - 62) RETURNING id INTO warehouse;
     INSERT INTO milestones (project_id, name, start_date, end_date, completed_at)
         VALUES (warehouse, 'Schema Mapping', d - 60, d - 35, d - 35) RETURNING id INTO m_schema;
     INSERT INTO milestones (project_id, name, start_date, end_date)
-        VALUES (warehouse, 'Data Load', d - 34, d + 10) RETURNING id INTO m_load;
+        VALUES (warehouse, 'Data Load', d - 34, d - 5) RETURNING id INTO m_load;
     INSERT INTO milestones (project_id, name, start_date, end_date)
-        VALUES (warehouse, 'Validation', d + 11, d + 30) RETURNING id INTO m_validation;
-    INSERT INTO milestone_dependencies VALUES (m_load, m_schema, warehouse), (m_validation, m_load, warehouse);
+        VALUES (warehouse, 'Index Tuning', d - 20, d - 2) RETURNING id INTO m_tuning;
+    INSERT INTO milestones (project_id, name, start_date, end_date)
+        VALUES (warehouse, 'Validation', d - 4, d + 30) RETURNING id INTO m_validation;
+    INSERT INTO milestone_dependencies VALUES
+        (m_load, m_schema, warehouse), (m_tuning, m_schema, warehouse), (m_validation, m_load, warehouse);
 
     -- Support Portal: ends in three months, under budget, with two parallel branches.
     INSERT INTO projects (name, manager_id, start_date, end_date, budget, created_at)

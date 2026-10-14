@@ -2,7 +2,7 @@
 // { id, name, start_date, end_date, status, archived_at, manager, milestones: { completed, total },
 //   member_count, hours, budget?, cost? } (budget and cost only for admins and managers).
 import { daysBetween, todayIso } from './calendar.js'
-import { getSchedulePhase, isOverBudget } from './schedule.js'
+import { getProjectHealth, isOverBudget } from './schedule.js'
 
 export const PROJECT_STATUS = {
   inProgress: 'in_progress',
@@ -31,9 +31,9 @@ export function needsManager(project) {
   return !project.manager
 }
 
-/** Schedule phase as of today. */
+/** Health as of today: On track / Needs attention / Urgent (see getProjectHealth). */
 export function getProjectPhase(project) {
-  return getSchedulePhase(project.start_date, project.end_date)
+  return getProjectHealth(project)
 }
 
 /** Ends between today and `days` days from now. */

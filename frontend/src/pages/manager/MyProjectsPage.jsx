@@ -48,8 +48,8 @@ export function MyProjectsPage({ projects, onOpenProject }) {
         <div className="toolbar">
           <SearchBox value={search} onChange={setSearch} placeholder="Search your active projects" />
           <div className="filters">
-            <Select value={phase} onChange={setPhase} aria-label="Schedule phase">
-              <option value="">All phases</option>
+            <Select value={phase} onChange={setPhase} aria-label="Health">
+              <option value="">All health</option>
               {SCHEDULE_PHASES.map((value) => (
                 <option key={value} value={value}>
                   {phaseLabel(value)}

@@ -4,7 +4,7 @@ import { MilestoneProgress } from '../../components/projects/MilestoneProgress.j
 import { DataTable, Phase, Tooltip } from '../../components/ui'
 import { formatDateRange, formatHours, formatMoney } from '../../utils/format.js'
 import { getProjectPhase } from '../../utils/projects.js'
-import { SCHEDULE_PHASE_TABLE_HINT } from './managerConfig.js'
+import { SCHEDULE_PHASE_HINT } from '../../utils/schedule.js'
 
 /** Manager's project list. `compact` (dashboard) hides employees and labor cost. */
 export function ManagerProjectTable({ projects, onOpen, compact = false }) {
@@ -19,7 +19,7 @@ export function ManagerProjectTable({ projects, onOpen, compact = false }) {
       key: 'phase',
       header: (
         <>
-          Schedule phase <Tooltip text={SCHEDULE_PHASE_TABLE_HINT} />
+          Health <Tooltip text={SCHEDULE_PHASE_HINT} />
         </>
       ),
       render: (project) => <Phase value={getProjectPhase(project)} />,

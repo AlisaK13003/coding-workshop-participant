@@ -58,7 +58,7 @@ export function DashboardPage({ projects, milestones, members, onOpenProject, on
       <ReviewQueue reviews={reviews} projects={projects} onReview={onReview} />
       <Panel
         title="Active projects"
-        description="Schedule phase, milestone completion, logged hours, and budget usage are separate measures."
+        description="Health, milestone completion, logged hours, and budget usage are separate measures."
       >
         {projects.length ? (
           <ManagerProjectTable projects={projects} onOpen={(project) => onOpenProject(project.id)} compact />

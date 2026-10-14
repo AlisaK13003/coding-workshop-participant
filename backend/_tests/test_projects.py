@@ -1,8 +1,23 @@
-from conftest import call, sign_in, sql
+from datetime import date
+
+import pytest
+from conftest import call, load_service, sign_in, sql
 
 # Seed data: Customer Portal (id 1, 2026-10-01..2026-12-31, budget 50000) managed by Morgan Manager (2),
 # milestones Design (1), Backend API (2), Frontend (3), Launch (4); Emery Employee (3) is member 1 on
 # Design, with two logged days at $40/hour.
+
+@pytest.fixture(autouse=True)
+def today(monkeypatch):
+    """Sets the projects service's "today" (used for overdue milestones). Defaults to Wed 14 Oct 2026."""
+    clock = load_service("projects").clock
+
+    def set_today(day):
+        monkeypatch.setattr(clock, "today", lambda: day)
+
+    set_today(date(2026, 10, 14))
+    return set_today
+
 
 NEW_PROJECT = {"name": "Data Platform", "manager_id": 2, "start_date": "2026-11-01", "end_date": "2027-03-31",
                "budget": 120000}
@@ -48,7 +63,7 @@ def test_admin_sees_project_with_totals(admin_token):
     assert project["manager"] == {"id": 2, "name": "Morgan Manager"}
     assert project["start_date"] == "2026-10-01"
     assert project["member_count"] == 1
-    assert project["milestones"] == {"completed": 0, "total": 4}
+    assert project["milestones"] == {"completed": 0, "total": 4, "overdue": 0}
     assert project["hours"] == 16.0
     assert project["budget"] == 50000.0
     assert project["cost"] == 640.0
@@ -97,7 +112,7 @@ def test_admin_creates_project_and_notifies_manager(admin_token):
     assert r.status == 201
     assert r.json["status"] == "in_progress"
     assert r.json["budget"] == 120000.0
-    assert r.json["milestones"] == {"completed": 0, "total": 0}
+    assert r.json["milestones"] == {"completed": 0, "total": 0, "overdue": 0}
     assert r.json["hours"] == 0 and r.json["cost"] == 0
     entry = last_activity()
     assert entry["action"] == "project.create"
@@ -188,6 +203,16 @@ def test_archive_project(admin_token, manager_token):
     assert last_activity()["action"] == "project.archive"
     assert call("projects", "DELETE", "/1", token=admin_token).status == 409
     assert call("projects", "GET", "/1", token=admin_token).json["status"] == "abandoned"
+
+
+def test_overdue_milestones_count_unfinished_milestones_past_their_end_date(today, manager_token):
+    # Design ends Oct 31 and Backend API Nov 30.
+    today(date(2026, 11, 2))
+    assert call("projects", "GET", "/1", token=manager_token).json["milestones"]["overdue"] == 1
+    today(date(2026, 12, 1))
+    assert call("projects", "GET", "/1", token=manager_token).json["milestones"]["overdue"] == 2
+    complete_milestones(1)
+    assert call("projects", "GET", "/", token=manager_token).json[0]["milestones"]["overdue"] == 1
 
 
 def test_complete_project_rules(manager_token, employee_token):

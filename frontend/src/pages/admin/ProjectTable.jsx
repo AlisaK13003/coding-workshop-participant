@@ -42,7 +42,7 @@ export function ProjectTable({ projects, onOpen, compact = false }) {
       key: 'phase',
       header: (
         <>
-          Schedule phase <Tooltip text={SCHEDULE_PHASE_HINT} />
+          Health <Tooltip text={SCHEDULE_PHASE_HINT} />
         </>
       ),
       render: (project) => <Phase value={getProjectPhase(project)} />,

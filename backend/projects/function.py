@@ -15,7 +15,7 @@ Routes (under /api/projects):
     DELETE /{id}/members/{member_id}  admin, or its manager: remove a member
 """
 
-from shared import auth, db
+from shared import auth, clock, db
 from shared.access import get_managed_project, get_visible_project, require_open_project, visible_projects_filter
 from shared.activity import changed_fields, full_name, log_activity, notify
 from shared.auth import ADMIN, MANAGER
@@ -39,6 +39,9 @@ PROJECT_SQL = f"""
            (SELECT count(*) FROM milestones m
             WHERE m.project_id = p.id AND m.completed_at IS NOT NULL) AS milestones_completed,
            (SELECT count(*) FROM milestones m WHERE m.project_id = p.id) AS milestones_total,
+           -- past their end date but not completed, as of the business date passed in first
+           (SELECT count(*) FROM milestones m WHERE m.project_id = p.id
+            AND m.completed_at IS NULL AND m.end_date < %s) AS milestones_overdue,
            (SELECT coalesce(sum(w.hours), 0) FROM work_logs w WHERE w.project_id = p.id) AS hours,
            (SELECT coalesce(sum(w.hours * w.hourly_rate), 0) FROM work_logs w WHERE w.project_id = p.id) AS cost
     FROM projects p
@@ -70,7 +73,11 @@ def project_json(project, viewer):
     """The project as the API returns it, with its totals; money only for admins and managers."""
     body = {field: project[field] for field in PROJECT_FIELDS}
     body["manager"] = project["manager"]
-    body["milestones"] = {"completed": project["milestones_completed"], "total": project["milestones_total"]}
+    body["milestones"] = {
+        "completed": project["milestones_completed"],
+        "total": project["milestones_total"],
+        "overdue": project["milestones_overdue"],
+    }
     # Money is for admins and managers only; employees don't get the keys at all.
     if viewer["role"] in auth.ADMIN_OR_MANAGER:
         body["budget"] = project["budget"]
@@ -96,7 +103,7 @@ def member_json(member):
 def read_project(conn, viewer, project_id):
     """The project with its totals. Callers check access first: after completing a project,
     for example, its manager can no longer see it but still gets the result."""
-    return project_json(conn.execute(PROJECT_SQL + " WHERE p.id = %s", (project_id,)).fetchone(), viewer)
+    return project_json(conn.execute(PROJECT_SQL + " WHERE p.id = %s", (clock.today(), project_id)).fetchone(), viewer)
 
 
 def read_member(conn, member_id):
@@ -159,7 +166,9 @@ def list_projects(request):
             params.append(status)
         if archived:
             conditions.append("p.archived_at IS NOT NULL" if archived == "true" else "p.archived_at IS NULL")
-    projects = db.fetch_all(PROJECT_SQL + " WHERE " + " AND ".join(conditions) + " ORDER BY p.name", params)
+    # PROJECT_SQL's first placeholder is today's date (for overdue milestones).
+    projects = db.fetch_all(PROJECT_SQL + " WHERE " + " AND ".join(conditions) + " ORDER BY p.name",
+                            [clock.today(), *params])
     return [project_json(project, viewer) for project in projects]
 
 

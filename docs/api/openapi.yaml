@@ -1596,10 +1596,14 @@ components:
             - type: 'null'
         milestones:
           type: object
-          required: [completed, total]
+          required: [completed, total, overdue]
           properties:
             completed: { type: integer, example: 0 }
             total: { type: integer, example: 4 }
+            overdue:
+              type: integer
+              description: Milestones past their end date and not completed, as of today in the business time zone. The frontend's health label uses it.
+              example: 0
         budget:
           type: number
           description: '**Admins and managers only**; left out for employees.'

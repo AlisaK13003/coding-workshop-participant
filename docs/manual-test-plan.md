@@ -48,8 +48,8 @@ Everyone's password is `Password123!`.
 | # | Project | Manager | Ends | Budget used | Health | Who's on which milestone |
 |---|---|---|---|---|---|---|
 | 1 | Customer Portal | Morgan | Dec 31 | 1% | On track | Emery → Design (**awaiting review**) |
-| 2 | Mobile App Refresh | Morgan | D+7 (Oct 21) | **94%** | **Urgent** | Emery, Casey → Build (available); Devon → Store Release (**blocked**) |
-| 3 | Data Warehouse Migration | Morgan | D+30 (Nov 13) | **118%** | **Needs attention** | Emery, Devon → Data Load (**awaiting review**) |
+| 2 | Mobile App Refresh | Morgan | D+7 (Oct 21) | **94%** | **Needs attention** (Build 2 days overdue) | Emery, Casey → Build (available); Devon → Store Release (**blocked**) |
+| 3 | Data Warehouse Migration | Morgan | D+30 (Nov 13) | **118%** | **Urgent** (Data Load and Index Tuning overdue) | Emery, Devon → Data Load (**awaiting review**); Index Tuning unassigned |
 | 4 | Support Portal | Riley | D+90 (Jan 12) | **35%** | **On track** | Avery → Knowledge Base, Blake → Chatbot (both available; Go Live needs both) |
 | 5 | Vendor Onboarding | Morgan | ended | 27% | — | **abandoned**, not archived (admins only) |
 | 6 | Legacy Billing Cleanup | Morgan | ended | 88% | — | **completed and archived** |
@@ -276,7 +276,12 @@ Everyone's password is `Password123!`.
 
 - [ ] **Budget usage:** Mobile App Refresh ≈ **94%** (near), Data Warehouse Migration ≈ **118%** (shown as **over budget**), Support Portal ≈ **35%**, Customer Portal ≈ 1%.
 - [ ] **Push one over budget:** as Morgan, lower Mobile App Refresh's budget to 21,000 → it shows as over budget. Admin stat cards count it.
-- [ ] **Schedule health:** Mobile App Refresh **Urgent** (last week), Data Warehouse Migration **Needs attention**, Support Portal **On track**. Change a project's end date and the label follows: under 50% of the schedule passed is On track, 50–75% Needs attention, the last 25% Urgent. The filter on My Projects / Projects uses the same labels.
+- [ ] **Health** compares milestones with their own end dates: **On track** = none overdue, **Needs attention** = 1 milestone past its end date and not completed, **Urgent** = 2+ overdue or the project is past its end date with work left. Projects with no milestones fall back to time elapsed.
+  - Fresh reset: Mobile App Refresh **Needs attention**, Data Warehouse Migration **Urgent**, Support Portal and Customer Portal **On track**.
+  - **Complete Build** (Mobile App Refresh) → it becomes **On track**, even though it's in its last week.
+  - **Complete Data Load** (Data Warehouse Migration) → **Needs attention** (Index Tuning still overdue); complete Index Tuning too → **On track**.
+  - **Edit a milestone's end date into the past** → health drops; move it back → recovers.
+  - The Health filter on My Projects / Projects uses the same labels.
 - [ ] **Calendar (month):** each project appears **only on its deadline**.
   - Morgan: Oct 21 (Mobile App Refresh), Nov 13 (Data Warehouse Migration), Dec 31 (Customer Portal).
   - Riley: Jan 12 (Support Portal).
