@@ -17,7 +17,7 @@ import { ROLES, roleLabel } from '../../utils/users.js'
 
 const PAGE_SIZE = 50
 
-/** Searchable, paged audit trail of every change, filtered by the API. */
+/** Searchable audit trail of every change, filtered by the API, 50 entries per page. */
 export function ActivityPage() {
   const [search, setSearch] = useState('')
   const [filters, setFilters] = useState({ actor_id: '', role: '', action: '' })
@@ -83,20 +83,24 @@ export function ActivityPage() {
                 <span>
                   {page.total ? `${page.offset + 1}–${page.offset + page.items.length} of ${page.total}` : 'No entries'}
                 </span>
-                <Button
-                  variant="secondary"
-                  disabled={page.offset === 0}
-                  onClick={() => setOffset(Math.max(page.offset - PAGE_SIZE, 0))}
-                >
-                  Newer
-                </Button>
-                <Button
-                  variant="secondary"
-                  disabled={page.offset + page.items.length >= page.total}
-                  onClick={() => setOffset(page.offset + PAGE_SIZE)}
-                >
-                  Older
-                </Button>
+                {page.total > PAGE_SIZE && (
+                  <>
+                    <Button
+                      variant="secondary"
+                      disabled={page.offset === 0}
+                      onClick={() => setOffset(Math.max(page.offset - PAGE_SIZE, 0))}
+                    >
+                      Newer
+                    </Button>
+                    <Button
+                      variant="secondary"
+                      disabled={page.offset + page.items.length >= page.total}
+                      onClick={() => setOffset(page.offset + PAGE_SIZE)}
+                    >
+                      Older
+                    </Button>
+                  </>
+                )}
               </div>
             </>
           )}

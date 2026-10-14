@@ -5,3 +5,7 @@
 .button-secondary:hover, .button-ghost:hover { background: var(--soft); }
 .button-ghost { min-height: 34px; padding: 0 8px; background: transparent; color: var(--muted); }
 .button-danger { background: var(--red); color: var(--surface); }
+.button:disabled { opacity: 0.45; cursor: not-allowed; }
+.button-primary:disabled:hover { background: var(--ink); }
+.button-secondary:disabled:hover { background: var(--surface); }
+.button-ghost:disabled:hover { background: transparent; }
