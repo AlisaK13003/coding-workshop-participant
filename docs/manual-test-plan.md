@@ -69,7 +69,7 @@ Everyone's password is `Password123!`.
 
 ## 1. Sign-in and access
 
-- [ ] **Sign in as each role** → you land on `/admin`, `/manager` or `/employee`, and the top bar shows your name and job title.
+- [ ] **Sign in as each role** → you land on `/#/admin`, `/#/manager` or `/#/employee` (page URLs use `#`), and the top bar shows your name and job title.
 - [ ] **Username capitals don't matter.** `RChen5` works.
 - [ ] **Wrong password** → "Incorrect username or password."
 - [ ] **Unknown username** → the same message.
@@ -77,15 +77,16 @@ Everyone's password is `Password123!`.
 - [ ] **Empty fields** → "Enter your username." / "Enter your password.", under each field.
 - [ ] **Refresh while signed in** → you stay signed in.
 - [ ] **Profile menu → Sign out** → back to sign-in. The browser's Back button doesn't get you back in.
-- [ ] **Wrong workspace:** as Emery, go to `localhost:3010/admin` → sent to `/employee`. As Riley, go to `/employee` → sent to `/manager`.
-- [ ] **Signed out**, go to `/manager` → sent to sign-in.
-- [ ] **Sign-up is closed:** go to `/signup` → "This workspace is already set up."
+- [ ] **Wrong workspace:** as Emery, go to `localhost:3010/#/admin` → sent to `/#/employee`. As Riley, go to `/#/employee` → sent to `/#/manager`.
+- [ ] **Signed out**, go to `/#/manager` → sent to sign-in.
+- [ ] **Refresh on any page** (e.g. `/#/manager`) → you stay on it.
+- [ ] **Sign-up is closed:** go to `/#/signup` → "This workspace is already set up."
 - [ ] **Session refresh** *(optional, slow)*: stay signed in for 20+ minutes (the access token lasts 15), then click around → it still works.
 
 **Sign-up when the system is empty** *(then Reset)*:
 - [ ] Run `PGPASSWORD=postgres123 psql -h localhost -U postgres -d project_tracker -c "TRUNCATE users RESTART IDENTITY CASCADE"`.
 - [ ] Refresh the sign-in page → "Create the admin account" appears. Fill it in → you're signed in as an admin with username first initial + last name + 1 (e.g. `rowner1`).
-- [ ] Go to `/signup` again → closed. **Reset** afterwards.
+- [ ] Go to `/#/signup` again → closed. **Reset** afterwards.
 
 ---
 
@@ -149,8 +150,8 @@ Everyone's password is `Password123!`.
   - Quinn gets "Reporting manager changed: You now report to Riley Chen."
   - **Check:** Riley's My Employees shows Quinn; Jordan's is empty.
 - [ ] **Now Jordan has no employees and no projects:**
-  - **Promote Quinn to Manager** → Quinn's manager and salary are cleared, and Quinn signs in to `/manager`.
-  - **Demote Jordan to Employee** (with a manager and salary) → it works, because Jordan has nothing to hand over. Jordan signs in to `/employee`.
+  - **Promote Quinn to Manager** → Quinn's manager and salary are cleared, and Quinn signs in to the manager workspace.
+  - **Demote Jordan to Employee** (with a manager and salary) → it works, because Jordan has nothing to hand over. Jordan signs in to the employee workspace.
 - [ ] **Demote Morgan** → blocked (Morgan has employees and projects).
 
 **Manager limits:**

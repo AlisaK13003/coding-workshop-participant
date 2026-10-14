@@ -26,6 +26,17 @@ function buildUrl(service, path, query) {
   return search ? `${url}?${search}` : url
 }
 
+const NOT_JSON = Symbol('not JSON')
+
+function parseJson(text) {
+  if (!text) return null
+  try {
+    return JSON.parse(text)
+  } catch {
+    return NOT_JSON
+  }
+}
+
 async function send(service, path, { method = 'GET', body, query, token }) {
   const headers = { Accept: 'application/json' }
   if (body !== undefined) headers['Content-Type'] = 'application/json'
@@ -43,7 +54,12 @@ async function send(service, path, { method = 'GET', body, query, token }) {
   }
 
   const text = await response.text()
-  const data = text ? JSON.parse(text) : null
+  const data = parseJson(text)
+  if (data === NOT_JSON) {
+    // On AWS, CloudFront swaps 404s for the website's index.html (sent as 200), so an HTML
+    // page where JSON was expected means "not found".
+    throw new ApiError(404, 'not_found', 'Not found.')
+  }
   if (!response.ok) {
     const error = data?.error ?? {}
     throw new ApiError(response.status, error.code ?? 'error', error.message ?? 'Something went wrong.', error.fields)
