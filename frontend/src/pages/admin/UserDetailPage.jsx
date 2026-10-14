@@ -10,6 +10,7 @@ import {
   DetailList,
   EmptyState,
   Panel,
+  PanelFooter,
   QueryContent,
 } from '../../components/ui'
 import { DIALOGS } from '../../components/workspace/dialogKinds.js'
@@ -106,9 +107,11 @@ export function UserDetailPage({ userId, projects, onBack, onOpenProject, onOpen
                     ]}
                   />
                   {user.role === 'employee' && !user.archived_at && (
-                    <Button variant="secondary" onClick={open(DIALOGS.transferEmployee)}>
-                      Transfer manager
-                    </Button>
+                    <PanelFooter>
+                      <Button variant="secondary" onClick={open(DIALOGS.transferEmployee)}>
+                        Transfer manager
+                      </Button>
+                    </PanelFooter>
                   )}
                 </Panel>
                 <Panel

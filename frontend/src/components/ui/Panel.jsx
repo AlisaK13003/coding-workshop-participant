@@ -25,3 +25,8 @@ export function Panel({ title, description, actions, className, children }) {
     </section>
   )
 }
+
+/** Row of actions at the bottom of a panel, right-aligned with the panel's padding. */
+export function PanelFooter({ children }) {
+  return <div className="panel-footer">{children}</div>
+}
