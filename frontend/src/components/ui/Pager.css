@@ -1,0 +1,6 @@
+.pager { display: flex; align-items: center; justify-content: flex-end; gap: 8px; padding: 12px 18px; border-top: 1px solid var(--line); color: var(--muted); font-size: 11px; }
+.pager span { margin-right: auto; }
+.pager-button { display: grid; place-items: center; width: 30px; height: 30px; border: 1px solid var(--line-dark); border-radius: 999px; background: var(--surface); color: var(--ink); }
+.pager-button:hover:not(:disabled) { background: var(--soft); }
+.pager-button:disabled { opacity: 0.4; cursor: not-allowed; }
+.pager-button:focus-visible { outline: 2px solid var(--teal); outline-offset: 2px; }

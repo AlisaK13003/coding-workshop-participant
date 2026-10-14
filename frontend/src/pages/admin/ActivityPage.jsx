@@ -1,8 +1,8 @@
 import { useState } from 'react'
 import { ActivityList } from '../../components/activity/ActivityList.jsx'
 import {
-  Button,
   PageHeading,
+  Pager,
   Panel,
   QueryContent,
   SearchBox,
@@ -79,29 +79,15 @@ export function ActivityPage() {
                     includesText(`${item.actor} ${item.action} ${item.record} ${item.summary}`, search),
                   )}
               />
-              <div className="pager">
-                <span>
-                  {page.total ? `${page.offset + 1}–${page.offset + page.items.length} of ${page.total}` : 'No entries'}
-                </span>
-                {page.total > PAGE_SIZE && (
-                  <>
-                    <Button
-                      variant="secondary"
-                      disabled={page.offset === 0}
-                      onClick={() => setOffset(Math.max(page.offset - PAGE_SIZE, 0))}
-                    >
-                      Newer
-                    </Button>
-                    <Button
-                      variant="secondary"
-                      disabled={page.offset + page.items.length >= page.total}
-                      onClick={() => setOffset(page.offset + PAGE_SIZE)}
-                    >
-                      Older
-                    </Button>
-                  </>
-                )}
-              </div>
+              <Pager
+                start={page.total ? page.offset + 1 : 0}
+                end={page.offset + page.items.length}
+                total={page.total}
+                hasPrevious={page.offset > 0}
+                hasNext={page.offset + page.items.length < page.total}
+                previous={() => setOffset(Math.max(page.offset - PAGE_SIZE, 0))}
+                next={() => setOffset(page.offset + PAGE_SIZE)}
+              />
             </>
           )}
         </QueryContent>

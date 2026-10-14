@@ -5,13 +5,16 @@ import { formatDateTime } from '../../utils/format.js'
 import { ReviewIcon } from './ReviewIcon.jsx'
 import './ReviewQueue.css'
 
-/** Milestones waiting for a completion review (managers and admins). reviews from getPendingReviews. */
-export function ReviewQueue({ reviews, projects, onReview }) {
+/**
+ * Milestones waiting for a completion review (managers and admins). reviews from
+ * getPendingReviews; `total` (defaults to reviews.length) and `footer` (e.g. a Pager) support paging.
+ */
+export function ReviewQueue({ reviews, projects, onReview, total = reviews.length, footer = null }) {
   return (
     <Panel
       title="Milestone review queue"
       description="Requests apply to the entire milestone, not an individual task."
-      actions={<Badge tone="Awaiting review">{reviews.length} pending</Badge>}
+      actions={<Badge tone="Awaiting review">{total} pending</Badge>}
     >
       {reviews.length ? (
         <div className="review-queue">
@@ -37,6 +40,7 @@ export function ReviewQueue({ reviews, projects, onReview }) {
           body="New milestone completion requests will appear here."
         />
       )}
+      {footer}
     </Panel>
   )
 }
