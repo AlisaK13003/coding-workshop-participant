@@ -20,11 +20,14 @@ const COLUMNS = {
 const FULL = ['name', 'username', 'email', 'role', 'title', 'manager', 'id', 'open']
 const COMPACT = ['name', 'role', 'title', 'manager', 'open']
 
-/** People list; selecting a row calls onOpen(user). `compact` (dashboard) shows fewer columns. */
-export function UserTable({ users, onOpen, compact = false }) {
+/**
+ * People list; selecting a row calls onOpen(user). `compact` (dashboard) shows fewer columns;
+ * `columns` (keys of COLUMNS) picks them exactly.
+ */
+export function UserTable({ users, onOpen, compact = false, columns = compact ? COMPACT : FULL }) {
   return (
     <DataTable
-      columns={(compact ? COMPACT : FULL).map((key) => COLUMNS[key])}
+      columns={columns.map((key) => COLUMNS[key])}
       rows={users}
       getRowKey={(user) => user.id}
       onRowClick={onOpen}

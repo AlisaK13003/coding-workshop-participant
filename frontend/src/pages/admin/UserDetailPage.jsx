@@ -1,5 +1,6 @@
 import { ChevronRight } from 'lucide-react'
 import { AssignmentList } from '../../components/users/AssignmentList.jsx'
+import { DirectReportsPanel } from '../../components/users/DirectReportsPanel.jsx'
 import { RoleBadge } from '../../components/users/RoleBadge.jsx'
 import {
   ActionMenu,
@@ -19,6 +20,7 @@ import { useCurrentUser } from '../../hooks/useSession.js'
 import { getUser } from '../../services/usersApi.js'
 import { formatMoney } from '../../utils/format.js'
 import { projectStatusLabel } from '../../utils/projects.js'
+import { pluralize } from '../../utils/text.js'
 
 /** An employee's current projects, or the projects a manager runs (from the admin's project list). */
 function getAssignments(user, projects, onOpenProject) {
@@ -40,14 +42,17 @@ function getAssignments(user, projects, onOpenProject) {
     .map((project) => ({
       key: project.id,
       title: project.name,
-      detail: `${projectStatusLabel(project.status)}${project.archived_at ? ' · Archived' : ''} · ${project.member_count} employees`,
+      detail: `${projectStatusLabel(project.status)}${project.archived_at ? ' · Archived' : ''} · ${project.member_count} ${pluralize(project.member_count, 'employee')}`,
       trailing: <ChevronRight size={17} />,
       onClick: open(project.id),
     }))
 }
 
-/** One user's profile and project assignments, with edit, password and archive actions. */
-export function UserDetailPage({ userId, projects, onBack, onOpenProject, onOpenDialog }) {
+/**
+ * One user's profile and project assignments (and a manager's direct reports), with edit,
+ * password and archive actions. onOpenUser(user) opens another user, e.g. a direct report.
+ */
+export function UserDetailPage({ userId, projects, onBack, onOpenProject, onOpenUser, onOpenDialog }) {
   const me = useCurrentUser()
   const query = useApiQuery(() => getUser(userId), [userId])
 
@@ -130,6 +135,7 @@ export function UserDetailPage({ userId, projects, onBack, onOpenProject, onOpen
                   )}
                 </Panel>
               </div>
+              {user.role === 'manager' && <DirectReportsPanel manager={user} onOpenUser={onOpenUser} />}
             </>
           )
         }}

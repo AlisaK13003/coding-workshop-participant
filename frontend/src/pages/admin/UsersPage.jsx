@@ -41,6 +41,7 @@ export function UsersPage({ projects, selectedId, onSelectUser, onOpenProject, o
         projects={projects}
         onBack={() => onSelectUser(null)}
         onOpenProject={onOpenProject}
+        onOpenUser={(person) => onSelectUser(person.id)}
         onOpenDialog={onOpenDialog}
       />
     )

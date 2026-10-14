@@ -136,6 +136,7 @@ Everyone's password is `Password123!`.
   - username `DBROOKS8` → taken
   - password rules: under 8 characters → error; missing an uppercase letter, a number or a special character → the error names what's missing (e.g. `Uppercase1` → "Include a special character like . or !"); periods count, spaces don't
 - [ ] **Money fields** (salary, project budget, hourly rate on Add workday): typing `100,000` or `$100,000` works and is tidied to `100,000` when you leave the field; letters can't be typed. The ▲▼ buttons and the arrow keys add/subtract **$10,000** (salary, budget) or **$1** (hourly rate), never below 0.
+- [ ] **A manager's page** (Users → Morgan) shows **Direct reports** across the full width under Profile details and Managed projects: Devon, Emery and Casey, with a "3 employees" badge. Clicking a row opens that employee. Employees' and admins' pages have no such panel. Project rows say "1 employee", not "1 employees".
 
 **Editing:**
 - [ ] **Edit Casey's job title** → saved. Activity Log: `user.update` with before → after.
