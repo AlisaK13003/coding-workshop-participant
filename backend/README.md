@@ -18,7 +18,10 @@ Other folders:
 
 - `_shared/` — code every service uses (router, auth and role checks, validation, database, activity log). `bin/sync-backend-shared.sh` copies it into each service as `shared/` (each Lambda is packaged from its own folder); `start-dev.sh` and `deploy-backend.sh` run it for you. **Edit `_shared/`, never a service's `shared/` copy.**
   - `_shared/db.py` talks to PostgreSQL through [pg8000](https://pypi.org/project/pg8000/), a driver written in pure Python. Because it has no compiled code, the packages pip installs on your machine also load in the Lambdas, whatever Python version each one runs. Queries use `%s` placeholders, rows come back as dicts, and a broken unique, foreign-key or check constraint raises `db.UniqueViolation`, `db.ForeignKeyViolation` or `db.CheckViolation` with the constraint's name.
-- `db/` — `schema.sql` (tables and the rules the database enforces), `seed.sql` (the small sample data the tests use), `demo.sql` (extra people and projects for trying the app by hand, with dates relative to today), `reset.sh` (rebuilds a database from all three; `--seed-only` skips the demo data).
+- `db/` — `schema.sql` (tables and the rules the database enforces), `seed.sql` (the small sample data the tests use), `demo.sql` (extra people and projects for trying the app by hand, with dates relative to today).
+  - `reset.sh` wipes and rebuilds a database: tables plus all sample data, or `--seed-only` (small sample) or `--empty` (tables only; sign-up then creates the first admin).
+  - `seed.sh` adds the sample data to an existing database without deleting anything (safe to rerun).
+  - For the deployed AWS database, `bin/cloud-db.sh reset --empty`, `bin/cloud-db.sh seed` and `bin/cloud-db.sh psql` do the same there (reset asks you to type the database name to confirm).
 - `_tests/` — pytest suite that calls each service's `handler()` against a throwaway database.
 
 The full API reference is [docs/api/openapi.yaml](../docs/api/openapi.yaml), and [docs/api/README.md](../docs/api/README.md) explains testing it with Swagger UI, Postman or curl.

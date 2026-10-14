@@ -45,3 +45,15 @@ output "jupyter_url" {
   description = "The URL of the JupyterHub instance"
   value       = data.aws_caller_identity.this.id == "000000000000" ? "http://localhost:8888" : try(one(aws_eks_cluster.this.*.endpoint), null)
 }
+
+output "postgres_connection" {
+  description = "Database connection settings the Lambdas use; read by bin/cloud-db.sh"
+  sensitive   = true
+  value = {
+    host     = local.env_vars.POSTGRES_HOST
+    port     = local.env_vars.POSTGRES_PORT
+    name     = local.env_vars.POSTGRES_NAME
+    user     = local.env_vars.POSTGRES_USER
+    password = local.env_vars.POSTGRES_PASS
+  }
+}
