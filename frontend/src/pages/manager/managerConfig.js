@@ -31,6 +31,7 @@ export const MANAGER_SIDEBAR_FOOTER = {
 }
 
 export const SCHEDULE_PHASE_TABLE_HINT =
-  'Green: under 50% elapsed. Amber: 50–75%. Red: 75% or past the predicted end date. This reflects elapsed scheduled time, not performance.'
+  'Based only on how much of the schedule has passed, not on progress. On track: under 50%. ' +
+  'Needs attention: 50–75%. Urgent: the last 25%, or past the predicted end date.'
 
 export const MANAGER_WORK_LOG_COLUMNS = ['date', 'employee', 'project', 'milestone', 'hours', 'laborCost']

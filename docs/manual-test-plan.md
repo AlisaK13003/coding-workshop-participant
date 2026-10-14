@@ -47,10 +47,10 @@ Everyone's password is `Password123!`.
 
 | # | Project | Manager | Ends | Budget used | Health | Who's on which milestone |
 |---|---|---|---|---|---|---|
-| 1 | Customer Portal | Morgan | Dec 31 | 1% | green | Emery → Design (**awaiting review**) |
-| 2 | Mobile App Refresh | Morgan | D+7 (Oct 21) | **94%** | **red** | Emery, Casey → Build (available); Devon → Store Release (**blocked**) |
-| 3 | Data Warehouse Migration | Morgan | D+30 (Nov 13) | **118%** | **amber** | Emery, Devon → Data Load (**awaiting review**) |
-| 4 | Support Portal | Riley | D+90 (Jan 12) | **35%** | **green** | Avery → Knowledge Base, Blake → Chatbot (both available; Go Live needs both) |
+| 1 | Customer Portal | Morgan | Dec 31 | 1% | On track | Emery → Design (**awaiting review**) |
+| 2 | Mobile App Refresh | Morgan | D+7 (Oct 21) | **94%** | **Urgent** | Emery, Casey → Build (available); Devon → Store Release (**blocked**) |
+| 3 | Data Warehouse Migration | Morgan | D+30 (Nov 13) | **118%** | **Needs attention** | Emery, Devon → Data Load (**awaiting review**) |
+| 4 | Support Portal | Riley | D+90 (Jan 12) | **35%** | **On track** | Avery → Knowledge Base, Blake → Chatbot (both available; Go Live needs both) |
 | 5 | Vendor Onboarding | Morgan | ended | 27% | — | **abandoned**, not archived (admins only) |
 | 6 | Legacy Billing Cleanup | Morgan | ended | 88% | — | **completed and archived** |
 | 7 | Intranet Redesign | **none** | D+60 | 13% | — | **unarchived, needs a manager** (previously Riley) |
@@ -276,7 +276,7 @@ Everyone's password is `Password123!`.
 
 - [ ] **Budget usage:** Mobile App Refresh ≈ **94%** (near), Data Warehouse Migration ≈ **118%** (shown as **over budget**), Support Portal ≈ **35%**, Customer Portal ≈ 1%.
 - [ ] **Push one over budget:** as Morgan, lower Mobile App Refresh's budget to 21,000 → it shows as over budget. Admin stat cards count it.
-- [ ] **Schedule health:** Mobile App Refresh **red** (last week), Data Warehouse Migration **amber**, Support Portal **green**. Change a project's end date and the colour follows (0–50% elapsed green, 50–75% amber, the last 25% red).
+- [ ] **Schedule health:** Mobile App Refresh **Urgent** (last week), Data Warehouse Migration **Needs attention**, Support Portal **On track**. Change a project's end date and the label follows: under 50% of the schedule passed is On track, 50–75% Needs attention, the last 25% Urgent. The filter on My Projects / Projects uses the same labels.
 - [ ] **Calendar (month):** each project appears **only on its deadline**.
   - Morgan: Oct 21 (Mobile App Refresh), Nov 13 (Data Warehouse Migration), Dec 31 (Customer Portal).
   - Riley: Jan 12 (Support Portal).

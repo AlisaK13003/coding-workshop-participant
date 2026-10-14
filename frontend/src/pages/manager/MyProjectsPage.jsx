@@ -10,7 +10,7 @@ import {
   ViewToggle,
 } from '../../components/ui'
 import { getProjectPhase } from '../../utils/projects.js'
-import { SCHEDULE_PHASES } from '../../utils/schedule.js'
+import { SCHEDULE_PHASES, phaseLabel } from '../../utils/schedule.js'
 import { includesText } from '../../utils/text.js'
 import { ManagerProjectTable } from './ManagerProjectTable.jsx'
 import { ProjectCardGrid } from './ProjectCardGrid.jsx'
@@ -51,7 +51,9 @@ export function MyProjectsPage({ projects, onOpenProject }) {
             <Select value={phase} onChange={setPhase} aria-label="Schedule phase">
               <option value="">All phases</option>
               {SCHEDULE_PHASES.map((value) => (
-                <option key={value}>{value}</option>
+                <option key={value} value={value}>
+                  {phaseLabel(value)}
+                </option>
               ))}
             </Select>
             <Input

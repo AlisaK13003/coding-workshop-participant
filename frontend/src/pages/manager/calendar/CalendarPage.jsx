@@ -70,13 +70,13 @@ export function CalendarPage({ projects, onOpenProject }) {
         </div>
         <div className="schedule-legend">
           <span>
-            <i className="phase-dot phase-green" /> Green · under 50%
+            <i className="phase-dot phase-green" /> On track · under 50%
           </span>
           <span>
-            <i className="phase-dot phase-amber" /> Amber · 50–75%
+            <i className="phase-dot phase-amber" /> Needs attention · 50–75%
           </span>
           <span>
-            <i className="phase-dot phase-red" /> Red · 75% or more
+            <i className="phase-dot phase-red" /> Urgent · last 25%
           </span>
           <small>
             Schedule phase reflects elapsed scheduled time, not performance.

@@ -11,7 +11,7 @@ import {
 import { DIALOGS } from '../../components/workspace/dialogKinds.js'
 import { uniqueBy } from '../../utils/collections.js'
 import { PROJECT_STATUS, getProjectPhase, projectStatusLabel } from '../../utils/projects.js'
-import { SCHEDULE_PHASES } from '../../utils/schedule.js'
+import { SCHEDULE_PHASES, phaseLabel } from '../../utils/schedule.js'
 import { includesText } from '../../utils/text.js'
 import { ProjectTable } from './ProjectTable.jsx'
 
@@ -80,7 +80,9 @@ export function ProjectsPage({ projects, onOpenProject, onOpenDialog }) {
             <Select value={phase} onChange={setPhase} aria-label="Schedule phase">
               <option value={ALL}>All phases</option>
               {SCHEDULE_PHASES.map((value) => (
-                <option key={value}>{value}</option>
+                <option key={value} value={value}>
+                  {phaseLabel(value)}
+                </option>
               ))}
             </Select>
           </div>

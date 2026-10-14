@@ -1,10 +1,20 @@
-// Project health: schedule phase (green / amber / red) and budget usage.
+// Project health: schedule phase and budget usage.
 import { parseDate } from './format.js'
 
-export const SCHEDULE_PHASE_HINT =
-  'Green: under 50% elapsed. Amber: 50–75%. Red: 75% or past end date.'
+// Phases are 'Green' | 'Amber' | 'Red' internally (they pick the colour); people see these labels.
+export const SCHEDULE_PHASE_LABELS = {
+  Green: 'On track',
+  Amber: 'Needs attention',
+  Red: 'Urgent',
+}
 
-export const SCHEDULE_PHASES = ['Green', 'Amber', 'Red']
+export const SCHEDULE_PHASES = Object.keys(SCHEDULE_PHASE_LABELS)
+
+export const phaseLabel = (phase) => SCHEDULE_PHASE_LABELS[phase] ?? phase
+
+export const SCHEDULE_PHASE_HINT =
+  'Based on how much of the schedule has passed. On track: under 50%. Needs attention: 50–75%. ' +
+  'Urgent: the last 25%, or past the end date.'
 
 /**
  * Schedule phase from elapsed scheduled time (not performance or budget).
