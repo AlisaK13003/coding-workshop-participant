@@ -1,7 +1,9 @@
 // Milestone rules shared by every role. Milestones come from the API as
 // { id, project_id, name, start_date, end_date, status, prerequisite_ids, members,
 //   hours, pending_review }. The server works out the status.
+import { daysBetween, todayIso } from './calendar.js'
 import { findById } from './collections.js'
+import { pluralize } from './text.js'
 
 export const MILESTONE_STATUS = {
   blocked: 'blocked',
@@ -122,4 +124,25 @@ export function getAssignmentTone(state) {
   if (state === ASSIGNMENT_STATE.available) return 'Green'
   if (state === ASSIGNMENT_STATE.review) return 'Awaiting review'
   return 'Amber'
+}
+
+// A blocked milestone this close to its end date is unlikely to make it.
+const BLOCKED_URGENT_DAYS = 7
+
+/**
+ * Deadline health for an open milestone, for lists of upcoming end dates:
+ * { phase: 'Green' | 'Amber' | 'Red', reason }. Urgent: past its end date, or still blocked
+ * with a week or less to go. Needs attention: blocked, or nobody assigned. Otherwise on track.
+ */
+export function getMilestoneHealth(milestone, today = todayIso()) {
+  const daysLeft = daysBetween(today, milestone.end_date)
+  const blocked = milestone.status === MILESTONE_STATUS.blocked
+  if (daysLeft < 0) return { phase: 'Red', reason: 'Past its end date and not completed' }
+  if (blocked && daysLeft <= BLOCKED_URGENT_DAYS) {
+    return { phase: 'Red', reason: `Ends in ${daysLeft} ${pluralize(daysLeft, 'day')} but its prerequisites aren’t done` }
+  }
+  if (blocked) return { phase: 'Amber', reason: 'Waiting on prerequisites before work can start' }
+  if (milestone.status === MILESTONE_STATUS.review) return { phase: 'Green', reason: 'Waiting for a review decision' }
+  if (!milestone.members.length) return { phase: 'Amber', reason: 'Nobody is assigned to it' }
+  return { phase: 'Green', reason: `${milestone.members.length} ${pluralize(milestone.members.length, 'person', 'people')} working on it` }
 }
