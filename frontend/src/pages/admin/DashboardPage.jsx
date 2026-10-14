@@ -33,7 +33,7 @@ import {
   isProjectOverBudget,
   needsManager,
 } from '../../utils/projects.js'
-import { pluralize } from '../../utils/text.js'
+import { listWords, pluralize } from '../../utils/text.js'
 import { ROLES } from '../../utils/users.js'
 import { getMonthlyTotals, sumHours } from '../../utils/workLogs.js'
 import { ADMIN_PAGES, DASHBOARD_VIEWS } from './adminConfig.js'
@@ -49,6 +49,16 @@ function countRoles(users) {
     const count = users.filter((user) => user.role === role).length
     return `${count} ${pluralize(count, role)}`
   }).join(' · ')
+}
+
+/** "1 project needs a manager and 2 milestone reviews are pending"; parts with nothing to report are left out. */
+function attentionSummary({ unassigned, overBudget, reviews }) {
+  const parts = [
+    unassigned && `${unassigned} ${pluralize(unassigned, 'project needs', 'projects need')} a manager`,
+    overBudget && `${overBudget} ${pluralize(overBudget, 'project is', 'projects are')} over budget`,
+    reviews && `${reviews} milestone ${pluralize(reviews, 'review is', 'reviews are')} pending`,
+  ].filter(Boolean)
+  return `${listWords(parts)}.`
 }
 
 function oldestRequestNote(reviews) {
@@ -147,9 +157,11 @@ export function DashboardPage({ projects, onOpenProject, onOpenUser, onNavigate,
                         {attention} {pluralize(attention, 'item needs', 'items need')} attention
                       </strong>
                       <span>
-                        {unassigned.length} {pluralize(unassigned.length, 'project needs', 'projects need')} a
-                        manager, {overBudget.length} {pluralize(overBudget.length, 'is', 'are')} over budget,
-                        and {reviews.length} milestone {pluralize(reviews.length, 'review is', 'reviews are')} pending.
+                        {attentionSummary({
+                          unassigned: unassigned.length,
+                          overBudget: overBudget.length,
+                          reviews: reviews.length,
+                        })}
                       </span>
                     </p>
                   </div>

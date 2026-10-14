@@ -9,3 +9,8 @@ export function includesText(text, query) {
 export function pluralize(count, singular, plural = `${singular}s`) {
   return count === 1 ? singular : plural
 }
+
+/** listWords(['a']) → "a"; listWords(['a', 'b', 'c']) → "a, b and c". */
+export function listWords(items) {
+  return items.length <= 1 ? (items[0] ?? '') : `${items.slice(0, -1).join(', ')} and ${items.at(-1)}`
+}
