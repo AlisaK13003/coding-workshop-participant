@@ -8,7 +8,7 @@ Routes (under /api/projects):
     DELETE /{id}                      admin: archive a project
     POST   /{id}/complete             admin, or its manager: complete once every milestone is complete
     POST   /{id}/abandon              admin: abandon an open project
-    POST   /{id}/unarchive            admin: unarchive; clears the manager and the members
+    POST   /{id}/unarchive            admin: unarchive and reopen; clears the manager and the members
     GET    /{id}/members              signed in: current members of a visible project
     POST   /{id}/members              admin, or its manager: add an employee
     PUT    /{id}/members/{member_id}  admin, or its manager: change a member's milestone
@@ -299,14 +299,19 @@ def unarchive_project(request):
         project = get_managed_project(conn, request.user, request.path_params["id"], lock=True)
         if project["archived_at"] is None:
             raise conflict("This project isn't archived.")
-        # The project comes back without a manager or members; an admin assigns a new manager.
+        # Unarchiving reopens the project so it can be reassigned: it comes back in progress,
+        # without a manager or members, until an admin assigns a new manager.
         # Completed milestones stay completed.
-        conn.execute("UPDATE projects SET archived_at = NULL, manager_id = NULL WHERE id = %s", (project["id"],))
+        conn.execute(
+            "UPDATE projects SET archived_at = NULL, manager_id = NULL, status = 'in_progress' WHERE id = %s",
+            (project["id"],),
+        )
         conn.execute("UPDATE project_members SET removed_at = now() WHERE project_id = %s AND removed_at IS NULL",
                      (project["id"],))
         log_activity(conn, request.user, "project.unarchive", "project", project["id"],
-                     f"Unarchived project {project['name']}; its manager and members were cleared.",
-                     project_id=project["id"], changes=changed_fields(project, {"manager_id": None}))
+                     f"Unarchived and reopened project {project['name']}; its manager and members were cleared.",
+                     project_id=project["id"],
+                     changes=changed_fields(project, {"manager_id": None, "status": "in_progress"}))
         return read_project(conn, request.user, project["id"])
 
 

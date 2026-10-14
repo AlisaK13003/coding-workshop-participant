@@ -226,6 +226,7 @@ def test_unarchive_clears_manager_and_members(admin_token, manager_token):
     assert r.json["manager"] is None
     assert r.json["member_count"] == 0
     assert r.json["milestones"]["completed"] == 1
+    assert r.json["status"] == "in_progress"
     entry = last_activity()
     assert entry["action"] == "project.unarchive"
     assert entry["changes"] == {"manager_id": {"from": 2, "to": None}}
@@ -233,6 +234,26 @@ def test_unarchive_clears_manager_and_members(admin_token, manager_token):
     r = call("projects", "PUT", "/1", {"manager_id": 2}, token=admin_token)
     assert r.status == 200 and r.json["manager"]["id"] == 2
     assert last_activity()["summary"] == "Assigned project Customer Portal to Morgan Manager."
+
+
+def test_unarchive_reopens_a_closed_project_so_it_can_be_reassigned(admin_token, manager_token):
+    complete_milestones(1, 2, 3, 4)
+    assert call("projects", "POST", "/1/complete", token=manager_token).status == 200
+    assert call("projects", "DELETE", "/1", token=admin_token).status == 204
+
+    r = call("projects", "POST", "/1/unarchive", token=admin_token)
+    assert r.status == 200
+    assert r.json["status"] == "in_progress"
+    assert r.json["manager"] is None
+    assert last_activity()["changes"] == {
+        "manager_id": {"from": 2, "to": None},
+        "status": {"from": "completed", "to": "in_progress"},
+    }
+    # Hidden from the old manager until it's reassigned, then visible and editable again.
+    assert call("projects", "GET", "/1", token=manager_token).status == 404
+    assert call("projects", "PUT", "/1", {"manager_id": 2}, token=admin_token).status == 200
+    assert call("projects", "GET", "/1", token=manager_token).status == 200
+    assert call("projects", "PUT", "/1", {"budget": 60000}, token=manager_token).status == 200
 
 
 # Members

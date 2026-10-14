@@ -676,11 +676,13 @@ paths:
       operationId: unarchiveProject
       summary: Unarchive a project
       description: |
-        **Admin only.** The project comes back **without a manager and without members**;
-        assign a manager with `PUT /api/projects/{id}`. Completed milestones stay completed.
+        **Admin only.** Reopens the project so it can be reassigned: it comes back with
+        `status: in_progress`, **without a manager and without members** (even if it had been
+        completed or abandoned). Assign a manager with `PUT /api/projects/{id}`. Completed
+        milestones stay completed. The activity entry records the previous manager and status.
       responses:
         '200':
-          description: The unarchived project (`manager` is null)
+          description: The reopened project (`status` is `in_progress`, `manager` is null)
           content:
             application/json:
               schema: { $ref: '#/components/schemas/Project' }
