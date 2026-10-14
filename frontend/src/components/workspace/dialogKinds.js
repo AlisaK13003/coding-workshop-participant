@@ -6,6 +6,7 @@ export const DIALOGS = {
   editProject: 'editProject',
   completeProject: 'completeProject',
   abandonProject: 'abandonProject',
+  reopenProject: 'reopenProject',
   archiveProject: 'archiveProject',
   unarchiveProject: 'unarchiveProject',
   assignManager: 'assignManager',

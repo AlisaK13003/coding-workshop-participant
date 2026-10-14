@@ -22,7 +22,7 @@ import { ProjectWorkLogsTab } from '../../components/worklogs/ProjectWorkLogsTab
 import { useApiQuery } from '../../hooks/useApiQuery.js'
 import { listMilestones } from '../../services/milestonesApi.js'
 import { formatDateRange } from '../../utils/format.js'
-import { canCompleteProject, getProjectPhase, isOpenProject, needsManager } from '../../utils/projects.js'
+import { PROJECT_STATUS, canCompleteProject, getProjectPhase, isOpenProject, needsManager } from '../../utils/projects.js'
 import { getAdminWorkLogColumns } from './adminWorkLogColumns.jsx'
 import { ActivityTab } from './tabs/ActivityTab.jsx'
 import { HealthExplanation } from '../../components/projects/HealthExplanation.jsx'
@@ -31,7 +31,7 @@ const TABS = ['Overview', 'Milestones', 'People', 'Work Logs', 'Activity']
 
 /**
  * One project: header, completion note, summary cards and tabbed details.
- * Changes need an open project, so closed and archived ones only offer archiving.
+ * Changes need an open project, so closed ones offer archiving (and reopening, if abandoned).
  */
 export function ProjectDetailPage({ project, onBack, onOpenDialog }) {
   const [tab, setTab] = useState(TABS[0])
@@ -81,6 +81,10 @@ export function ProjectDetailPage({ project, onBack, onOpenDialog }) {
                   onClick: openDialog(DIALOGS.completeProject),
                 },
                 open && { label: 'Mark abandoned', onClick: openDialog(DIALOGS.abandonProject) },
+                project.status === PROJECT_STATUS.abandoned && !project.archived_at && {
+                  label: 'Reopen project',
+                  onClick: openDialog(DIALOGS.reopenProject),
+                },
                 project.archived_at
                   ? { label: 'Unarchive project', onClick: openDialog(DIALOGS.unarchiveProject) }
                   : {

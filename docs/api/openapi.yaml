@@ -669,6 +669,33 @@ paths:
         '403': { $ref: '#/components/responses/Forbidden' }
         '404': { $ref: '#/components/responses/NotFound' }
 
+  /api/projects/{id}/reopen:
+    parameters:
+      - $ref: '#/components/parameters/Id'
+    post:
+      tags: [projects]
+      operationId: reopenProject
+      summary: Reopen an abandoned project
+      description: |
+        **Admin only.** Undoes abandoning: an abandoned, unarchived project goes back to
+        `status: in_progress` with the **same manager and members**. The manager is notified
+        ("Project reopened"). Archived projects use `/unarchive` instead; completed projects
+        can't be reopened.
+      responses:
+        '200':
+          description: The reopened project
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Project' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '409':
+          description: The project is archived (`project_archived`) or isn't abandoned (`project_not_abandoned`)
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Error' }
+
   /api/projects/{id}/unarchive:
     parameters:
       - $ref: '#/components/parameters/Id'

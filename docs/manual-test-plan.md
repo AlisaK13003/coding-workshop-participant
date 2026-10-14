@@ -321,6 +321,7 @@ Everyone's password is `Password123!`.
 - [ ] **Complete a project with unfinished milestones** → "These milestones aren't complete yet: …".
 - [ ] **Managers can't abandon:** Morgan has no "Mark abandoned"; admins do.
 - [ ] **Archive a running project** → Archive is disabled ("Mark the project completed or abandoned first").
+- [ ] **Reopen Vendor Onboarding** (abandoned, not archived) → its … menu has **Reopen project** (admins only). Confirm → it's **In progress** again with Morgan still managing and the same employees; Morgan gets "Project reopened". Completed or archived projects don't offer Reopen (archived ones use Restore). Mark it abandoned again before the next step.
 - [ ] **Archive Vendor Onboarding** (abandoned) → it moves to Archive, showing "Abandoned".
 
 **Unarchive Legacy Billing Cleanup:**

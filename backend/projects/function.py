@@ -8,6 +8,7 @@ Routes (under /api/projects):
     DELETE /{id}                      admin: archive a completed or abandoned project
     POST   /{id}/complete             admin, or its manager: complete once every milestone is complete
     POST   /{id}/abandon              admin: abandon an open project
+    POST   /{id}/reopen               admin: reopen an abandoned, unarchived project as it was
     POST   /{id}/unarchive            admin: unarchive and reopen; clears the manager and the members
     GET    /{id}/members              signed in: current members of a visible project
     POST   /{id}/members              admin, or its manager: add an employee
@@ -303,6 +304,26 @@ def abandon_project(request):
         log_activity(conn, request.user, "project.abandon", "project", project["id"],
                      f"Abandoned project {project['name']}.", project_id=project["id"],
                      changes={"status": {"from": project["status"], "to": "abandoned"}})
+        return read_project(conn, request.user, project["id"])
+
+
+@router.route("POST", "/{id}/reopen", roles=auth.ADMIN_ONLY)
+def reopen_project(request):
+    """Undoes abandoning: back in progress with the same manager and members. Archived
+    projects come back through unarchive instead; completed projects stay completed."""
+    with db.transaction() as conn:
+        project = get_managed_project(conn, request.user, request.path_params["id"], lock=True)
+        if project["archived_at"] is not None:
+            raise conflict("Archived projects come back through unarchiving.", "project_archived")
+        if project["status"] != "abandoned":
+            raise conflict("Only abandoned projects can be reopened.", "project_not_abandoned")
+        conn.execute("UPDATE projects SET status = 'in_progress' WHERE id = %s", (project["id"],))
+        if project["manager_id"] is not None:
+            notify(conn, project["manager_id"], "Project reopened",
+                   f"{full_name(request.user)} reopened {project['name']}.", project["id"])
+        log_activity(conn, request.user, "project.reopen", "project", project["id"],
+                     f"Reopened project {project['name']}.", project_id=project["id"],
+                     changes={"status": {"from": "abandoned", "to": "in_progress"}})
         return read_project(conn, request.user, project["id"])
 
 

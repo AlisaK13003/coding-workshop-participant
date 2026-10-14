@@ -18,6 +18,7 @@ const ACTION_LABELS = {
   'project.update': 'Updated project',
   'project.complete': 'Completed project',
   'project.abandon': 'Abandoned project',
+  'project.reopen': 'Reopened project',
   'project.archive': 'Archived project',
   'project.unarchive': 'Unarchived project',
   'member.add': 'Added project member',

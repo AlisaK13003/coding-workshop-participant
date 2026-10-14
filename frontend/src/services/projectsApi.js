@@ -21,6 +21,9 @@ export const completeProject = (id) => api.post('projects', `/${id}/complete`)
 /** Admin only. */
 export const abandonProject = (id) => api.post('projects', `/${id}/abandon`)
 
+/** Admin only. An abandoned, unarchived project goes back in progress, same manager and members. */
+export const reopenProject = (id) => api.post('projects', `/${id}/reopen`)
+
 /** Admin only. The project comes back without a manager or members. */
 export const unarchiveProject = (id) => api.post('projects', `/${id}/unarchive`)
 

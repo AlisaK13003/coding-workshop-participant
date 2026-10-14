@@ -242,6 +242,37 @@ def test_abandon_project(admin_token, manager_token):
     assert call("projects", "POST", "/1/abandon", token=admin_token).status == 403
 
 
+def test_reopen_an_abandoned_project(admin_token, manager_token):
+    # Only abandoned projects reopen.
+    r = call("projects", "POST", "/1/reopen", token=admin_token)
+    assert r.status == 409 and r.json["error"]["code"] == "project_not_abandoned"
+    call("projects", "POST", "/1/abandon", token=admin_token)
+    assert call("projects", "POST", "/1/reopen", token=manager_token).status == 403
+
+    r = call("projects", "POST", "/1/reopen", token=admin_token)
+    assert r.status == 200 and r.json["status"] == "in_progress"
+    # Same manager and members as before.
+    assert r.json["manager"]["id"] == 2 and r.json["member_count"] == 1
+    entry = last_activity()
+    assert entry["action"] == "project.reopen"
+    assert entry["changes"] == {"status": {"from": "abandoned", "to": "in_progress"}}
+    assert notifications(2)[-1]["title"] == "Project reopened"
+    assert call("projects", "GET", "/1", token=manager_token).status == 200
+
+
+def test_reopen_leaves_archived_and_completed_projects_alone(admin_token, manager_token):
+    call("projects", "POST", "/1/abandon", token=admin_token)
+    call("projects", "DELETE", "/1", token=admin_token)
+    r = call("projects", "POST", "/1/reopen", token=admin_token)
+    assert r.status == 409 and r.json["error"]["code"] == "project_archived"
+    call("projects", "POST", "/1/unarchive", token=admin_token)
+    complete_milestones(1, 2, 3, 4)
+    call("projects", "PUT", "/1", {"manager_id": 2}, token=admin_token)
+    assert call("projects", "POST", "/1/complete", token=admin_token).status == 200
+    r = call("projects", "POST", "/1/reopen", token=admin_token)
+    assert r.status == 409 and r.json["error"]["code"] == "project_not_abandoned"
+
+
 def test_unarchive_clears_manager_and_members(admin_token, manager_token):
     complete_milestones(1)
     assert call("projects", "POST", "/1/unarchive", token=admin_token).status == 409
