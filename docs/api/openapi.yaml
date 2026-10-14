@@ -1479,7 +1479,7 @@ components:
     Password:
       type: string
       minLength: 8
-      description: 8 to 72 characters (bcrypt only uses 72 bytes)
+      description: 8 to 72 characters (bcrypt only uses 72 bytes), with at least one uppercase letter, one number and one special character (anything but a letter, number or space, e.g. `.` or `!`). Otherwise 400 with a field error naming what's missing.
 
     Destination:
       type: object

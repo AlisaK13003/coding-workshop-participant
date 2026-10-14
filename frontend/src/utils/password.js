@@ -1,14 +1,25 @@
 // Password rules shared by every form that sets a password. They match the backend
-// (Validator.password): 8 to 72 characters, with at least one letter and one number.
+// (Validator.password): 8 to 72 characters, with an uppercase letter, a number and a
+// special character (anything that isn't a letter, number or space, e.g. . ! @ -).
 
-export const PASSWORD_HINT = '8–72 characters, with at least one letter and one number.'
+export const PASSWORD_HINT =
+  '8–72 characters, with an uppercase letter, a number and a special character like . or !'
 
-/** The first rule a new password breaks, as a message, or null if it's fine. */
+/** "a, b and c" */
+function listOf(items) {
+  return items.length === 1 ? items[0] : `${items.slice(0, -1).join(', ')} and ${items.at(-1)}`
+}
+
+/** The problem with a new password, as a message (same wording as the server), or null if it's fine. */
 export function passwordProblem(password) {
   if (password.length < 8) return 'Use at least 8 characters.'
   if (new TextEncoder().encode(password).length > 72) return 'Use at most 72 characters.'
-  if (!/\p{L}/u.test(password) || !/\d/.test(password)) return 'Include at least one letter and one number.'
-  return null
+  const missing = [
+    !/\p{Lu}/u.test(password) && 'an uppercase letter',
+    !/\d/.test(password) && 'a number',
+    !/[^\p{L}\p{N}\s]/u.test(password) && 'a special character like . or !',
+  ].filter(Boolean)
+  return missing.length ? `Include ${listOf(missing)}.` : null
 }
 
 /** Returns { field: message } for each problem; empty when the change can be sent. The server checks the current password. */

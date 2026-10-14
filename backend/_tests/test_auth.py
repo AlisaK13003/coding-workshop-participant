@@ -69,7 +69,7 @@ def test_token_stops_working_once_user_is_archived(employee_token):
 def test_signup_is_closed_once_users_exist():
     assert call("auth", "GET", "/setup").json == {"signup_open": False}
     r = call("auth", "POST", "/signup", {"first_name": "A", "last_name": "B", "email": "a@b.com",
-                                         "job_title": "Owner", "password": "longenough1"})
+                                         "job_title": "Owner", "password": "Longenough1."})
     assert r.status == 409
 
 
@@ -77,11 +77,11 @@ def test_signup_creates_first_admin_when_empty():
     sql("TRUNCATE users RESTART IDENTITY CASCADE")
     assert call("auth", "GET", "/setup").json == {"signup_open": True}
     r = call("auth", "POST", "/signup", {"first_name": "Riley", "last_name": "Owner", "email": "riley@example.com",
-                                         "job_title": "Founder", "password": "longenough1"})
+                                         "job_title": "Founder", "password": "Longenough1."})
     assert r.status == 201
     assert r.json["user"]["role"] == "admin"
     assert r.json["user"]["username"] == "rowner1"
-    assert sign_in("rowner1", "longenough1")
+    assert sign_in("rowner1", "Longenough1.")
 
 
 def test_signup_validates_fields():
@@ -93,13 +93,13 @@ def test_signup_validates_fields():
 
 
 def test_change_password(employee_token):
-    wrong = call("auth", "PUT", "/me/password", {"current_password": "nope", "new_password": "newpassword1"},
+    wrong = call("auth", "PUT", "/me/password", {"current_password": "nope", "new_password": "Newpassword1."},
                  token=employee_token)
     assert wrong.status == 400 and "current_password" in wrong.json["error"]["fields"]
-    ok = call("auth", "PUT", "/me/password", {"current_password": SEED_PASSWORD, "new_password": "newpassword1"},
+    ok = call("auth", "PUT", "/me/password", {"current_password": SEED_PASSWORD, "new_password": "Newpassword1."},
               token=employee_token)
     assert ok.status == 204
-    assert sign_in("eemployee3", "newpassword1")
+    assert sign_in("eemployee3", "Newpassword1.")
 
 
 def test_unknown_route_and_wrong_method():
@@ -129,9 +129,18 @@ def test_without_a_configured_key_a_random_one_is_stored_in_the_database(monkeyp
     assert len(sql("SELECT value FROM app_settings")) == 1
 
 
-def test_new_passwords_need_a_letter_and_a_number(employee_token):
-    for weak in ("onlyletters", "12345678"):
+def test_new_passwords_need_uppercase_number_and_special_character(employee_token):
+    cases = {
+        "onlylowercase": "Must include an uppercase letter, a number and a special character like . or !.",
+        "Uppercase1": "Must include a special character like . or !.",
+        "Uppercase.": "Must include a number.",
+        "lowercase1.": "Must include an uppercase letter.",
+        "Has Space1": "Must include a special character like . or !.",  # a space doesn't count
+    }
+    for weak, message in cases.items():
         r = call("auth", "PUT", "/me/password", {"current_password": SEED_PASSWORD, "new_password": weak},
                  token=employee_token)
-        assert r.status == 400
-        assert r.json["error"]["fields"]["new_password"] == "Must include at least one letter and one number."
+        assert r.status == 400 and r.json["error"]["fields"]["new_password"] == message, weak
+    ok = call("auth", "PUT", "/me/password", {"current_password": SEED_PASSWORD, "new_password": "Period.1x"},
+              token=employee_token)
+    assert ok.status == 204

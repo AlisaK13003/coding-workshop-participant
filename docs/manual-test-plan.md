@@ -132,7 +132,7 @@ Everyone's password is `Password123!`.
   - an employee without a manager or salary → field errors
   - email `RILEY@example.com` → already in use (emails ignore capitals)
   - username `DBROOKS8` → taken
-  - password under 8 characters → error
+  - password rules: under 8 characters → error; missing an uppercase letter, a number or a special character → the error names what's missing (e.g. `Uppercase1` → "Include a special character like . or !"); periods count, spaces don't
 - [ ] **Money fields** (salary, project budget, hourly rate on Add workday): typing `100,000` or `$100,000` works and is tidied to `100,000` when you leave the field; letters can't be typed. The ▲▼ buttons and the arrow keys add/subtract **$10,000** (salary, budget) or **$1** (hourly rate), never below 0.
 
 **Editing:**

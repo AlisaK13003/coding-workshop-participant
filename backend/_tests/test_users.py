@@ -3,7 +3,7 @@ from conftest import SEED_PASSWORD, call, sign_in, sql
 # Seed data: 1 Alex Admin, 2 Morgan Manager, 3 Emery Employee (reports to Morgan, on Customer Portal).
 
 NEW_EMPLOYEE = {"first_name": "Jordan", "last_name": "Lee", "email": "jordan@example.com", "job_title": "Analyst",
-                "role": "employee", "password": "longenough1", "manager_id": 2, "annual_salary": 62400}
+                "role": "employee", "password": "Longenough1.", "manager_id": 2, "annual_salary": 62400}
 
 
 def add_user(first_name, role, manager_id=None, salary=None):
@@ -104,7 +104,7 @@ def test_admin_creates_employee(admin_token):
     assert r.json["manager"] == {"id": 2, "name": "Morgan Manager"}
     assert r.json["annual_salary"] == 62400.0
     assert r.json["project_count"] == 0
-    assert sign_in(r.json["username"], "longenough1")
+    assert sign_in(r.json["username"], "Longenough1.")
     entry = last_activity()
     assert entry["action"] == "user.create"
     assert entry["summary"] == "Created employee Jordan Lee, reporting to Morgan Manager."
@@ -329,18 +329,18 @@ def test_restore_needs_active_manager(admin_token):
 # POST /{id}/password
 
 def test_admin_and_manager_reset_passwords(admin_token, manager_token):
-    assert call("users", "POST", "/3/password", {"password": "brandnew1"}, token=manager_token).status == 204
-    assert sign_in("eemployee3", "brandnew1")
+    assert call("users", "POST", "/3/password", {"password": "Brandnew1."}, token=manager_token).status == 204
+    assert sign_in("eemployee3", "Brandnew1.")
     entry = last_activity()
     assert entry["action"] == "user.password_reset"
-    assert "brandnew1" not in str(entry)
-    assert call("users", "POST", "/2/password", {"password": "brandnew2"}, token=admin_token).status == 204
-    assert sign_in("mmanager2", "brandnew2")
+    assert "Brandnew1." not in str(entry)
+    assert call("users", "POST", "/2/password", {"password": "Brandnew2."}, token=admin_token).status == 204
+    assert sign_in("mmanager2", "Brandnew2.")
 
 
 def test_password_reset_rules(manager_token, employee_token, admin_token):
     r = call("users", "POST", "/3/password", {"password": "short"}, token=admin_token)
     assert r.status == 400 and "password" in r.json["error"]["fields"]
-    assert call("users", "POST", "/2/password", {"password": "brandnew1"}, token=manager_token).status == 403
-    assert call("users", "POST", "/1/password", {"password": "brandnew1"}, token=manager_token).status == 404
-    assert call("users", "POST", "/3/password", {"password": "brandnew1"}, token=employee_token).status == 403
+    assert call("users", "POST", "/2/password", {"password": "Brandnew1."}, token=manager_token).status == 403
+    assert call("users", "POST", "/1/password", {"password": "Brandnew1."}, token=manager_token).status == 404
+    assert call("users", "POST", "/3/password", {"password": "Brandnew1."}, token=employee_token).status == 403

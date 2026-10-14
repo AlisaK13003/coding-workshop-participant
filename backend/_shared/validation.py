@@ -108,7 +108,7 @@ class Validator:
         return value
 
     def password(self, field, required=False):
-        """8 to 72 characters, with at least one letter and one number."""
+        """8 to 72 characters, with an uppercase letter, a number and a special character (not a space)."""
         value = self._get(field, required)
         if value is None:
             return None
@@ -119,8 +119,16 @@ class Validator:
             # bcrypt only uses the first 72 bytes.
             self.errors[field] = "Must be at most 72 characters."
             return None
-        if not any(c.isalpha() for c in value) or not any(c.isdigit() for c in value):
-            self.errors[field] = "Must include at least one letter and one number."
+        missing = [
+            name for name, present in (
+                ("an uppercase letter", any(c.isupper() for c in value)),
+                ("a number", any(c.isdigit() for c in value)),
+                ("a special character like . or !", any(not c.isalnum() and not c.isspace() for c in value)),
+            ) if not present
+        ]
+        if missing:
+            listed = missing[0] if len(missing) == 1 else ", ".join(missing[:-1]) + " and " + missing[-1]
+            self.errors[field] = f"Must include {listed}."
             return None
         return value
 
