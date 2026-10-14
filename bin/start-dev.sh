@@ -342,7 +342,11 @@ for req in "$PROJECT_ROOT"/backend/*/requirements.txt; do
         continue
     fi
     echo -e "  Installing pip requirements for $(basename "$svc_dir")..."
-    pip install --quiet --target="$svc_dir" -r "$req" 2>/dev/null || true
+    # Download packages built for the Lambda runtime (Python 3.13, Linux x86_64), not for
+    # whatever Python this machine has, so compiled packages like psycopg load in Lambda.
+    pip install --quiet --target="$svc_dir" --upgrade \
+        --python-version 3.13 --implementation cp --platform manylinux2014_x86_64 --only-binary=:all: \
+        -r "$req" 2>/dev/null || true
     echo "$REQS_HASH" > "$HASH_FILE"
 done
 
