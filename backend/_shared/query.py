@@ -7,15 +7,18 @@ it collects every problem before failing, so the client can show all of them at 
     project_id = q.id("project_id")
     q.raise_if_invalid()
 
-The same code is in work_log_filters.py in the work-logs service; it's a candidate for _shared.
+Request bodies are read with Validator (validation.py) instead.
 """
 
 from datetime import date
 
-from shared.http import ApiError
+from .http import ApiError
 
 
 class QueryParams:
+    """Converts and checks query-string values. Every method returns None (or the default)
+    for a missing or blank value."""
+
     def __init__(self, query):
         self.query = query
         self.errors = {}
@@ -39,6 +42,7 @@ class QueryParams:
         return number
 
     def integer(self, name, default, minimum=0, maximum=None):
+        """A whole number within the limits, or `default` when it isn't sent."""
         value = self._get(name)
         if value is None:
             return default

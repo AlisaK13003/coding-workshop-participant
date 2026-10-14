@@ -31,6 +31,8 @@ _PARAM = re.compile(r"\{(\w+)\}")
 
 
 class Router:
+    """One per service: holds its routes and answers every request for it."""
+
     def __init__(self, service):
         self._prefix = f"/api/{service}"
         self._routes = []
@@ -51,6 +53,7 @@ class Router:
         return register
 
     def handle(self, event):
+        """Runs the matching handler for a Lambda event and returns the Lambda response."""
         request = Request(event)
         try:
             if request.method == "OPTIONS":

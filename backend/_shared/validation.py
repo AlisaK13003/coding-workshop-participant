@@ -15,6 +15,9 @@ from .http import ApiError
 
 
 class Validator:
+    """Each reader returns the converted value, or None when it's missing or invalid
+    (recording the problem in self.errors)."""
+
     def __init__(self, data, partial=False):
         """partial=True is for updates: missing fields are skipped instead of required."""
         self.data = data
@@ -24,11 +27,15 @@ class Validator:
     def has(self, field):
         return field in self.data
 
+    def _missing(self, field, required):
+        """Records "required" for a missing field, unless it's a partial update that didn't send it."""
+        if required and not (self.partial and field not in self.data):
+            self.errors[field] = "This field is required."
+
     def _get(self, field, required):
         value = self.data.get(field)
         if value is None or (isinstance(value, str) and not value.strip()):
-            if required and not (self.partial and field not in self.data):
-                self.errors[field] = "This field is required."
+            self._missing(field, required)
             return None
         return value
 
@@ -61,6 +68,7 @@ class Validator:
         return value
 
     def money(self, field, required=False):
+        """A Decimal of zero or more, rounded to cents."""
         value = self._get(field, required)
         if value is None:
             return None
@@ -111,6 +119,24 @@ class Validator:
             self.errors[field] = "Must be at most 72 characters."
             return None
         return value
+
+    def id_list(self, field, required=False, label="ids"):
+        """A list of record ids, sorted and without duplicates, like [3, 4]. label names
+        them in the error, e.g. "milestone ids"."""
+        values = self.data.get(field)
+        if values is None:
+            self._missing(field, required)
+            return None
+        if not isinstance(values, list) or any(isinstance(x, bool) or not isinstance(x, int) for x in values):
+            self.errors[field] = f"Must be a list of {label}."
+            return None
+        return sorted(set(values))
+
+    def check_date_order(self, start_date, end_date, field="end_date"):
+        """Records an error on `field` if end_date is before start_date. Skipped when either
+        date is missing or the field already has a problem."""
+        if start_date and end_date and end_date < start_date and field not in self.errors:
+            self.errors[field] = "Must be on or after the start date."
 
     def add_error(self, field, message):
         self.errors[field] = message

@@ -8,17 +8,10 @@ A milestone:
 A review:
     {id, milestone_id, requested_by: {id, name}, requested_at,
      decision, decided_by: {id, name} or null, decided_at, feedback}
-
-(This module isn't called serializers.py because the tests load every service into one
-Python process, and two services with a module of the same name would clash.)
 """
 
 from shared.milestones import STATUS_SQL
-
-
-def person_json(alias):
-    """SQL building {"id": 2, "name": "Morgan Manager"} from a users row."""
-    return f"json_build_object('id', {alias}.id, 'name', {alias}.first_name || ' ' || {alias}.last_name)"
+from shared.sql import person_json
 
 
 MILESTONE_SQL = f"""
@@ -39,7 +32,7 @@ MILESTONE_SQL = f"""
 REVIEW_SQL = f"""
     SELECT r.id, r.milestone_id, {person_json('requester')} AS requested_by, r.requested_at,
            r.decision,
-           CASE WHEN decider.id IS NULL THEN NULL ELSE {person_json('decider')} END AS decided_by,
+           {person_json('decider')} AS decided_by,
            r.decided_at, r.feedback
     FROM milestone_reviews r
     JOIN users requester   ON requester.id = r.requested_by
@@ -48,10 +41,12 @@ REVIEW_SQL = f"""
 
 
 def project_milestones(conn, project_id):
+    """Every milestone of the project, in date order."""
     return conn.execute(f"{MILESTONE_SQL} WHERE m.project_id = %s ORDER BY m.start_date, m.id", (project_id,)).fetchall()
 
 
 def milestone(conn, milestone_id):
+    """One milestone, without its reviews."""
     return conn.execute(f"{MILESTONE_SQL} WHERE m.id = %s", (milestone_id,)).fetchone()
 
 
@@ -64,4 +59,5 @@ def milestone_with_reviews(conn, milestone_id):
 
 
 def review(conn, review_id):
+    """One review request."""
     return conn.execute(f"{REVIEW_SQL} WHERE r.id = %s", (review_id,)).fetchone()

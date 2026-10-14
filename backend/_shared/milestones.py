@@ -26,5 +26,6 @@ STATUS_SQL = """
 
 
 def milestone_status(conn, milestone_id):
+    """The milestone's status now, or None if it doesn't exist."""
     row = conn.execute(f"SELECT {STATUS_SQL} AS status FROM milestones m WHERE m.id = %s", (milestone_id,)).fetchone()
     return row["status"] if row else None

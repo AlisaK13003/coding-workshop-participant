@@ -23,7 +23,7 @@ import milestone_json
 from completion import DESTINATION, complete_milestone
 from dependencies import (
     FIELD as PREREQUISITES, add_prerequisites, check_prerequisites, current_prerequisites,
-    read_id_list, reject_completed, reject_cycle, remove_prerequisites,
+    reject_completed, reject_cycle, remove_prerequisites,
 )
 from shared import auth, db
 from shared.access import get_managed_project, get_visible_project, require_open_project
@@ -31,11 +31,15 @@ from shared.activity import changed_fields, full_name, log_activity, notify
 from shared.http import bad_request, conflict, forbidden, not_found
 from shared.milestones import AVAILABLE, AWAITING_REVIEW, BLOCKED, COMPLETED, milestone_status
 from shared.router import Router
+from shared.sql import update_sql
 from shared.validation import Validator
 
 router = Router("milestones")
 
 MILESTONE_COLUMNS = "id, project_id, name, start_date, end_date, completed_at"
+
+# The columns PUT /{id} may change. Column names in an UPDATE only ever come from here.
+EDITABLE_COLUMNS = ("name", "start_date", "end_date")
 
 # Why an employee can't ask for a review, by milestone status.
 REVIEW_BLOCKERS = {
@@ -66,6 +70,7 @@ def find_managed_milestone(conn, user, milestone_id):
 
 
 def require_not_completed(milestone, message="Completed milestones can't be changed."):
+    """409 if the milestone is completed."""
     if milestone["completed_at"] is not None:
         raise conflict(message, "milestone_completed")
 
@@ -75,8 +80,7 @@ def check_dates(v, project, start_date, end_date):
     for field, value in (("start_date", start_date), ("end_date", end_date)):
         if value and not project["start_date"] <= value <= project["end_date"]:
             v.add_error(field, f"Must be within the project's dates ({project['start_date']} to {project['end_date']}).")
-    if start_date and end_date and end_date < start_date and "end_date" not in v.errors:
-        v.add_error("end_date", "Must be on or after the start date.")
+    v.check_date_order(start_date, end_date)
 
 
 @router.route("GET", "/", roles=auth.ANY_ROLE)
@@ -103,7 +107,7 @@ def create_milestone(request):
     name = v.text("name", required=True)
     start_date = v.date("start_date", required=True)
     end_date = v.date("end_date", required=True)
-    prerequisite_ids = read_id_list(v) or []
+    prerequisite_ids = v.id_list(PREREQUISITES, label="milestone ids") or []
     v.raise_if_invalid()
 
     with db.transaction() as conn:
@@ -147,10 +151,8 @@ def update_milestone(request):
 
         changes = changed_fields(before, after)
         if changes:
-            # Column names come from the fixed `fields` keys above, never from the request.
-            assignments = ", ".join(f"{field} = %s" for field in changes)
-            conn.execute(f"UPDATE milestones SET {assignments} WHERE id = %s",
-                         (*(after[field] for field in changes), before["id"]))
+            new_values = {field: change["to"] for field, change in changes.items()}
+            conn.execute(*update_sql("milestones", before["id"], new_values, EDITABLE_COLUMNS))
             log_activity(conn, request.user, "milestone.update", "milestone", before["id"],
                          f"Updated milestone {after.get('name', before['name'])}.",
                          project_id=project["id"], changes=changes)
@@ -200,9 +202,7 @@ def delete_milestone(request):
 @router.route("PUT", "/{id}/dependencies", roles=auth.ADMIN_OR_MANAGER)
 def replace_dependencies(request):
     v = Validator(request.json())
-    proposed_ids = read_id_list(v)
-    if proposed_ids is None and PREREQUISITES not in v.errors:
-        v.add_error(PREREQUISITES, "This field is required.")
+    proposed_ids = v.id_list(PREREQUISITES, required=True, label="milestone ids")
     v.raise_if_invalid()
 
     with db.transaction() as conn:

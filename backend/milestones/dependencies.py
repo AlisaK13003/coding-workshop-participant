@@ -11,18 +11,6 @@ from shared.http import conflict
 FIELD = "prerequisite_ids"
 
 
-def read_id_list(v, field=FIELD):
-    """A list of whole numbers from the request body, without duplicates, or None if not sent.
-    The shared Validator has no list type, so this reads v.data directly."""
-    if not v.has(field) or v.data[field] is None:
-        return None
-    values = v.data[field]
-    if not isinstance(values, list) or any(isinstance(x, bool) or not isinstance(x, int) for x in values):
-        v.add_error(field, "Must be a list of milestone ids.")
-        return None
-    return sorted(set(values))
-
-
 def check_prerequisites(conn, v, project_id, milestone_id, prerequisite_ids):
     """Field errors for ids that aren't other milestones in the same project.
     Returns {id: row} for the valid ones, so callers can check completed_at and names."""
@@ -85,6 +73,7 @@ def reject_cycle(conn, milestone_id, prerequisites):
 
 
 def add_prerequisites(conn, project_id, milestone_id, prerequisite_ids):
+    """Makes milestone_id depend on each of prerequisite_ids."""
     for prerequisite_id in prerequisite_ids:
         conn.execute(
             "INSERT INTO milestone_dependencies (milestone_id, prerequisite_id, project_id) VALUES (%s, %s, %s)",
@@ -93,6 +82,7 @@ def add_prerequisites(conn, project_id, milestone_id, prerequisite_ids):
 
 
 def remove_prerequisites(conn, milestone_id, prerequisite_ids):
+    """Removes these prerequisites from milestone_id."""
     conn.execute(
         "DELETE FROM milestone_dependencies WHERE milestone_id = %s AND prerequisite_id = ANY(%s)",
         (milestone_id, prerequisite_ids),

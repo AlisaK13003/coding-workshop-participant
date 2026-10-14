@@ -33,6 +33,7 @@ def changed_fields(before, after):
 
 
 def notify(conn, recipient_id, title, detail=None, project_id=None, milestone_id=None):
+    """Adds a notification for one user, optionally linked to a project and milestone."""
     conn.execute(
         """
         INSERT INTO notifications (recipient_id, title, detail, project_id, milestone_id)

@@ -24,22 +24,22 @@ from shared.activity import changed_fields, full_name, log_activity, notify
 from shared.auth import ADMIN, ADMIN_ONLY, ANY_ROLE, EMPLOYEE, MANAGER
 from shared.http import conflict, not_found
 from shared.milestones import AVAILABLE, milestone_status
+from shared.query import QueryParams
 from shared.router import Router
+from shared.sql import person_json
 from shared.validation import Validator
-
-from work_log_filters import QueryParams
 
 router = Router("work-logs")
 
 ADMIN_OR_EMPLOYEE = frozenset({ADMIN, EMPLOYEE})
 WORK_HOURS_PER_YEAR = 2080  # 52 weeks * 40 hours
 
-LOG_SQL = """
+LOG_SQL = f"""
     SELECT wl.id, wl.work_date, wl.hours, wl.hourly_rate, wl.created_at,
-           wl.employee_id, e.first_name || ' ' || e.last_name AS employee_name, e.manager_id AS employee_manager_id,
+           wl.employee_id, {person_json('e')} AS employee, e.manager_id AS employee_manager_id,
            wl.project_id, p.name AS project_name,
            wl.milestone_id, m.name AS milestone_name,
-           wl.entered_by, eb.first_name || ' ' || eb.last_name AS entered_by_name
+           {person_json('eb')} AS entered_by
     FROM work_logs wl
     JOIN users e      ON e.id = wl.employee_id
     JOIN users eb     ON eb.id = wl.entered_by
@@ -65,16 +65,17 @@ def sees_pay(user, log):
 
 
 def to_json(log, user):
+    """The log as the API returns it; pay only for those who may see it."""
     body = {
         "id": log["id"],
         "work_date": log["work_date"],
-        "employee": {"id": log["employee_id"], "name": log["employee_name"]},
+        "employee": log["employee"],
         "project": {"id": log["project_id"], "name": log["project_name"]},
         "milestone": {"id": log["milestone_id"], "name": log["milestone_name"]},
         "hours": log["hours"],
-        "entered_by": {"id": log["entered_by"], "name": log["entered_by_name"]},
+        "entered_by": log["entered_by"],
         # Entered by someone else (an admin) rather than the employee on the day.
-        "historical": log["entered_by"] != log["employee_id"],
+        "historical": log["entered_by"]["id"] != log["employee_id"],
         "created_at": log["created_at"],
     }
     if sees_pay(user, log):
@@ -89,6 +90,7 @@ def hourly_rate(annual_salary):
 
 
 def is_weekday(day):
+    """Monday to Friday."""
     return day.isoweekday() < 6
 
 
@@ -105,6 +107,7 @@ def fetch_log(conn, user, log_id, lock=False):
 
 
 def insert_log(conn, employee_id, project_id, milestone_id, work_date, rate, entered_by):
+    """Saves a new log and returns its id."""
     return conn.execute(
         """
         INSERT INTO work_logs (employee_id, project_id, milestone_id, work_date, hourly_rate, entered_by)
@@ -116,6 +119,7 @@ def insert_log(conn, employee_id, project_id, milestone_id, work_date, rate, ent
 
 
 def milestone_in_project(conn, milestone_id, project_id):
+    """The milestone's id and name if it belongs to the project; otherwise None."""
     return conn.execute(
         "SELECT id, name FROM milestones WHERE id = %s AND project_id = %s",
         (milestone_id, project_id),
@@ -315,7 +319,7 @@ def correct_log(request):
                 (new["project_id"], new["milestone_id"], new["work_date"], before["id"]),
             )
             log = fetch_log(conn, admin, before["id"])
-            record = f"{before['employee_name']} · {before['work_date']}"
+            record = f"{before['employee']['name']} · {before['work_date']}"
             sentence = describe_changes(before, log)
             log_activity(conn, admin, "work_log.correct", "work_log", before["id"],
                          f"Corrected work log {record}. {sentence}", project_id=log["project_id"], changes=changes)

@@ -7,4 +7,5 @@ from . import config
 
 
 def today():
+    """Today's date in config.TIMEZONE."""
     return datetime.now(ZoneInfo(config.TIMEZONE)).date()

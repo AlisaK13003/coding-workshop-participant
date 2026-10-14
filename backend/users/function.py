@@ -11,14 +11,14 @@ Routes (under /api/users):
     POST   /{id}/password  admin, or the employee's own manager: set a new password
 """
 
-from psycopg.errors import UniqueViolation
-
 from shared import auth, db
 from shared.access import can_manage_user
 from shared.activity import changed_fields, full_name, log_activity, notify
 from shared.auth import ADMIN, EMPLOYEE, MANAGER
-from shared.http import ApiError, conflict, forbidden, not_found
+from shared.http import conflict, forbidden, not_found
+from shared.people import find_active_manager
 from shared.router import Router
+from shared.sql import person_json, save, update_sql
 from shared.validation import Validator
 
 router = Router("users")
@@ -26,10 +26,9 @@ router = Router("users")
 ROLES = {ADMIN, MANAGER, EMPLOYEE}
 BOOLEAN = {"true", "false"}
 
-USER_SQL = """
+USER_SQL = f"""
     SELECT u.id, u.display_id, u.username, u.first_name, u.last_name, u.email, u.job_title, u.role,
-           u.manager_id, u.annual_salary, u.archived_at,
-           mgr.first_name || ' ' || mgr.last_name AS manager_name,
+           u.manager_id, u.annual_salary, u.archived_at, {person_json('mgr')} AS manager,
            (SELECT count(*) FROM project_members pm
             WHERE pm.employee_id = u.id AND pm.removed_at IS NULL) AS project_count
     FROM users u
@@ -37,6 +36,11 @@ USER_SQL = """
 """
 
 USER_FIELDS = ("id", "display_id", "username", "first_name", "last_name", "email", "job_title", "role", "archived_at")
+
+# The columns PUT /{id} may change. Column names in an UPDATE only ever come from here.
+EDITABLE_COLUMNS = (
+    "first_name", "last_name", "username", "email", "job_title", "role", "manager_id", "annual_salary",
+)
 
 # Which unique index a clash came from, and what to tell the client.
 UNIQUE_FIELDS = {
@@ -46,9 +50,10 @@ UNIQUE_FIELDS = {
 
 
 def user_json(user, viewer):
+    """The user as the API returns them; salary and project count only where they apply."""
     body = {field: user[field] for field in USER_FIELDS}
     body["name"] = full_name(user)
-    body["manager"] = {"id": user["manager_id"], "name": user["manager_name"]} if user["manager_id"] else None
+    body["manager"] = user["manager"]
     if user["role"] == EMPLOYEE:
         body["project_count"] = user["project_count"]
     # Salaries are only for admins and the employee's own manager.
@@ -58,6 +63,7 @@ def user_json(user, viewer):
 
 
 def can_view_user(viewer, user):
+    """Everyone can see themselves; admins and managers also see the people they manage."""
     return viewer["id"] == user["id"] or can_manage_user(viewer, user)
 
 
@@ -69,22 +75,6 @@ def find_user(conn, viewer, user_id, lock=False):
     return user
 
 
-def find_active_manager(conn, v, manager_id):
-    """The manager row, held with a share lock so they can't be archived or demoted until we commit."""
-    manager = conn.execute(
-        """
-        SELECT id, first_name, last_name FROM users
-        WHERE id = %s AND role = 'manager' AND archived_at IS NULL
-        FOR SHARE
-        """,
-        (manager_id,),
-    ).fetchone()
-    if manager is None:
-        v.add_error("manager_id", "Must be an active manager.")
-        v.raise_if_invalid()
-    return manager
-
-
 def check_employee_fields(v, role, manager_id, annual_salary):
     """Matches the employee_has_manager and employee_has_salary CHECKs, with clear messages."""
     for field, value, label in (("manager_id", manager_id, "a manager"), ("annual_salary", annual_salary, "a salary")):
@@ -94,15 +84,6 @@ def check_employee_fields(v, role, manager_id, annual_salary):
             v.add_error(field, f"Employees must have {label}.")
         elif role != EMPLOYEE and value is not None:
             v.add_error(field, f"Only employees have {label}.")
-
-
-def save_user(conn, query, params):
-    """Runs an INSERT or UPDATE, turning a clashing username or email into a 409 on that field."""
-    try:
-        return conn.execute(query, params).fetchone()
-    except UniqueViolation as error:
-        field, message = UNIQUE_FIELDS[error.diag.constraint_name]
-        raise ApiError(409, "conflict", message, {field: message})
 
 
 def require_no_reports(conn, manager, action, current_only=False):
@@ -134,6 +115,7 @@ def end_memberships(conn, user_id):
 
 
 def read_user(conn, viewer, user_id):
+    """The user as stored now, in the API's shape."""
     return user_json(find_user(conn, viewer, user_id), viewer)
 
 
@@ -211,7 +193,7 @@ def create_user(request):
     with db.transaction() as conn:
         manager = find_active_manager(conn, v, manager_id) if role == EMPLOYEE else None
         # A missing username stays NULL here, so the set_username trigger generates one.
-        created = save_user(
+        created = save(
             conn,
             """
             INSERT INTO users (first_name, last_name, username, email, job_title, role, manager_id, annual_salary,
@@ -221,6 +203,7 @@ def create_user(request):
             """,
             (first_name, last_name, username, email, job_title, role, manager_id, annual_salary,
              auth.hash_password(password)),
+            UNIQUE_FIELDS,
         )
         user = find_user(conn, request.user, created["id"])
         summary = f"Created {role} {full_name(user)}"
@@ -282,10 +265,8 @@ def update_user(request):
         if not changes:
             return user_json(user, actor)
 
-        # Column names come from the fixed list above; only the values are user input.
-        assignments = ", ".join(f"{field} = %s" for field in changes)
-        save_user(conn, f"UPDATE users SET {assignments} WHERE id = %s RETURNING id",
-                  (*(change["to"] for change in changes.values()), user["id"]))
+        new_values = {field: change["to"] for field, change in changes.items()}
+        save(conn, *update_sql("users", user["id"], new_values, EDITABLE_COLUMNS), UNIQUE_FIELDS)
 
         name = full_name({**user, **updates})
         if role_changed:
@@ -293,7 +274,7 @@ def update_user(request):
             if user["role"] == EMPLOYEE:
                 end_memberships(conn, user["id"])
         elif manager_changed:
-            summary = f"Reporting manager changed from {user['manager_name']} to {full_name(new_manager)}."
+            summary = f"Reporting manager changed from {user['manager']['name']} to {full_name(new_manager)}."
             notify(conn, user["id"], "Reporting manager changed", f"You now report to {full_name(new_manager)}.")
         else:
             summary = f"Updated {name}."
@@ -328,7 +309,7 @@ def restore_user(request):
             manager = conn.execute("SELECT archived_at FROM users WHERE id = %s FOR SHARE",
                                    (user["manager_id"],)).fetchone()
             if manager["archived_at"] is not None:
-                raise conflict(f"{user['manager_name']} is archived. Give {full_name(user)} a new manager first.")
+                raise conflict(f"{user['manager']['name']} is archived. Give {full_name(user)} a new manager first.")
         conn.execute("UPDATE users SET archived_at = NULL WHERE id = %s", (user["id"],))
         log_activity(conn, request.user, "user.restore", "user", user["id"], f"Restored {full_name(user)}.")
         return read_user(conn, request.user, user["id"])

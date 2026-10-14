@@ -32,11 +32,13 @@ def visible_projects_filter(user, alias="p"):
     )
 
 
-def get_visible_project(conn, user, project_id):
-    """The project if the user can see it; otherwise 404."""
+def get_visible_project(conn, user, project_id, lock=False):
+    """The project if the user can see it; otherwise 404. lock=True reads and locks the row
+    in one query, holding the lock until the transaction ends."""
     condition, params = visible_projects_filter(user)
     project = conn.execute(
-        f"SELECT {PROJECT_COLUMNS} FROM projects p WHERE p.id = %s AND {condition}",
+        f"SELECT {PROJECT_COLUMNS} FROM projects p WHERE p.id = %s AND {condition}"
+        + (" FOR UPDATE OF p" if lock else ""),
         (project_id, *params),
     ).fetchone()
     if project is None:
@@ -47,12 +49,11 @@ def get_visible_project(conn, user, project_id):
 def get_managed_project(conn, user, project_id, lock=False):
     """The project if the user may change it: any project for admins, their own active
     projects for managers. Employees can see but never manage. lock=True holds a row lock
-    until the transaction ends, so concurrent changes can't interleave."""
-    project = get_visible_project(conn, user, project_id)
+    until the transaction ends, so concurrent changes can't interleave. The row returned is the
+    locked one, so it can't be out of date."""
+    project = get_visible_project(conn, user, project_id, lock)
     if user["role"] == EMPLOYEE:
         raise forbidden()
-    if lock:
-        conn.execute("SELECT 1 FROM projects WHERE id = %s FOR UPDATE", (project_id,))
     return project
 
 
@@ -62,6 +63,7 @@ def is_project_open(project):
 
 
 def require_open_project(project):
+    """403 unless the project is open."""
     if not is_project_open(project):
         raise forbidden("This project is closed or archived, so it can't be changed.")
 

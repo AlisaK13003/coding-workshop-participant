@@ -14,17 +14,17 @@ describe (see shared/activity.py), so there are no routes that change anything h
 from shared import db
 from shared.auth import ADMIN_ONLY, ANY_ROLE
 from shared.http import not_found
+from shared.query import QueryParams
 from shared.router import Router
-
-from activity_filters import QueryParams
+from shared.sql import person_json
 
 router = Router("activity")
 
 DEFAULT_LIMIT = 50
 MAX_LIMIT = 200
 
-ENTRY_SQL = """
-    SELECT a.id, a.created_at, a.actor_id, u.first_name || ' ' || u.last_name AS actor_name, a.actor_role,
+ENTRY_SQL = f"""
+    SELECT a.id, a.created_at, {person_json('u')} AS actor, a.actor_role,
            a.action, a.entity_type, a.entity_id, a.project_id, p.name AS project_name, a.summary, a.changes
     FROM activity_log a
     JOIN users u         ON u.id = a.actor_id
@@ -33,10 +33,11 @@ ENTRY_SQL = """
 
 
 def to_json(entry):
+    """The entry as the API returns it."""
     return {
         "id": entry["id"],
         "created_at": entry["created_at"],
-        "actor": {"id": entry["actor_id"], "name": entry["actor_name"]},
+        "actor": entry["actor"],
         "actor_role": entry["actor_role"],
         "action": entry["action"],
         "entity_type": entry["entity_type"],

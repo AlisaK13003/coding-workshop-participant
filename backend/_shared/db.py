@@ -47,10 +47,12 @@ def transaction():
 
 
 def fetch_all(sql, params=None):
+    """Every row of one query, run in its own transaction."""
     with transaction() as conn:
         return conn.execute(sql, params).fetchall()
 
 
 def fetch_one(sql, params=None):
+    """The first row of one query (or None), run in its own transaction."""
     with transaction() as conn:
         return conn.execute(sql, params).fetchone()

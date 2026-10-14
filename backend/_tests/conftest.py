@@ -30,12 +30,15 @@ _services = {}
 
 
 def load_service(name):
-    """Imports backend/<name>/function.py. Every service has a module called `function`
-    and a package called `shared`, so they're swapped in and out of sys.modules."""
+    """Imports backend/<name>/function.py. Every service has a module called `function`, a
+    package called `shared`, and maybe other modules whose names another service also uses,
+    so a service's modules are cleared from sys.modules before it's imported (as bin/local-api.py does)."""
     if name in _services:
         return _services[name]
-    for module in [m for m in sys.modules if m == "function" or m == "shared" or m.startswith("shared.")]:
-        del sys.modules[module]
+    local_modules = {path.stem for path in (BACKEND / name).glob("*.py")} | {"shared"}
+    for module in list(sys.modules):
+        if module.split(".")[0] in local_modules:
+            del sys.modules[module]
     sys.path.insert(0, str(BACKEND / name))
     try:
         module = importlib.import_module("function")

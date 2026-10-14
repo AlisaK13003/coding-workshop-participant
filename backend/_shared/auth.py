@@ -100,5 +100,6 @@ def authenticate(request):
 
 
 def authorize(user, roles):
+    """403 unless the user's role is one of `roles`."""
     if user["role"] not in roles:
         raise forbidden()

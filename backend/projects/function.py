@@ -15,15 +15,15 @@ Routes (under /api/projects):
     DELETE /{id}/members/{member_id}  admin, or its manager: remove a member
 """
 
-from psycopg.errors import UniqueViolation
-
 from shared import auth, db
 from shared.access import get_managed_project, get_visible_project, require_open_project, visible_projects_filter
 from shared.activity import changed_fields, full_name, log_activity, notify
 from shared.auth import ADMIN, MANAGER
-from shared.http import ApiError, conflict, forbidden, not_found
+from shared.http import conflict, forbidden, not_found
 from shared.milestones import STATUS_SQL
+from shared.people import find_active_manager
 from shared.router import Router
+from shared.sql import person_json, save, update_sql
 from shared.validation import Validator
 
 router = Router("projects")
@@ -31,8 +31,8 @@ router = Router("projects")
 STATUSES = {"in_progress", "completed", "abandoned"}
 BOOLEAN = {"true", "false"}
 
-PROJECT_SQL = """
-    SELECT p.id, p.name, p.manager_id, mgr.first_name || ' ' || mgr.last_name AS manager_name,
+PROJECT_SQL = f"""
+    SELECT p.id, p.name, p.manager_id, {person_json('mgr')} AS manager,
            p.start_date, p.end_date, p.budget, p.status, p.archived_at, p.created_at,
            (SELECT count(*) FROM project_members pm
             WHERE pm.project_id = p.id AND pm.removed_at IS NULL) AS member_count,
@@ -49,6 +49,14 @@ PROJECT_FIELDS = (
     "id", "name", "start_date", "end_date", "status", "archived_at", "created_at", "member_count", "hours",
 )
 
+# The columns PUT /{id} may change. Column names in an UPDATE only ever come from here.
+EDITABLE_COLUMNS = ("name", "manager_id", "start_date", "end_date", "budget")
+
+# Which unique index a clash came from, and what to tell the client.
+UNIQUE_FIELDS = {
+    "project_name_unique": ("name", "A project with this name already exists."),
+}
+
 MEMBER_SQL = f"""
     SELECT pm.id, pm.added_at, pm.employee_id, u.first_name, u.last_name, u.job_title, u.display_id,
            pm.milestone_id, m.name AS milestone_name, {STATUS_SQL} AS milestone_status
@@ -59,8 +67,9 @@ MEMBER_SQL = f"""
 
 
 def project_json(project, viewer):
+    """The project as the API returns it, with its totals; money only for admins and managers."""
     body = {field: project[field] for field in PROJECT_FIELDS}
-    body["manager"] = {"id": project["manager_id"], "name": project["manager_name"]} if project["manager_id"] else None
+    body["manager"] = project["manager"]
     body["milestones"] = {"completed": project["milestones_completed"], "total": project["milestones_total"]}
     # Money is for admins and managers only; employees don't get the keys at all.
     if viewer["role"] in auth.ADMIN_OR_MANAGER:
@@ -70,6 +79,7 @@ def project_json(project, viewer):
 
 
 def member_json(member):
+    """A project member as the API returns them, with their milestone if they have one."""
     milestone = None
     if member["milestone_id"]:
         milestone = {"id": member["milestone_id"], "name": member["milestone_name"],
@@ -90,32 +100,8 @@ def read_project(conn, viewer, project_id):
 
 
 def read_member(conn, member_id):
+    """The member as stored now, in the API's shape."""
     return member_json(conn.execute(MEMBER_SQL + " WHERE pm.id = %s", (member_id,)).fetchone())
-
-
-def find_active_manager(conn, v, manager_id):
-    """The manager row, held with a share lock so they can't be archived or demoted until we commit."""
-    manager = conn.execute(
-        """
-        SELECT id, first_name, last_name FROM users
-        WHERE id = %s AND role = 'manager' AND archived_at IS NULL
-        FOR SHARE
-        """,
-        (manager_id,),
-    ).fetchone()
-    if manager is None:
-        v.add_error("manager_id", "Must be an active manager.")
-        v.raise_if_invalid()
-    return manager
-
-
-def save_project(conn, query, params):
-    """Runs an INSERT or UPDATE, turning a clashing name into a 409 on that field."""
-    try:
-        return conn.execute(query, params).fetchone()
-    except UniqueViolation:
-        message = "A project with this name already exists."
-        raise ApiError(409, "conflict", message, {"name": message})
 
 
 def check_milestone(conn, v, project_id, milestone_id):
@@ -192,13 +178,12 @@ def create_project(request):
     start_date = v.date("start_date", required=True)
     end_date = v.date("end_date", required=True)
     budget = v.money("budget", required=True)
-    if start_date and end_date and end_date < start_date:
-        v.add_error("end_date", "Must be on or after the start date.")
+    v.check_date_order(start_date, end_date)
     v.raise_if_invalid()
 
     with db.transaction() as conn:
         manager = find_active_manager(conn, v, manager_id)
-        project = save_project(
+        project = save(
             conn,
             """
             INSERT INTO projects (name, manager_id, start_date, end_date, budget)
@@ -206,6 +191,7 @@ def create_project(request):
             RETURNING id, name
             """,
             (name, manager_id, start_date, end_date, budget),
+            UNIQUE_FIELDS,
         )
         log_activity(conn, request.user, "project.create", "project", project["id"],
                      f"Created project {project['name']}, managed by {full_name(manager)}.", project_id=project["id"])
@@ -232,9 +218,8 @@ def update_project(request):
 
         new_start = start_date or project["start_date"]
         new_end = end_date or project["end_date"]
-        if new_end < new_start:
-            v.add_error("end_date", "Must be on or after the start date.")
-            v.raise_if_invalid()
+        v.check_date_order(new_start, new_end)
+        v.raise_if_invalid()
         check_milestones_fit(conn, v, project["id"], new_start, new_end)
 
         updates = {"name": name, "manager_id": manager_id, "start_date": start_date, "end_date": end_date,
@@ -244,10 +229,8 @@ def update_project(request):
             return read_project(conn, actor, project["id"])
 
         manager = find_active_manager(conn, v, manager_id) if "manager_id" in changes else None
-        # Column names come from the fixed list above; only the values are user input.
-        assignments = ", ".join(f"{field} = %s" for field in changes)
-        save_project(conn, f"UPDATE projects SET {assignments} WHERE id = %s RETURNING id",
-                     (*(change["to"] for change in changes.values()), project["id"]))
+        new_values = {field: change["to"] for field, change in changes.items()}
+        save(conn, *update_sql("projects", project["id"], new_values, EDITABLE_COLUMNS), UNIQUE_FIELDS)
 
         project_name = name or project["name"]
         if manager is None:

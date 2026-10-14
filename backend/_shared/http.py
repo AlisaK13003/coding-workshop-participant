@@ -80,6 +80,7 @@ def _to_json(value):
 
 
 def response(status, body=None):
+    """A Lambda Function URL response with a JSON body (empty when body is None)."""
     return {
         "statusCode": status,
         "headers": {"Content-Type": "application/json"},
