@@ -1,8 +1,8 @@
 # Manual Test Plan
 
-A checklist for testing Project Tracker by hand, role by role. Each test says what to **do**, what you should **see**, and where the change should also show up in **other roles**.
+A checklist for testing Project Tracker by hand. Each test says what to **do**, what you should **see**, and where the change should also show up for **other people**.
 
-Work top to bottom. Later sections rely on state from earlier ones; where one needs a clean start, it says **Reset**.
+It uses the demo data loaded by `backend/db/reset.sh`. Work through it top to bottom: later sections build on earlier ones, and a section that needs a clean start says **Reset**.
 
 ---
 
@@ -11,263 +11,311 @@ Work top to bottom. Later sections rely on state from earlier ones; where one ne
 **Start the app** from the repository root:
 
 ```sh
-backend/db/reset.sh                                   # fresh sample data (rerun any time)
-.venv/bin/python bin/local-api.py                     # API on http://localhost:3002
+backend/db/reset.sh                         # seed + demo data (rerun any time to start over)
+.venv/bin/python bin/local-api.py           # API on http://localhost:3002 (restart after backend changes)
 cd frontend && VITE_API_URL=http://localhost:3002 npx vite --port 3010
 ```
 
 Then open http://localhost:3010.
 
-**Accounts** (password `Password123!` for all):
-
-| Username | Person | Role |
-|---|---|---|
-| `aadmin1` | Alex Admin | Admin |
-| `mmanager2` | Morgan Manager | Manager of Emery and of Customer Portal |
-| `eemployee3` | Emery Employee | Employee ($83,200/year, so $40/hour) |
-
-**More accounts:** `reset.sh` also loads `backend/db/demo.sql` (same password):
-- a second admin, `pshah4`
-- managers with 1 and 0 projects, `rchen5` and `jpark6`
-- employees on 2, 1 and 0 projects
-- an archived employee
-- projects ending in 1 week, 1 month and 3 months that are nearly at, over and under budget
-- an abandoned project, a completed archived one, and an unarchived one waiting for a manager
-
-The list at the top of `demo.sql` shows who's on what. The tests below use the seed people (Alex, Morgan, Emery) unless they say otherwise.
-
-**Starting data after a reset:**
-- **Project:** Customer Portal, Oct 1 – Dec 31 2026, budget $50,000, managed by Morgan.
-- **Milestones:**
-  - Design (Oct): no prerequisites
-  - Backend API (Nov): needs Design
-  - Frontend (Nov – Dec 15): needs Design
-  - Launch (Dec 16 – 31): needs Backend API **and** Frontend
-- **Emery** is a member of Customer Portal, on Design, with work logged on Oct 1 and Oct 2 (8 h, $320 each, so 16 h and $640 in total).
-- **Design** has a review request from Emery, waiting for a decision.
-- **Morgan** has 1 unread notification: "Milestone review requested".
-
 **Tips:**
-- Use a **normal window** for one role and a **private window** for another, so you can watch both side by side. Each window keeps its own sign-in.
-- After changing something in one window, **refresh the other** to see the change. Notifications also refresh on their own every 30 seconds.
-- **"Today" is the real date.** Logging work only works on weekdays.
+- Use a **normal window** for one person and a **private window** for another, so you can watch both side by side. Each window keeps its own sign-in.
+- After a change in one window, **refresh the other**. Notifications also refresh on their own every 30 seconds.
+- Demo dates are relative to the day you reset. Below, "D" means the reset day, and the example dates assume a reset on **Wed Oct 14 2026**.
+- Logging work only works on **weekdays**.
+
+### The cast
+
+Everyone's password is `Password123!`.
+
+| Username | Person | Role | Reports to | Pay | Open projects |
+|---|---|---|---|---|---|
+| `aadmin1` | Alex Admin | Admin | — | — | — |
+| `pshah4` | Priya Shah | Admin | — | — | — |
+| `mmanager2` | Morgan Manager | Manager | — | — | manages **3** |
+| `rchen5` | Riley Chen | Manager | — | — | manages **1** |
+| `jpark6` | Jordan Park | Manager | — | — | manages **0** |
+| `eemployee3` | Emery Employee | Employee | Morgan | $40/h ($320/day) | on **3** |
+| `dbrooks8` | Devon Brooks | Employee | Morgan | $45/h ($360/day) | on **2** |
+| `clopez7` | Casey Lopez | Employee | Morgan | $35/h ($280/day) | on **1** |
+| `akim9` | Avery Kim | Employee | Riley | $30/h ($240/day) | on **1** |
+| `brivera10` | Blake Rivera | Employee | Riley | $37.50/h ($300/day) | on **1** |
+| `qpatel11` | Quinn Patel | Employee | Jordan | $34/h | on **0** |
+| `treed12` | Taylor Reed | Employee (**archived**) | Riley | $32/h | — |
+
+### The projects
+
+| # | Project | Manager | Ends | Budget used | Health | Who's on which milestone |
+|---|---|---|---|---|---|---|
+| 1 | Customer Portal | Morgan | Dec 31 | 1% | green | Emery → Design (**awaiting review**) |
+| 2 | Mobile App Refresh | Morgan | D+7 (Oct 21) | **94%** | **red** | Emery, Casey → Build (available); Devon → Store Release (**blocked**) |
+| 3 | Data Warehouse Migration | Morgan | D+30 (Nov 13) | **118%** | **amber** | Emery, Devon → Data Load (**awaiting review**) |
+| 4 | Support Portal | Riley | D+90 (Jan 12) | **35%** | **green** | Avery → Knowledge Base, Blake → Chatbot (both available; Go Live needs both) |
+| 5 | Vendor Onboarding | Morgan | ended | 27% | — | **abandoned**, not archived (admins only) |
+| 6 | Legacy Billing Cleanup | Morgan | ended | 88% | — | **completed and archived** |
+| 7 | Intranet Redesign | **none** | D+60 | 13% | — | **unarchived, needs a manager** (previously Riley) |
+
+### Starting notifications (unread)
+
+| Person | Unread |
+|---|---|
+| Morgan | 2 review requests: Design (Emery), Data Load (Devon) |
+| Avery | 2: review accepted, moved to Knowledge Base |
+| Devon | 1: milestone assignment changed (Store Release) |
+| Blake | 1: removed from Intranet Redesign |
+| Everyone else | 0 |
 
 ---
 
 ## 1. Sign-in and access
 
-- [ ] **Sign in as each account** → you land on `/admin`, `/manager` or `/employee`, and the top bar shows your name and job title.
-- [ ] **Username capitals don't matter.** `EEmployee3` works.
+- [ ] **Sign in as each role** → you land on `/admin`, `/manager` or `/employee`, and the top bar shows your name and job title.
+- [ ] **Username capitals don't matter.** `RChen5` works.
 - [ ] **Wrong password** → "Incorrect username or password."
-- [ ] **Unknown username** → the same message (it doesn't reveal which accounts exist).
-- [ ] **Empty fields** → "Enter your username." / "Enter your password.", shown under each field.
-- [ ] **Refresh the page while signed in** → you stay signed in.
-- [ ] **Profile menu → Sign out** → back to the sign-in page. Pressing the browser's Back button doesn't get you back in.
-- [ ] **Wrong workspace:** as Emery, type `localhost:3010/admin` in the address bar → you're sent to `/employee`. Same for Morgan → `/manager`.
-- [ ] **Signed out**, open `localhost:3010/manager` → sent to sign-in.
-- [ ] **Sign-up is closed:** open `/signup` → "This workspace is already set up."
-- [ ] **Session refresh** *(optional, slow)*: stay signed in for 20+ minutes (the access token lasts 15), then click around → everything still works, because the token refreshes silently.
+- [ ] **Unknown username** → the same message.
+- [ ] **Taylor** (`treed12`, archived) → the same message.
+- [ ] **Empty fields** → "Enter your username." / "Enter your password.", under each field.
+- [ ] **Refresh while signed in** → you stay signed in.
+- [ ] **Profile menu → Sign out** → back to sign-in. The browser's Back button doesn't get you back in.
+- [ ] **Wrong workspace:** as Emery, go to `localhost:3010/admin` → sent to `/employee`. As Riley, go to `/employee` → sent to `/manager`.
+- [ ] **Signed out**, go to `/manager` → sent to sign-in.
+- [ ] **Sign-up is closed:** go to `/signup` → "This workspace is already set up."
+- [ ] **Session refresh** *(optional, slow)*: stay signed in for 20+ minutes (the access token lasts 15), then click around → it still works.
 
-**Sign-up when the system is empty** *(then Reset afterwards)*:
+**Sign-up when the system is empty** *(then Reset)*:
 - [ ] Run `PGPASSWORD=postgres123 psql -h localhost -U postgres -d project_tracker -c "TRUNCATE users RESTART IDENTITY CASCADE"`.
-- [ ] The sign-in page now shows "Create the admin account" → fill the form → you're signed in as an admin. Your username is first initial + last name + 1 (e.g. `rowner1`).
-- [ ] Try `/signup` again → closed. **Reset** afterwards.
+- [ ] Refresh the sign-in page → "Create the admin account" appears. Fill it in → you're signed in as an admin with username first initial + last name + 1 (e.g. `rowner1`).
+- [ ] Go to `/signup` again → closed. **Reset** afterwards.
 
 ---
 
-## 2. What each role can see (fresh Reset)
+## 2. What each person sees (fresh Reset)
 
-| Check | Admin | Manager (Morgan) | Employee (Emery) |
-|---|---|---|---|
-| Customer Portal in project lists | ✓ | ✓ | ✓ |
-| Budget and labor cost ($640 of $50,000) | ✓ | ✓ | **hidden** |
-| Hourly rate / cost on work logs | ✓ | ✓ | **hidden** |
-| Emery's salary | ✓ | ✓ (Emery is theirs) | not shown |
-| Users page | ✓ all users | My Employees: only Emery | no such page |
-| Activity Log | ✓ | no such page | no such page |
-| Archive | ✓ | no such page | no such page |
+**Projects:**
+- [ ] **Alex and Priya:** all 7 projects, including abandoned, archived and the one needing a manager.
+- [ ] **Morgan:** 3 (Customer Portal, Mobile App Refresh, Data Warehouse Migration). Not Support Portal, and none of the closed ones.
+- [ ] **Riley:** only Support Portal. **Jordan:** none, with empty states on Dashboard, My Projects and Calendar (no errors or blank pages).
+- [ ] **Emery:** 3 projects, with a **different milestone and status on each**.
+- [ ] **Devon:** 2. **Casey, Avery, Blake:** 1 each. **Quinn:** none, with empty states.
 
-- [ ] **Admin → Activity Log** shows the 5 starting entries: users created, project created, Emery assigned to Design, review requested.
-- [ ] **Manager Dashboard** shows a review waiting for Design. The bell has 1 unread notification.
-- [ ] **Employee → My Projects → Customer Portal:** "Your milestone" is Design. It's awaiting review, so **Log work is disabled**.
+**Money and pay:**
+- [ ] Budgets, labor cost, hourly rates and salaries are visible to admins and to the employee's own manager. **Employees never see them**, not even their own salary.
 
----
+**People:**
+- [ ] **Morgan's My Employees:** Emery, Devon, Casey. **Riley's:** Avery, Blake. **Jordan's:** Quinn.
+- [ ] **Admin Users page:** 11 active people. With the archived filter → Taylor too. Filtering by role or manager narrows the list.
 
-## 3. Users (Admin)
-
-**Set up extra people** (later sections use them):
-- [ ] **Users → create a manager:** Riley Ross, `riley@example.com`, any job title, role Manager. The username is generated (e.g. `rross4`) and the user ID shows as `USR-0004`.
-  - There are **no manager or salary fields** for a manager: only employees have those.
-- [ ] **Create an employee:** Jordan Lee, `jordan@example.com`, Employee, manager **Morgan**, salary 62400 (= $30/hour).
-
-**Validation:**
-- [ ] **Employee without a manager or salary** → errors under those fields.
-- [ ] **Email `EMERY@example.com`** → "already in use" (emails ignore capitals).
-- [ ] **Username `EEMPLOYEE3`** (if you type one) → taken.
-- [ ] **Password under 8 characters** → error under the password field.
-
-**Editing and moving people:**
-- [ ] **Edit Jordan's job title** → saved. Activity Log shows `user.update` with the before → after values.
-- [ ] **Transfer Jordan to Riley** (change manager):
-  - Jordan gets the notification "Reporting manager changed: You now report to Riley Ross."
-  - **Check:** Riley's My Employees shows Jordan; Morgan's no longer does.
-  - Transfer Jordan **back to Morgan** for later sections.
-- [ ] **Reset Emery's password** to `NewPass123!` → Emery can sign in with it (and not with the old one).
-  - Activity says a password was reset, without showing the password.
-  - Reset it back to `Password123!`.
-
-**Archiving:**
-- [ ] **Archive Jordan** → Jordan can't sign in ("Incorrect username or password"), and disappears from Morgan's My Employees.
-  - **Restore Jordan** → can sign in again.
-- [ ] **Archive Morgan** → blocked: "Reassign Morgan Manager's employees to another manager before archiving them."
-- [ ] **Archive yourself (Alex)** → not allowed.
-
-**Role changes:**
-- [ ] **Promote Jordan to Manager:**
-  - Jordan's manager and salary are cleared, and Jordan is removed from any projects.
-  - Jordan now signs in to `/manager`.
-  - **Then demote Jordan back to Employee** with manager Morgan and a salary.
-- [ ] **Demote Morgan to Employee** → blocked: Morgan still has employees and projects.
-
-**Manager limits** (sign in as Morgan):
-- [ ] Morgan can edit Emery's details **and salary**, but **can't change Emery's role or manager**.
-- [ ] Morgan can't see Riley's employees.
+**Other pages:**
+- [ ] **Activity Log** (admins only) shows **21** entries, newest first, including Priya's and Alex's actions. Managers and employees have no such page.
+- [ ] **Archive** (admins only) shows Legacy Billing Cleanup: Completed, with Morgan as the previous manager.
+- [ ] **Notification bells** match the table above.
 
 ---
 
-## 4. Projects (Admin, then Manager)
+## 3. Two admins see the same thing
 
-**Creating** (as Admin, on Projects):
-- [ ] **Create:** Mobile App, manager Morgan, Oct 1 – Dec 31 2026, budget 30000.
-  - **Morgan** gets "New project assigned".
-  - **Check as Morgan:** it's in My Projects and on the Calendar.
+- [ ] **Priya** edits Support Portal's budget → **Alex** refreshes and sees the new budget. The Activity Log shows **Priya** as the actor, with before → after.
+- [ ] **Alex** archives Vendor Onboarding (it's already abandoned, so this is allowed) → **Priya** sees it on the Archive page.
+- [ ] Either admin can do what the other did. There's no "owner" admin.
+
+---
+
+## 4. People
+
+**Creating** (as an admin, on Users):
+- [ ] **Create an employee:** Sam Ortiz, `sam@example.com`, manager **Riley**, salary 62400.
+  - The username is generated (`sortiz13`) and the user ID shows as `USR-0013`.
+  - **Check as Riley:** Sam appears under My Employees.
+- [ ] **Create a manager:** there are **no manager or salary fields**, because only employees have those.
 - [ ] **Validation:**
-  - name `customer portal` → already taken (names ignore capitals)
-  - end date before start date → error under the end date
+  - an employee without a manager or salary → field errors
+  - email `RILEY@example.com` → already in use (emails ignore capitals)
+  - username `DBROOKS8` → taken
+  - password under 8 characters → error
+
+**Editing:**
+- [ ] **Edit Casey's job title** → saved. Activity Log: `user.update` with before → after.
+- [ ] **Reset Avery's password** to `NewPass123!` → Avery can only sign in with the new one. The Activity Log doesn't show the password. Change it back afterwards.
+
+**Archiving and restoring:**
+- [ ] **Taylor:** **Restore** → Taylor can sign in again. Riley's My Employees shows Taylor.
+- [ ] **Archive Casey** → Casey can't sign in, disappears from Morgan's employees, and is removed from Mobile App Refresh's members. **Restore Casey.** Casey is back, but not on the project, since archiving removed the membership. Re-add Casey to Mobile App Refresh on Build for later sections.
+- [ ] **Archive yourself** → not allowed.
+- [ ] **Archive Morgan** → blocked: "Reassign Morgan Manager's employees to another manager before archiving them."
+
+**Manager changes:**
+- [ ] **Transfer Quinn from Jordan to Riley** (change manager):
+  - Quinn gets "Reporting manager changed: You now report to Riley Chen."
+  - **Check:** Riley's My Employees shows Quinn; Jordan's is empty.
+- [ ] **Now Jordan has no employees and no projects:**
+  - **Promote Quinn to Manager** → Quinn's manager and salary are cleared, and Quinn signs in to `/manager`.
+  - **Demote Jordan to Employee** (with a manager and salary) → it works, because Jordan has nothing to hand over. Jordan signs in to `/employee`.
+- [ ] **Demote Morgan** → blocked (Morgan has employees and projects).
+
+**Manager limits:**
+- [ ] **As Morgan:** you can edit Emery's details **and salary**, but **not role or manager**. You can't see Riley's people.
+- [ ] **As Riley:** the same for Avery and Blake, and Morgan's people aren't visible.
+
+---
+
+## 5. Projects
+
+**Creating** (as an admin):
+- [ ] **Create** "Payments Revamp", manager **Riley** (or Quinn, if promoted in section 4), from today to 2 months away, budget 30000.
+  - That manager gets "New project assigned", and it appears in their My Projects and on their Calendar.
+- [ ] **Validation:**
+  - name `support portal` → already taken (names ignore capitals)
+  - end date before start date → field error
   - negative budget → error
   - an employee as manager → error
 
-**Members** (as Morgan, on Mobile App → People):
-- [ ] **Add Emery** → Emery gets "Added to project", and Mobile App appears in Emery's My Projects.
-- [ ] **Add Emery again** → "Emery Employee is already on this project."
-- [ ] **Jordan (Morgan's)** → can be added. **Riley's people** don't appear in the list. As Admin, anyone can be added.
+**Members** (as the project's manager):
+- [ ] **Add one of your own employees** → they get "Added to project", and it appears in their My Projects.
+- [ ] **Add them again** → "… is already on this project."
+- [ ] **Another manager's employees** don't appear in the list. As an admin, anyone can be added.
+- [ ] **Remove a member** → they get "Removed from project", and the project disappears for them.
 
-**Milestones on Mobile App** (as Morgan):
-- [ ] **Add** "Prototype", Oct 1 – Oct 31.
-- [ ] **Add** "Testing", Nov 1 – Nov 30, needing Prototype. Testing shows **Blocked**; Prototype shows **Available**.
-- [ ] **A milestone outside the project's dates** (e.g. Jan 2027) → error under the dates.
-- [ ] **Circular dependency:** edit Prototype to need Testing → rejected (Testing already needs Prototype).
-- [ ] **Assign Emery to Prototype** → Emery gets "Milestone assignment changed" and sees Prototype as their milestone on Mobile App.
-  - Emery now has **two projects**, with one milestone on each.
-- [ ] **Delete Testing** (no history yet) → it's removed. Add it back.
-- [ ] **Delete Prototype after someone is assigned or has logged work** → blocked, with the reason.
+**Milestones** (on Payments Revamp):
+- [ ] **Add** "Prototype" (first month) and "Testing" (second month, needs Prototype) → Testing shows **Blocked**, Prototype **Available**.
+- [ ] **Dates outside the project** → error.
+- [ ] **Circular dependency:** make Prototype need Testing → rejected.
+- [ ] **Assign an employee to Prototype** → they get "Milestone assignment changed".
+- [ ] **Delete Testing** (no history) → removed.
+- [ ] **Delete a milestone with history** (e.g. Mobile App Refresh's Build) → blocked, with the reason.
 
 **Editing:**
-- [ ] **Shrink Customer Portal to end Nov 15** → error naming Frontend and Launch, which wouldn't fit.
-- [ ] **Change the budget** → saved. The Admin's Activity Log shows the budget from → to.
-- [ ] **As Morgan, change the manager** → not possible (admin only).
+- [ ] **Shrink Customer Portal to end Nov 15** → error naming Frontend and Launch.
+- [ ] **Morgan changes a budget** → saved, and the admin's Activity Log shows from → to.
+- [ ] **A manager changing the project manager** → not possible (admin only).
 
-**Removing a member:**
-- [ ] **Remove Jordan from Mobile App** (if added) → Jordan gets "Removed from project", and the project disappears from Jordan's view.
-
----
-
-## 5. Review flow (Customer Portal; Reset first is easiest)
-
-**Keep open:**
-- [ ] **Emery:** Design is awaiting review → **Log work disabled**, and **Request review disabled** (one is already waiting).
-- [ ] **Morgan:** open the review (Dashboard queue, or the bell notification). Type feedback, click **Keep open** → the feedback is carried into the second dialog → confirm.
-  - Emery gets "Milestone kept open", with your feedback.
-  - **Check as Emery:** Design is **Available** again, the feedback shows on the milestone, and **Log work is enabled**.
-- [ ] **Emery: Request review** → Morgan gets "Milestone review requested · Emery Employee · Design".
-
-**Accept:**
-- [ ] **Morgan: Accept**, with destination **Backend API**:
-  - Design becomes **Completed**.
-  - Emery moves to Backend API, and gets "Moved to Backend API".
-  - Emery also gets "Review accepted", with feedback if you wrote any.
-  - **Backend API and Frontend** change from Blocked to **Available**. **Launch stays Blocked**: it needs both.
-  - **Check as Emery:** their milestone is now Backend API, and they can log work.
-  - **Check as Admin:** the Activity Log shows `review.accept` and `milestone.complete`.
-- [ ] **Completed milestones can't be reopened or edited:** there's no edit for Design, and it can't be added as a prerequisite.
-
-**Edge cases:**
-- [ ] **Destination that's still blocked:**
-  1. Complete Backend API (directly, as Morgan) with destination **Launch**.
-  2. **Check:** Emery is on Launch, which is Blocked → Emery **can't log work** ("…while your milestone is blocked").
-  3. Complete Frontend → Launch becomes Available → Emery can log.
-- [ ] **No destination:** complete a milestone without choosing one → its employees get "Milestone completed: assignment needed" and have no milestone (they can't log until reassigned).
-- [ ] **Not your milestone:** Emery can't request review on a milestone they're not on.
+**Riley can't see Morgan's work:**
+- [ ] As Riley, try a link to one of Morgan's projects → not found.
 
 ---
 
-## 6. Work logs
+## 6. Reviews and milestone flow
 
-**As Emery** *(weekday only)*:
-- [ ] **Log today on Customer Portal** (needs an Available milestone):
-  - It appears in My Work Logs as 8 h, **without** rate or cost.
-  - **Check as Morgan:** it's in Work Logs with the $320 labor cost, "Hours this week" goes up, and the project's cost increases.
-  - **Check as Admin:** it's in Work Logs.
-- [ ] **Log again today** → "You've already logged work today."
-- [ ] **Log today on Mobile App** too → blocked (**one project per day**).
-- [ ] **On a Saturday or Sunday** → "You can only log work on weekdays."
-- [ ] **Milestone awaiting review or blocked** → Log work disabled. Through the API, the error is "You can't log work while your milestone is …".
+**Data Load: one review moves two people** (as Morgan):
+- [ ] **Dashboard** → the review queue shows **Design (Emery)** and **Data Load (Devon)**.
+- [ ] **Open Data Load → Keep open**, with feedback → Devon gets "Milestone kept open" plus the feedback. Data Load is **Available** again.
+  - **Check as Devon *and* Emery:** they can now log on Data Warehouse Migration.
+- [ ] **As Devon: Request review** again → Morgan is notified.
+- [ ] **As Morgan: Accept**, with destination **Validation**:
+  - Data Load becomes **Completed**.
+  - **Both Emery and Devon** move to Validation, and each gets "Moved to Validation".
+  - **Validation** changes from Blocked to **Available**.
+  - Devon (the requester) also gets "Review accepted".
+- [ ] **Activity Log** shows `review.accept` and `milestone.complete`: "Completed Data Load; 2 members moved to Validation."
 
-**Managers can't log:**
-- [ ] **As Morgan** → no Log work action.
+**Design (Customer Portal):**
+- [ ] **Keep open with feedback.** The feedback you typed is carried into the second dialog.
+- [ ] **Emery** sees the feedback, and **Log work** is enabled on Customer Portal.
+- [ ] **Emery requests review again → Morgan accepts with destination Backend API:**
+  - Backend API **and** Frontend become Available.
+  - Launch stays Blocked.
 
-**As Admin, historical entries** (Work Logs → Add workday):
-- [ ] **A past weekday for Emery** → it appears for Emery and Morgan marked as historical / entered by Alex Admin.
-- [ ] **A future date** → error.
-- [ ] **A weekend** → error.
+**Parallel branches (Support Portal, as Riley):**
+- [ ] **Complete Knowledge Base** (directly, no destination):
+  - Avery gets "Milestone completed: assignment needed" and has **no milestone**, so can't log.
+  - **Go Live stays Blocked.**
+- [ ] **Complete Chatbot** with destination **Go Live** → Go Live becomes **Available**, and Blake moves there.
+- [ ] **Assign Avery to Go Live** → Avery can log again.
+
+**Waiting on a blocked milestone:**
+- [ ] **Devon on Store Release** (Mobile App Refresh) is blocked behind Build → no Log work there.
+- [ ] **As Morgan, complete Build** with destination **Store Release**:
+  - Emery and Casey move there.
+  - Store Release becomes Available, so Devon, Emery and Casey can all log there.
+
+**Rules:**
+- [ ] **Completed milestones** can't be edited, reopened or added as prerequisites.
+- [ ] **An employee** can't request review of a milestone they're not on.
+- [ ] **The review history** on Mobile App Refresh's UX Design shows a "kept open" (with feedback) and then an "accepted".
+
+---
+
+## 7. Work logs
+
+**Who can log today** (fresh Reset, on a weekday):
+
+| Person | Expected |
+|---|---|
+| Emery | Can log on **Mobile App Refresh** (Build). Customer Portal and Data Warehouse Migration are awaiting review |
+| Casey | Can log on Mobile App Refresh |
+| Avery, Blake | Can log on Support Portal |
+| Devon | **Can't log anywhere** (Store Release is blocked; Data Load is awaiting review) |
+| Quinn | No projects, so nothing to log |
+| Morgan, Riley | Managers have no Log work action |
+
+**Employee logging:**
+- [ ] **Emery logs today** on Mobile App Refresh:
+  - My Work Logs shows 8 h, **without** rate or cost.
+  - **Check as Morgan:** it's in Work Logs at $320, "Hours this week" goes up, and Mobile App Refresh's budget use goes up (about +1.4%).
+  - **Check as Alex:** it's in Work Logs.
+- [ ] **Emery logs again today** → "You've already logged work today."
+- [ ] **One project per day:** after the Data Load review is accepted (section 6), Emery has two available milestones. After logging on one, logging on the other → blocked.
+- [ ] **On a weekend** → "You can only log work on weekdays."
+
+**Admin entries and corrections:**
+- [ ] **Add a workday:** for Blake, on a weekday 6+ weeks ago, on Support Portal → Discovery.
+  - It shows for Blake and Riley as entered by the admin / historical.
+  - Casey already has one historical entry from Priya.
+- [ ] **A future date or a weekend** → error.
 - [ ] **A day Emery already logged** → "This employee already has a work log on that day."
-- [ ] **Correct a log** (change its milestone or date):
-  - Emery gets "Work log corrected", describing what changed.
-  - The Activity Log shows `work_log.correct` with before → after.
+- [ ] **Correct a log** (change its milestone or date) → the employee gets "Work log corrected". Activity: `work_log.correct` with before → after.
 
-**Pay rate is saved per log:**
-- [ ] **As Morgan, change Emery's salary to 104000** ($50/hour).
-  - **Check:** old logs still cost $320.
-  - Log a new day as Emery → $400.
-  - The project's total cost = old + new.
+**The pay rate is saved per log:**
+- [ ] **As Morgan, change Casey's salary to 83200** ($40/h). Old Casey logs stay at $280; a new log is $320. The project's cost = old + new.
+
+**Filters with real volume:**
+- [ ] **Admin Work Logs:** filtering by employee, project, or a date range narrows hundreds of entries correctly.
 
 ---
 
-## 7. Closing, archiving and unarchiving projects
+## 8. Budgets, schedule and dashboards
 
-**Completing:**
+- [ ] **Budget usage:** Mobile App Refresh ≈ **94%** (near), Data Warehouse Migration ≈ **118%** (shown as **over budget**), Support Portal ≈ **35%**, Customer Portal ≈ 1%.
+- [ ] **Push one over budget:** as Morgan, lower Mobile App Refresh's budget to 21,000 → it shows as over budget. Admin stat cards count it.
+- [ ] **Schedule health:** Mobile App Refresh **red** (last week), Data Warehouse Migration **amber**, Support Portal **green**. Change a project's end date and the colour follows (0–50% elapsed green, 50–75% amber, the last 25% red).
+- [ ] **Calendar (month):** each project appears **only on its deadline**.
+  - Morgan: Oct 21 (Mobile App Refresh), Nov 13 (Data Warehouse Migration), Dec 31 (Customer Portal).
+  - Riley: Jan 12 (Support Portal).
+  - Today is highlighted.
+- [ ] **Calendar (timeline):** full date ranges for each project.
+- [ ] **Manager "hours this week"** adds up the current Monday–Sunday across all their employees.
+- [ ] **Admin stat cards** show real counts: users by role, open projects without a manager (**1**: Intranet Redesign), the oldest waiting review, over-budget projects.
+
+---
+
+## 9. Closing, archiving and unarchiving
+
 - [ ] **Complete a project with unfinished milestones** → "These milestones aren't complete yet: …".
-- [ ] **Complete every milestone of Mobile App, then Morgan marks it complete:**
-  - **Check as Morgan and Emery:** Mobile App **disappears** (closed projects are hidden from them).
-  - **Check as Admin:** it shows as Completed.
-- [ ] **Managers can't abandon:** Morgan has no "Mark abandoned". Admin does.
+- [ ] **Managers can't abandon:** Morgan has no "Mark abandoned"; admins do.
+- [ ] **Archive a running project** → Archive is disabled ("Mark the project completed or abandoned first").
+- [ ] **Archive Vendor Onboarding** (abandoned) → it moves to Archive, showing "Abandoned".
 
-**Archiving:**
-- [ ] **Archive a running project** (Customer Portal) → the Archive action is disabled ("Mark the project completed or abandoned first"). Through the API → 409 "Only completed or abandoned projects can be archived."
-- [ ] **Admin: Mark Customer Portal abandoned, then Archive it:**
-  - It moves to **Archive**, showing "Abandoned".
-  - **Check as Morgan and Emery:** it's gone, and so are its work logs in their views.
+**Unarchive Legacy Billing Cleanup:**
+- [ ] It's reopened **In progress**, with **no manager and no members**, and completed milestones stay completed.
+- [ ] The Activity Log shows the previous manager (Morgan) and status (completed).
+- [ ] It now counts as needing a manager.
 
-**Unarchiving:**
-- [ ] **Admin: Unarchive:**
-  - The project is back **In progress**, with **no manager and no members**, and completed milestones stay completed.
-  - It shows as needing a manager.
-  - The Activity Log shows the previous manager and status.
-- [ ] **Do the same with the completed Mobile App:** archive it, then unarchive it → it's reopened and can get a manager.
-- [ ] **Assign a manager** (edit the project) → it reappears in that manager's My Projects. The manager can add members and milestones again.
+**Intranet Redesign** (already unarchived, needs a manager):
+- [ ] It shows "previously managed by Riley".
+- [ ] Assign **Riley** → Riley now manages **2** projects, sees it in My Projects and on the Calendar, and can add members (e.g. Blake back) and milestones.
+
+**Completing a project:**
+- [ ] Finish every milestone of Payments Revamp (section 5), then its manager marks it complete → it disappears for that manager and its members, and admins see it as Completed.
 
 ---
 
-## 8. Notifications
+## 10. Notifications
 
-- [ ] **The bell's red dot and count** match the unread notifications.
-- [ ] **Click a notification** → it's marked read and opens the related project or milestone.
-- [ ] **Mark all read** → the count goes to 0. Refresh → it stays 0.
-- [ ] **Notifications are private:** each person only sees their own.
+- [ ] **The bell's dot and count** match unread notifications.
+- [ ] **Click one** → it's marked read and opens the related project or milestone.
+- [ ] **Mark all read** → 0, and it stays 0 after refresh.
+- [ ] **Each person sees only their own.**
 
-**Who gets what:**
-
-| Event | Who is notified | Title |
+| Event | Who's notified | Title |
 |---|---|---|
 | Project created | its manager | New project assigned |
 | Added to / removed from a project | the employee | Added to project / Removed from project |
@@ -280,57 +328,53 @@ The list at the top of `demo.sql` shows who's on what. The tests below use the s
 
 ---
 
-## 9. Activity Log (Admin)
+## 11. Activity Log (admins)
 
-- [ ] **Every change** from the sections above appears, newest first, with who did it, their role and a sentence.
-- [ ] **Filters:** by person, role, action type → the list narrows. Pages of 50.
-- [ ] **Edits show before → after** (e.g. budget 50,000 → 60,000).
-- [ ] **Employees logging their own day** don't appear (by design). Admin historical entries and corrections do.
-
----
-
-## 10. Dashboards and numbers
-
-- [ ] **Schedule health** (green / amber / red) comes from how much of the project's dates have passed: 0–50% green, 50–75% amber, the last 25% red.
-  - Customer Portal (Oct 1 – Dec 31) in mid-October is green.
-  - Edit its dates to end soon → it turns red.
-- [ ] **Budget usage** = labor cost ÷ budget. Lower the budget below the cost → it shows over budget.
-- [ ] **Hours this week** (manager) counts only Monday–Sunday of the current week.
-- [ ] **Admin stat cards** show real counts: users by role, open projects without a manager, the oldest waiting review, over-budget projects.
-- [ ] **Manager Calendar** shows each project across its dates, with today highlighted.
+- [ ] **Every change** from the sections above appears, newest first, with who did it, their role at the time, and a sentence.
+- [ ] **Filters** (person, role, action type) narrow the list.
+- [ ] **Paging:** once there are more than 50 entries, **Newer / Older** appear and page correctly. Below 50, you see just "1–N of N".
+- [ ] **Edits show before → after.**
+- [ ] **Employees' own daily logs** don't appear (by design). Admin entries and corrections do.
 
 ---
 
-## 11. API-level checks (Swagger or Postman)
+## 12. API checks (Swagger or Postman)
 
-See [api/README.md](api/README.md) for setup. These cover things the UI hides:
+See [api/README.md](api/README.md) for setup. Ids for reference:
 
-- [ ] **As Emery,** `POST /api/projects` → **403**.
-- [ ] **As Morgan,** `POST /api/projects/{id}/abandon` → **403**.
+| Kind | Ids |
+|---|---|
+| Projects | 1 Customer Portal, 2 Mobile App Refresh, 3 Data Warehouse Migration, 4 Support Portal, 5 Vendor Onboarding, 6 Legacy Billing Cleanup, 7 Intranet Redesign |
+| Users | 1 Alex, 2 Morgan, 3 Emery, 4 Priya, 5 Riley, 6 Jordan, 7 Casey, 8 Devon, 9 Avery, 10 Blake, 11 Quinn, 12 Taylor |
+
+- [ ] **As Riley,** `GET /api/projects/2` → **404** (not Riley's project).
+- [ ] **As Avery,** `GET /api/projects/1` → **404**.
+- [ ] **As Avery,** `POST /api/projects` → **403**.
+- [ ] **As Morgan,** `POST /api/projects/2/abandon` → **403**.
 - [ ] **As Morgan,** `GET /api/activity` → **403**.
-- [ ] **As Emery,** `GET /api/projects/{id}` for a project they're not on → **404** (it isn't revealed).
+- [ ] **As Morgan,** `GET /api/users/9` (Avery, Riley's employee) → **404**.
+- [ ] **As an admin,** `DELETE /api/projects/1` (running) → **409** `project_not_closed`.
+- [ ] **As Devon,** `POST /api/work-logs` with body `{"project_id": 2}` → **409** (blocked milestone).
 - [ ] **No token** → **401** "Sign in to continue."
 - [ ] **A made-up token** → **401** "Your session is invalid."
 - [ ] **A refresh token used as an access token** → **401**.
-- [ ] **Archive Emery,** then use Emery's old token → **401** "Your account is no longer active."
-- [ ] **Bad JSON body** → **400**.
-- [ ] **Missing fields** → **400**, with `fields` listing each problem.
-- [ ] **`DELETE /api/work-logs/1`** → **405**: logs are never deleted.
+- [ ] **Archive Avery,** then use Avery's old token → **401** "Your account is no longer active."
+- [ ] **Bad JSON** → **400**. **Missing fields** → **400** with `fields`.
+- [ ] **`DELETE /api/work-logs/1`** → **405**.
 - [ ] **Employee responses** never include `budget`, `cost`, `hourly_rate` or `annual_salary`.
 
 ---
 
-## 12. Look and feel
+## 13. Look and feel
 
-- [ ] **Narrow the browser to phone width** → the sidebar collapses into a menu button, and pages stay usable.
-- [ ] **Loading:** each page briefly shows a loading state.
-  - Stop the API server and click around → a friendly error with **Retry**, not a blank page.
-  - Start the API server again and click Retry → recovers.
-- [ ] **Forms disable their buttons while saving.** Errors appear next to the field they're about.
-- [ ] **Keyboard:** Tab through a dialog, and Esc or Cancel closes it.
+- [ ] **Phone width** → the sidebar collapses into a menu button, and pages stay usable.
+- [ ] **Loading states** appear briefly. **Stop the API server** → a friendly error with **Retry**. Restart the server and click Retry → recovers.
+- [ ] **Forms** disable their buttons while saving, and errors appear next to the field they're about.
+- [ ] **Disabled buttons look disabled** (faded, "not allowed" cursor).
+- [ ] **Keyboard:** Tab through dialogs, and Esc or Cancel closes them.
 
 ---
 
 ## Found a problem?
 
-Note the **role**, the **page**, **what you did**, **what you expected** and **what happened**. If the screen went blank or something failed silently, include the browser console's red error (F12 → Console).
+Note the **person**, the **page**, **what you did**, **what you expected** and **what happened**. If the screen went blank or something failed silently, include the browser console's red error (F12 → Console).
