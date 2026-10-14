@@ -1,5 +1,50 @@
 # Coding Workshop - Backend Code
 
+## Project Tracker backend
+
+One Python Lambda per area, all backed by PostgreSQL:
+
+| Service | URL | What it does |
+| --- | --- | --- |
+| `auth/` | `/api/auth` | Sign-in (JWT access + refresh tokens), first-admin sign-up, current user, change password |
+| `users/` | `/api/users` | People, roles, reporting managers, salaries; archive/restore; password resets |
+| `projects/` | `/api/projects` | Projects and their members; complete, abandon, archive, unarchive |
+| `milestones/` | `/api/milestones` | Milestones, dependencies, completion, review requests |
+| `work-logs/` | `/api/work-logs` | Daily 8-hour work entries with the pay rate saved on each |
+| `activity/` | `/api/activity` | Audit trail of every change (admins only) |
+| `notifications/` | `/api/notifications` | Each user's in-app notifications |
+
+Other folders:
+
+- `_shared/` — code every service uses (router, auth and role checks, validation, database, activity log). `bin/sync-backend-shared.sh` copies it into each service as `shared/` (each Lambda is packaged from its own folder); `start-dev.sh` and `deploy-backend.sh` run it for you. **Edit `_shared/`, never a service's `shared/` copy.**
+- `db/` — `schema.sql` (tables and the rules the database enforces), `seed.sql` (sample data), `reset.sh` (rebuilds a database from both).
+- `_tests/` — pytest suite that calls each service's `handler()` against a throwaway database.
+
+The full API reference is [docs/api/openapi.yaml](../docs/api/openapi.yaml), and [docs/api/README.md](../docs/api/README.md) explains testing it with Swagger UI, Postman or curl.
+
+### Quick start (no LocalStack needed)
+
+From the repository root:
+
+```sh
+python3 -m venv .venv && .venv/bin/pip install -r backend/requirements-dev.txt   # once
+backend/db/reset.sh                         # rebuild the project_tracker database
+.venv/bin/python bin/local-api.py           # all services on http://localhost:3002
+VITE_API_URL=http://localhost:3002 npm run dev --prefix frontend
+```
+
+Sample accounts (local only): `aadmin1`, `mmanager2`, `eemployee3`, password `Password123!`.
+
+### Tests
+
+```sh
+.venv/bin/pytest            # resets the project_tracker_test database for every test
+```
+
+### On LocalStack
+
+`./bin/start-dev.sh` deploys every service as a Lambda. Those Lambdas use the database named `postgres`, so load it once with `backend/db/reset.sh postgres`.
+
 ## Overview
 
 This folder contains backend services for CRUD operations with examples. Python with PostgreSQL are preferred, but Java and NodeJS with MongoDB options are available.
