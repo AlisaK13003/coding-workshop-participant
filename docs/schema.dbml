@@ -162,3 +162,10 @@ Ref: activity_log.project_id > projects.id
 Ref: notifications.recipient_id > users.id
 Ref: notifications.project_id > projects.id
 Ref: notifications.milestone_id > milestones.id
+
+Table app_settings {
+  name text [pk, note: "e.g. 'jwt_secret'"]
+  value text [not null]
+  created_at timestamptz [not null, default: `now()`]
+  Note: 'Values the backend generates for itself. On AWS it holds the JWT signing key, created on first use; never exposed through the API.'
+}

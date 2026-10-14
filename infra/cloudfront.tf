@@ -6,27 +6,6 @@ resource "aws_cloudfront_origin_access_control" "this" {
   signing_protocol                  = "sigv4"
 }
 
-# The frontend is a single-page app: /admin, /manager and so on aren't files in S3, the app
-# draws them itself. This runs before each website request (not /api/*) and serves
-# index.html for any path without a file extension; real files like /assets/app.js pass through.
-resource "aws_cloudfront_function" "spa_routes" {
-  count   = data.aws_caller_identity.this.id != "000000000000" ? 1 : 0
-  name    = format("%s-spa-routes-%s", var.aws_project, local.app_id)
-  runtime = "cloudfront-js-2.0"
-  comment = "Serve index.html for frontend page routes"
-  publish = true
-  code    = <<-EOT
-    function handler(event) {
-      var request = event.request;
-      var lastSegment = request.uri.split('/').pop();
-      if (lastSegment.indexOf('.') === -1) {
-        request.uri = '/index.html';
-      }
-      return request;
-    }
-  EOT
-}
-
 resource "aws_cloudfront_distribution" "this" {
   count               = data.aws_caller_identity.this.id != "000000000000" ? 1 : 0
   enabled             = true
@@ -60,9 +39,12 @@ resource "aws_cloudfront_distribution" "this" {
     }
   }
 
-  # No custom_error_response here: it would apply to every origin, so API errors (e.g. a 404
-  # "Project not found" from a Lambda) would be replaced by index.html. Page routes are
-  # handled by the spa_routes function on the website behaviour instead.
+  custom_error_response {
+    error_code            = 404
+    error_caching_min_ttl = 300
+    response_code         = 200
+    response_page_path    = "/index.html"
+  }
 
   # logging_config {
   #   include_cookies = false
@@ -114,12 +96,6 @@ resource "aws_cloudfront_distribution" "this" {
 
     target_origin_id       = local.origin_id
     viewer_protocol_policy = "redirect-to-https"
-
-    # Serves index.html for page routes like /admin, so refreshes and bookmarks work.
-    function_association {
-      event_type   = "viewer-request"
-      function_arn = element(aws_cloudfront_function.spa_routes.*.arn, count.index)
-    }
 
     forwarded_values {
       query_string = false

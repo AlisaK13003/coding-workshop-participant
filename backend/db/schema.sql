@@ -203,3 +203,11 @@ CREATE TABLE notifications (
     CONSTRAINT notification_milestone_in_project
         FOREIGN KEY (milestone_id, project_id) REFERENCES milestones (id, project_id)
 );
+
+-- Values the backend generates for itself. On AWS it keeps the JWT signing key here
+-- ('jwt_secret'), created on first use; never exposed through the API.
+CREATE TABLE app_settings (
+    name       TEXT PRIMARY KEY,
+    value      TEXT NOT NULL,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT now()
+);

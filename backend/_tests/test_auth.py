@@ -1,4 +1,4 @@
-from conftest import SEED_PASSWORD, call, sign_in, sql
+from conftest import SEED_PASSWORD, call, load_service, sign_in, sql
 
 
 def test_login_returns_tokens_and_profile():
@@ -110,3 +110,20 @@ def test_unknown_route_and_wrong_method():
 def test_full_aws_style_path_also_works():
     r = call("auth", "POST", "/api/auth/login", {"username": "aadmin1", "password": SEED_PASSWORD})
     assert r.status == 200
+
+
+def test_without_a_configured_key_a_random_one_is_stored_in_the_database(monkeypatch):
+    # On AWS there's no JWT_SECRET: the backend generates a key once and keeps it in app_settings.
+    service = load_service("auth")
+    monkeypatch.setattr(service.auth.config, "JWT_SECRET", None)
+    monkeypatch.setattr(service.auth, "_stored_secret", None)
+
+    token = sign_in("aadmin1")
+    [row] = sql("SELECT value FROM app_settings WHERE name = 'jwt_secret'")
+    assert len(row["value"]) >= 60 and row["value"] != "local-development-only-not-a-secret"
+    assert call("auth", "GET", "/me", token=token).status == 200
+
+    # A fresh Lambda (no cached key) reads the same key back, so existing tokens stay valid.
+    monkeypatch.setattr(service.auth, "_stored_secret", None)
+    assert call("auth", "GET", "/me", token=token).status == 200
+    assert len(sql("SELECT value FROM app_settings")) == 1

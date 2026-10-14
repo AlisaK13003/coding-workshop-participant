@@ -12,8 +12,9 @@ POSTGRES = {
     "database": os.getenv("POSTGRES_NAME", "project_tracker"),
 }
 
-# Signing key for JWTs. Terraform generates one per deployment. A fixed key is only
-# acceptable for local development; elsewhere it stays None and auth refuses to work.
+# Signing key for JWTs. A JWT_SECRET variable wins if one is set. Locally a fixed key is
+# fine; anywhere else it stays None and auth.py generates a random key once and keeps it
+# in the database (app_settings), so deploying needs no extra infrastructure.
 _DEV_JWT_SECRET = "local-development-only-not-a-secret"
 JWT_SECRET = os.getenv("JWT_SECRET") or (_DEV_JWT_SECRET if IS_LOCAL else None)
 

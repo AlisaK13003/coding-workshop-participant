@@ -1,12 +1,13 @@
 """Password hashing, JWTs, and the central authentication and role checks."""
 
+import secrets
 from datetime import datetime, timedelta, timezone
 
 import bcrypt
 import jwt
 
 from . import config, db
-from .http import ApiError, forbidden, unauthorized
+from .http import forbidden, unauthorized
 
 ADMIN = "admin"
 MANAGER = "manager"
@@ -31,10 +32,29 @@ def verify_password(password, password_hash):
     return matches and password_hash is not None
 
 
+_stored_secret = None
+
+
+def _load_or_create_stored_secret():
+    """The signing key kept in the database, created on first use. ON CONFLICT means two
+    Lambdas starting at once still agree on one key."""
+    with db.transaction() as conn:
+        conn.execute(
+            "INSERT INTO app_settings (name, value) VALUES ('jwt_secret', %s) ON CONFLICT (name) DO NOTHING",
+            (secrets.token_urlsafe(48),),
+        )
+        return conn.execute("SELECT value FROM app_settings WHERE name = 'jwt_secret'").fetchone()["value"]
+
+
 def _secret():
-    if not config.JWT_SECRET:
-        raise ApiError(500, "server_misconfigured", "Sign-in isn't configured on the server.")
-    return config.JWT_SECRET
+    """The key that signs and checks tokens: JWT_SECRET if configured (always set locally),
+    otherwise a random key stored in the database, cached for the life of the Lambda."""
+    global _stored_secret
+    if config.JWT_SECRET:
+        return config.JWT_SECRET
+    if _stored_secret is None:
+        _stored_secret = _load_or_create_stored_secret()
+    return _stored_secret
 
 
 def _create_token(user, token_type, lifetime):
