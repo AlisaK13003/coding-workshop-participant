@@ -19,7 +19,12 @@ const PRESET_COLUMNS = {
   hours: { header: 'Hours', render: (log) => `${log.hours} h` },
   rate: { header: 'Historical rate', render: (log) => `${formatCents(log.rate)}/h` },
   cost: { header: 'Recorded cost', render: (log) => formatCents(log.cost) },
-  laborCost: { header: 'Recorded labor cost', render: (log) => formatMoney(log.cost) },
+  // A manager sees other managers' employees on their projects, but not their pay.
+  laborCost: {
+    header: 'Recorded labor cost',
+    render: (log) =>
+      log.cost == null ? <span title="Pay is shown only to this person’s own manager and admins">—</span> : formatMoney(log.cost),
+  },
   submitted: { header: 'Submitted', render: (log) => log.submittedAt },
 }
 

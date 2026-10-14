@@ -283,6 +283,7 @@ Everyone's password is `Password123!`.
 
 **Filters with real volume:**
 - [ ] **Admin Work Logs:** filtering by employee, project, or a date range narrows hundreds of entries correctly.
+- [ ] **Other managers' employees on your project:** Quinn (Jordan's employee) is on Morgan's Customer Portal. As Alex, enter a past day for Quinn on Customer Portal. **As Morgan:** Work Logs lists it, Quinn appears in the Employee filter, and the labor cost shows **—** (hover: pay is shown only to their own manager and admins). **As Jordan:** the log isn't listed (not Jordan's project).
 
 ---
 

@@ -10,7 +10,8 @@ Routes (under /api/work-logs):
 
 There's no DELETE: wrong entries are corrected in place, and the activity log keeps the history.
 
-Every log is 8 hours on a weekday, one per employee per day. Hourly rate and cost are
+Every log is 8 hours on a weekday, one per employee per day. Managers see every log on the
+projects they manage, including other managers' employees, but hourly rate and cost are
 shown only to admins and to the employee's own manager.
 """
 
@@ -48,13 +49,14 @@ LOG_SQL = f"""
 
 def visible_logs_filter(user):
     """A SQL condition (and its params) limiting logs to those the user can see:
-    admins see all; managers see their own employees' logs on projects they can see;
+    admins see all; managers see everyone's logs on the projects they manage (and can see);
     employees see their own logs on projects they can still see."""
     if user["role"] == ADMIN:
         return "TRUE", ()
     project_condition, project_params = visible_projects_filter(user)
-    owner = "e.manager_id = %s" if user["role"] == MANAGER else "wl.employee_id = %s"
-    return f"{owner} AND {project_condition}", (user["id"], *project_params)
+    if user["role"] == MANAGER:
+        return project_condition, project_params
+    return f"wl.employee_id = %s AND {project_condition}", (user["id"], *project_params)
 
 
 def sees_pay(user, log):

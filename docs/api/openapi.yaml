@@ -1110,7 +1110,7 @@ paths:
       description: |
         **Any signed-in user**, newest first.
         - **Admin:** every log.
-        - **Manager:** their own employees' logs on projects the manager can see.
+        - **Manager:** every log on the projects they manage (open, unarchived), including employees who report to another manager.
         - **Employee:** their own logs on projects they can still see.
 
         `hourly_rate` and `cost` are only included for admins and the employee's own manager.

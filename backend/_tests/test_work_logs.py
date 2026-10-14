@@ -89,10 +89,12 @@ def test_employee_no_longer_sees_logs_once_removed_from_project(employee_token):
     assert call("work-logs", "GET", "/1", token=employee_token).status == 404
 
 
-def test_manager_sees_only_own_employees_logs_on_own_projects(manager_token, other_team):
+def test_manager_sees_every_log_on_own_projects_but_only_own_employees_pay(manager_token, other_team):
     r = call("work-logs", "GET", "/", token=manager_token)
-    assert [log["employee"]["id"] for log in r.json] == [3, 3]
-    assert r.json[0]["cost"] == 320.0
+    assert [log["employee"]["id"] for log in r.json] == [5, 3, 3]
+    # Owen reports to Olive, so Morgan sees his day on Customer Portal but not his pay.
+    assert "cost" not in r.json[0] and "hourly_rate" not in r.json[0]
+    assert r.json[1]["cost"] == 320.0
     # Olive manages Owen, but Customer Portal isn't her project.
     assert call("work-logs", "GET", "/", token=sign_in("omanager4")).json == []
 
@@ -131,9 +133,10 @@ def test_get_one_log(admin_token, employee_token, manager_token, other_team):
     assert r.status == 200 and r.json["work_date"] == "2026-10-01"
     assert "cost" not in call("work-logs", "GET", "/1", token=employee_token).json
     assert call("work-logs", "GET", "/1", token=manager_token).json["cost"] == 320.0
-    # Owen's log: not Emery's, and Owen isn't Morgan's employee.
+    # Owen's log: not Emery's; Morgan sees it (his project) without pay (not his employee).
     assert call("work-logs", "GET", "/3", token=employee_token).status == 404
-    assert call("work-logs", "GET", "/3", token=manager_token).status == 404
+    owen = call("work-logs", "GET", "/3", token=manager_token)
+    assert owen.status == 200 and "cost" not in owen.json
     assert call("work-logs", "GET", "/999", token=admin_token).status == 404
 
 

@@ -2,11 +2,12 @@ import { useState } from 'react'
 import { Clock3 } from 'lucide-react'
 import { Input, PageHeading, Panel, Select } from '../../components/ui'
 import { WorkLogTable } from '../../components/worklogs/WorkLogTable.jsx'
+import { uniqueBy } from '../../utils/collections.js'
 import { MANAGER_WORK_LOG_COLUMNS } from './managerConfig.js'
 
 /**
- * Read-only workdays for the manager's employees on their active projects
- * (already loaded with the workspace), filtered by date, person, project and milestone.
+ * Read-only workdays on the manager's active projects, including people who report to another
+ * manager (shown without pay), filtered by date, person, project and milestone.
  */
 export function WorkLogsPage({ logs, employees, projects, milestones }) {
   const [filters, setFilters] = useState({ from: '', to: '', employee: '', project: '', milestone: '' })
@@ -21,13 +22,16 @@ export function WorkLogsPage({ logs, employees, projects, milestones }) {
       matches(log.milestone.id, filters.milestone),
   )
   const milestoneChoices = milestones.filter((item) => matches(item.project_id, filters.project))
+  // Your employees, plus anyone else who logged time on your projects.
+  const people = uniqueBy([...employees, ...logs.map((log) => log.employee)], (person) => person.id)
+    .sort((a, b) => a.name.localeCompare(b.name))
 
   return (
     <>
       <PageHeading
         eyebrow="Review time"
         title="Work logs"
-        description="Read-only workdays for your employees on your active projects."
+        description="Read-only workdays on your active projects. Pay shows only for your own employees."
       />
       <Panel>
         <div className="toolbar toolbar-wrap">
@@ -46,7 +50,7 @@ export function WorkLogsPage({ logs, employees, projects, milestones }) {
             />
             <Select value={filters.employee} onChange={setFilter('employee')} aria-label="Employee">
               <option value="">All employees</option>
-              {employees.map((item) => (
+              {people.map((item) => (
                 <option value={item.id} key={item.id}>
                   {item.name}
                 </option>
