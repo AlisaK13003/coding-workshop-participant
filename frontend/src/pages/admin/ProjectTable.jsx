@@ -1,7 +1,10 @@
 import { ChevronRight } from 'lucide-react'
 import { BudgetUsage } from '../../components/projects/BudgetUsage.jsx'
-import { Badge, DataTable, Phase, Tooltip } from '../../components/ui'
-import { formatHours, formatMoney, formatRange } from '../../utils/format.js'
+import { MilestoneProgress } from '../../components/projects/MilestoneProgress.jsx'
+import { ProjectStatusBadge } from '../../components/projects/ProjectStatusBadge.jsx'
+import { DataTable, Phase, Tooltip } from '../../components/ui'
+import { formatDate, formatDateRange, formatHours, formatMoney } from '../../utils/format.js'
+import { getProjectPhase, needsManager } from '../../utils/projects.js'
 import { SCHEDULE_PHASE_HINT } from '../../utils/schedule.js'
 
 /** Admin project list. `compact` (dashboard) merges dates and adds the schedule phase. */
@@ -13,29 +16,27 @@ export function ProjectTable({ projects, onOpen, compact = false }) {
       render: (project) => (
         <>
           <strong>{project.name}</strong>
-          {project.needsAssignment && (
-            <small className="table-note">Needs reassignment</small>
-          )}
+          {needsManager(project) && <small className="table-note">Needs a manager</small>}
         </>
       ),
     },
-    { key: 'manager', header: 'Manager', render: (project) => project.manager },
+    { key: 'manager', header: 'Manager', render: (project) => project.manager?.name ?? 'Unassigned' },
     compact
       ? {
           key: 'dates',
           header: 'Date range',
-          render: (project) => formatRange(project.start, project.end),
+          render: (project) => formatDateRange(project.start_date, project.end_date),
         }
-      : { key: 'start', header: 'Start date', render: (project) => project.start },
+      : { key: 'start', header: 'Start date', render: (project) => formatDate(project.start_date) },
     !compact && {
       key: 'end',
       header: 'Predicted end',
-      render: (project) => project.end,
+      render: (project) => formatDate(project.end_date),
     },
     {
       key: 'status',
       header: 'Status',
-      render: (project) => <Badge tone={project.status}>{project.status}</Badge>,
+      render: (project) => <ProjectStatusBadge status={project.status} />,
     },
     compact && {
       key: 'phase',
@@ -44,18 +45,14 @@ export function ProjectTable({ projects, onOpen, compact = false }) {
           Schedule phase <Tooltip text={SCHEDULE_PHASE_HINT} />
         </>
       ),
-      render: (project) => <Phase value={project.phase} />,
+      render: (project) => <Phase value={getProjectPhase(project)} />,
     },
     {
       key: 'milestones',
       header: 'Milestones',
-      render: (project) => project.milestones,
+      render: (project) => <MilestoneProgress counts={project.milestones} />,
     },
-    {
-      key: 'hours',
-      header: 'Logged',
-      render: (project) => formatHours(project.hours),
-    },
+    { key: 'hours', header: 'Logged', render: (project) => formatHours(project.hours) },
     !compact && {
       key: 'cost',
       header: 'Labor cost',
@@ -64,9 +61,7 @@ export function ProjectTable({ projects, onOpen, compact = false }) {
     {
       key: 'budget',
       header: 'Budget',
-      render: (project) => (
-        <BudgetUsage cost={project.cost} budget={project.budget} />
-      ),
+      render: (project) => <BudgetUsage cost={project.cost} budget={project.budget} />,
     },
     { key: 'open', header: '', render: () => <ChevronRight size={17} /> },
   ].filter(Boolean)

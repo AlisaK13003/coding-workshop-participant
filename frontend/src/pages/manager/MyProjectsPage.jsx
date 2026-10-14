@@ -9,12 +9,11 @@ import {
   Select,
   ViewToggle,
 } from '../../components/ui'
+import { getProjectPhase } from '../../utils/projects.js'
+import { SCHEDULE_PHASES } from '../../utils/schedule.js'
 import { includesText } from '../../utils/text.js'
-import { getProjectPhase } from './managerSelectors.js'
 import { ManagerProjectTable } from './ManagerProjectTable.jsx'
 import { ProjectCardGrid } from './ProjectCardGrid.jsx'
-
-const ALL_PHASES = 'All phases'
 
 const VIEW_OPTIONS = [
   { value: 'table', icon: List, ariaLabel: 'Table view' },
@@ -22,18 +21,18 @@ const VIEW_OPTIONS = [
 ]
 
 /** The manager's active projects as a table or cards, with search and date filters. */
-export function MyProjectsPage({ projects, milestones, onOpenProject }) {
+export function MyProjectsPage({ projects, onOpenProject }) {
   const [search, setSearch] = useState('')
-  const [phase, setPhase] = useState(ALL_PHASES)
+  const [phase, setPhase] = useState('')
   const [startsAfter, setStartsAfter] = useState('')
   const [endsBefore, setEndsBefore] = useState('')
   const [view, setView] = useState('table')
   const visible = projects.filter(
     (project) =>
       includesText(project.name, search) &&
-      (phase === ALL_PHASES || getProjectPhase(project) === phase) &&
-      (!startsAfter || project.start >= startsAfter) &&
-      (!endsBefore || project.end <= endsBefore),
+      (!phase || getProjectPhase(project) === phase) &&
+      (!startsAfter || project.start_date >= startsAfter) &&
+      (!endsBefore || project.end_date <= endsBefore),
   )
   const openProject = (project) => onOpenProject(project.id)
 
@@ -42,24 +41,18 @@ export function MyProjectsPage({ projects, milestones, onOpenProject }) {
       <PageHeading
         eyebrow="Your portfolio"
         title="My projects"
-        description="Active projects assigned to you. Closed and archived projects are not available here."
-        actions={
-          <ViewToggle options={VIEW_OPTIONS} value={view} onChange={setView} />
-        }
+        description="Active projects assigned to you. Closed and archived projects aren’t available here."
+        actions={<ViewToggle options={VIEW_OPTIONS} value={view} onChange={setView} />}
       />
       <Panel>
         <div className="toolbar">
-          <SearchBox
-            value={search}
-            onChange={setSearch}
-            placeholder="Search your active projects"
-          />
+          <SearchBox value={search} onChange={setSearch} placeholder="Search your active projects" />
           <div className="filters">
-            <Select value={phase} onChange={setPhase}>
-              <option>{ALL_PHASES}</option>
-              <option>Green</option>
-              <option>Amber</option>
-              <option>Red</option>
+            <Select value={phase} onChange={setPhase} aria-label="Schedule phase">
+              <option value="">All phases</option>
+              {SCHEDULE_PHASES.map((value) => (
+                <option key={value}>{value}</option>
+              ))}
             </Select>
             <Input
               type="date"
@@ -78,20 +71,12 @@ export function MyProjectsPage({ projects, milestones, onOpenProject }) {
         {!visible.length ? (
           <EmptyState
             title="No active projects found"
-            body="Try clearing the search or schedule-phase filter."
+            body="Try clearing the search or filters. New projects are assigned to you by an admin."
           />
         ) : view === 'table' ? (
-          <ManagerProjectTable
-            projects={visible}
-            milestones={milestones}
-            onOpen={openProject}
-          />
+          <ManagerProjectTable projects={visible} onOpen={openProject} />
         ) : (
-          <ProjectCardGrid
-            projects={visible}
-            milestones={milestones}
-            onOpen={openProject}
-          />
+          <ProjectCardGrid projects={visible} onOpen={openProject} />
         )}
       </Panel>
     </>

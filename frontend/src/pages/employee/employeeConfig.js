@@ -21,12 +21,4 @@ export const EMPLOYEE_SIDEBAR_FOOTER = {
   subtitle: 'Your active assignments',
 }
 
-export const EMPLOYEE_USER = { name: 'Aisha Patel', subtitle: 'Product Designer' }
-
-export const EMPLOYEE_PROFILE_SUMMARY = 'Reports to Maya Chen'
-
-// Dialogs the employee workspace can open (keys for useModal).
-export const EMPLOYEE_DIALOGS = {
-  logWork: 'logWork',
-  requestReview: 'requestReview',
-}
+export const EMPLOYEE_WORK_LOG_COLUMNS = ['date', 'project', 'milestone', 'hours']

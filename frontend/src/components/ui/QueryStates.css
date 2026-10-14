@@ -1,0 +1,6 @@
+.query-state { min-height: 180px; display: grid; place-items: center; align-content: center; gap: 8px; padding: 30px; color: var(--muted); font-size: 11px; text-align: center; }
+.query-state strong { color: var(--ink); font-size: 14px; }
+.query-error > svg { color: var(--red); }
+.query-spinner { color: var(--teal); animation: query-spin 0.9s linear infinite; }
+
+@keyframes query-spin { to { transform: rotate(360deg); } }

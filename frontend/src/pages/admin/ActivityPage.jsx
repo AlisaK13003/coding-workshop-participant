@@ -1,61 +1,106 @@
 import { useState } from 'react'
 import { ActivityList } from '../../components/activity/ActivityList.jsx'
 import {
-  Input,
+  Button,
   PageHeading,
   Panel,
+  QueryContent,
   SearchBox,
   Select,
 } from '../../components/ui'
-import { activities } from '../../data/adminData.js'
+import { useApiQuery } from '../../hooks/useApiQuery.js'
+import { listActivity } from '../../services/activityApi.js'
+import { listUsers } from '../../services/usersApi.js'
+import { ACTION_TYPES, toActivityItem } from '../../utils/activity.js'
 import { includesText } from '../../utils/text.js'
+import { ROLES, roleLabel } from '../../utils/users.js'
 
-/** Searchable audit trail of admin and manager changes. */
+const PAGE_SIZE = 50
+
+/** Searchable, paged audit trail of every change, filtered by the API. */
 export function ActivityPage() {
   const [search, setSearch] = useState('')
-  const visible = activities.filter((item) =>
-    includesText(
-      `${item.actor} ${item.action} ${item.record} ${item.summary}`,
-      search,
-    ),
+  const [filters, setFilters] = useState({ actor_id: '', role: '', action: '' })
+  const [offset, setOffset] = useState(0)
+  const activity = useApiQuery(
+    () => listActivity({ ...filters, limit: PAGE_SIZE, offset }),
+    [filters, offset],
   )
+  const actors = useApiQuery(() => listUsers({ include_archived: 'true' }), [])
+  const setFilter = (name) => (value) => {
+    setFilters((current) => ({ ...current, [name]: value }))
+    setOffset(0)
+  }
 
   return (
     <>
       <PageHeading
         eyebrow="Audit trail"
         title="Activity log"
-        description="A searchable record of administrative and manager changes."
+        description="A searchable record of every change to projects, milestones, people and work logs."
       />
       <Panel>
         <div className="toolbar toolbar-wrap">
-          <SearchBox
-            value={search}
-            onChange={setSearch}
-            placeholder="Search actions and records"
-          />
+          <SearchBox value={search} onChange={setSearch} placeholder="Search this page" />
           <div className="filters">
-            <Input type="date" aria-label="From date" />
-            <Input type="date" aria-label="To date" />
-            <Select>
-              <option>All actors</option>
-              <option>Elena Vasquez</option>
-              <option>Maya Chen</option>
+            <Select value={filters.actor_id} onChange={setFilter('actor_id')} aria-label="Actor">
+              <option value="">All actors</option>
+              {(actors.data ?? []).map((user) => (
+                <option key={user.id} value={user.id}>
+                  {user.name}
+                </option>
+              ))}
             </Select>
-            <Select>
-              <option>All roles</option>
-              <option>Admin</option>
-              <option>Manager</option>
+            <Select value={filters.role} onChange={setFilter('role')} aria-label="Role">
+              <option value="">All roles</option>
+              {ROLES.map((role) => (
+                <option key={role} value={role}>
+                  {roleLabel(role)}
+                </option>
+              ))}
             </Select>
-            <Select>
-              <option>All action types</option>
-              <option>Assignments</option>
-              <option>Project changes</option>
-              <option>Work log corrections</option>
+            <Select value={filters.action} onChange={setFilter('action')} aria-label="Action type">
+              <option value="">All action types</option>
+              {ACTION_TYPES.map((type) => (
+                <option key={type.value} value={type.value}>
+                  {type.label}
+                </option>
+              ))}
             </Select>
           </div>
         </div>
-        <ActivityList items={visible} />
+        <QueryContent query={activity} loadingLabel="Loading activity…">
+          {(page) => (
+            <>
+              <ActivityList
+                items={page.items
+                  .map(toActivityItem)
+                  .filter((item) =>
+                    includesText(`${item.actor} ${item.action} ${item.record} ${item.summary}`, search),
+                  )}
+              />
+              <div className="pager">
+                <span>
+                  {page.total ? `${page.offset + 1}–${page.offset + page.items.length} of ${page.total}` : 'No entries'}
+                </span>
+                <Button
+                  variant="secondary"
+                  disabled={page.offset === 0}
+                  onClick={() => setOffset(Math.max(page.offset - PAGE_SIZE, 0))}
+                >
+                  Newer
+                </Button>
+                <Button
+                  variant="secondary"
+                  disabled={page.offset + page.items.length >= page.total}
+                  onClick={() => setOffset(page.offset + PAGE_SIZE)}
+                >
+                  Older
+                </Button>
+              </div>
+            </>
+          )}
+        </QueryContent>
       </Panel>
     </>
   )

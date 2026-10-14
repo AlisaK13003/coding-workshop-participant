@@ -1,6 +1,5 @@
 import { Avatar, Badge, Panel } from '../../../components/ui'
-import { signedInEmployee, teammates } from '../../../data/employeeData.js'
-import { findById } from '../../../utils/collections.js'
+import { useCurrentUser } from '../../../hooks/useSession.js'
 import { cx } from '../../../utils/cx.js'
 import './TeamTab.css'
 
@@ -17,26 +16,26 @@ function TeamPerson({ name, title, badge, isManager = false }) {
   )
 }
 
-/** The project manager and everyone assigned to the project. */
-export function TeamTab({ project }) {
-  const members = project.employeeIds
-    .map((id) => findById(teammates, id))
-    .filter(Boolean)
+/** The project manager and every current member. members from the project's members list. */
+export function TeamTab({ project, members }) {
+  const user = useCurrentUser()
   return (
-    <Panel title="Project team" description="People assigned to this active project.">
+    <Panel title="Project team" description="People currently on this project.">
       <div className="team-grid">
-        <TeamPerson
-          name={project.manager}
-          title="Engineering Manager"
-          badge={<Badge tone="Manager">Project manager</Badge>}
-          isManager
-        />
-        {members.map((person) => (
+        {project.manager && (
           <TeamPerson
-            key={person.id}
-            name={person.name}
-            title={person.title}
-            badge={person.id === signedInEmployee.id && <Badge>You</Badge>}
+            name={project.manager.name}
+            title="Manages this project"
+            badge={<Badge tone="Manager">Project manager</Badge>}
+            isManager
+          />
+        )}
+        {members.map((member) => (
+          <TeamPerson
+            key={member.id}
+            name={member.user.name}
+            title={`${member.user.job_title} · ${member.milestone?.name ?? 'No milestone'}`}
+            badge={member.user.id === user.id && <Badge>You</Badge>}
           />
         ))}
       </div>

@@ -1,12 +1,14 @@
-import { CheckCircle2, X } from 'lucide-react'
+import { CheckCircle2, CircleAlert, X } from 'lucide-react'
+import { cx } from '../../utils/cx.js'
 import './Toast.css'
 
-/** Bottom-right confirmation message. Renders nothing when message is empty. Pair with useToast. */
-export function Toast({ message, onDismiss }) {
+/** Bottom-right message. tone: 'success' | 'error'. Renders nothing when message is empty. Shown by ToastProvider. */
+export function Toast({ message, tone = 'success', onDismiss }) {
   if (!message) return null
+  const Icon = tone === 'error' ? CircleAlert : CheckCircle2
   return (
-    <div className="toast" role="status">
-      <CheckCircle2 size={18} />
+    <div className={cx('toast', tone === 'error' && 'toast-error')} role={tone === 'error' ? 'alert' : 'status'}>
+      <Icon size={18} />
       {message}
       <button onClick={onDismiss} aria-label="Dismiss">
         <X size={16} />

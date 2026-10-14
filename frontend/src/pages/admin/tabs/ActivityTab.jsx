@@ -1,23 +1,22 @@
 import { ActivityList } from '../../../components/activity/ActivityList.jsx'
-import { Panel } from '../../../components/ui'
-import { activities } from '../../../data/adminData.js'
+import { Panel, QueryContent } from '../../../components/ui'
+import { useApiQuery } from '../../../hooks/useApiQuery.js'
+import { listActivity } from '../../../services/activityApi.js'
+import { toActivityItem } from '../../../utils/activity.js'
 
-// Prototype sample filter for "this project's" activity.
-const projectActivities = activities.filter(
-  (item) =>
-    item.record.includes('Customer') ||
-    item.record.includes('Design') ||
-    item.action.includes('budget'),
-)
+const LIMIT = 50
 
-/** Assignment, milestone, budget and status changes for the project. */
-export function ActivityTab() {
+/** The latest assignment, milestone, budget and status changes on the project. */
+export function ActivityTab({ project }) {
+  const activity = useApiQuery(() => listActivity({ project_id: project.id, limit: LIMIT }), [project.id])
   return (
     <Panel
       title="Project activity"
-      description="Assignment, milestone, budget, and status changes."
+      description={`The latest ${LIMIT} assignment, milestone, budget and status changes.`}
     >
-      <ActivityList items={projectActivities} />
+      <QueryContent query={activity} loadingLabel="Loading activity…">
+        {(page) => <ActivityList items={page.items.map(toActivityItem)} />}
+      </QueryContent>
     </Panel>
   )
 }

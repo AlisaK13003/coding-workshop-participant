@@ -1,7 +1,8 @@
 import { formatCents, formatMoney } from '../../utils/format.js'
-import { DataTable } from '../ui'
+import { toWorkLogRow } from '../../utils/workLogs.js'
+import { DataTable, EmptyState } from '../ui'
 
-// Reusable columns. Each expects display-ready log fields (names, formatted dates).
+// Reusable columns. Each reads a display row made by toWorkLogRow.
 const PRESET_COLUMNS = {
   date: {
     header: 'Work date',
@@ -19,7 +20,6 @@ const PRESET_COLUMNS = {
   rate: { header: 'Historical rate', render: (log) => `${formatCents(log.rate)}/h` },
   cost: { header: 'Recorded cost', render: (log) => formatCents(log.cost) },
   laborCost: { header: 'Recorded labor cost', render: (log) => formatMoney(log.cost) },
-  corrected: { header: 'Last correction', render: (log) => log.corrected },
   submitted: { header: 'Submitted', render: (log) => log.submittedAt },
 }
 
@@ -32,18 +32,20 @@ function resolveColumn(column) {
 /**
  * Work log table shared by every role.
  *
- * logs: display-ready rows, e.g. { id, date: 'Jun 13, 2025', note?, employee,
- *   project, milestone, hours, rate, cost, corrected, submittedAt }.
+ * logs: work logs from the API.
  * columns: preset names ('date', 'employee', 'project', 'milestone', 'hours',
- *   'rate', 'cost', 'laborCost', 'corrected', 'submitted') and/or custom
- *   column objects { key, header, render } (e.g. a trailing action button).
+ *   'rate', 'cost', 'laborCost', 'submitted') and/or custom column objects
+ *   { key, header, render(row) } (e.g. a trailing action button).
  */
-export function WorkLogTable({ logs, columns, getRowKey = (log) => log.id }) {
+export function WorkLogTable({ logs, columns, emptyBody = 'No work logs match these filters.' }) {
+  if (!logs.length) {
+    return <EmptyState title="No work logs" body={emptyBody} />
+  }
   return (
     <DataTable
       columns={columns.map(resolveColumn)}
-      rows={logs}
-      getRowKey={getRowKey}
+      rows={logs.map(toWorkLogRow)}
+      getRowKey={(log) => log.id}
     />
   )
 }

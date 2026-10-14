@@ -4,98 +4,67 @@ import {
   CheckCircle2,
   FolderKanban,
 } from 'lucide-react'
-import { DeadlineList } from '../../components/projects/DeadlineList.jsx'
-import { Badge, PageHeading, Panel, Phase, StatCard } from '../../components/ui'
-import { toDateTile } from '../../utils/format.js'
-import { MILESTONE_STATUS } from '../../utils/milestones.js'
-import { isOverBudget } from '../../utils/schedule.js'
+import { UpcomingDeadlines } from '../../components/projects/UpcomingDeadlines.jsx'
+import { Badge, EmptyState, PageHeading, Panel, StatCard } from '../../components/ui'
+import { useCurrentUser } from '../../hooks/useSession.js'
+import { greeting } from '../../utils/format.js'
+import { getPendingReviews } from '../../utils/milestones.js'
+import { isEndingSoon, isProjectOverBudget } from '../../utils/projects.js'
 import { AttentionList } from './AttentionList.jsx'
-import { getAssignmentAttention, getProjectPhase } from './managerSelectors.js'
+import { getAssignmentAttention } from './managerSelectors.js'
 import { ManagerProjectTable } from './ManagerProjectTable.jsx'
 import { ReviewQueue } from './ReviewQueue.jsx'
 
-function getDeadlineItems(projects) {
-  return [...projects]
-    .sort((a, b) => a.end.localeCompare(b.end))
-    .slice(0, 4)
-    .map((project) => ({
-      key: project.id,
-      ...toDateTile(project.end),
-      title: project.name,
-      detail: 'Predicted project end',
-      status: <Phase value={getProjectPhase(project)} />,
-    }))
-}
-
 /** Manager overview: reviews, active projects, assignment attention and deadlines. */
-export function DashboardPage({
-  projects,
-  milestones,
-  employees,
-  onOpenProject,
-  onReview,
-}) {
-  const reviewCount = milestones.filter(
-    (milestone) => milestone.status === MILESTONE_STATUS.review,
-  ).length
-  const overBudgetCount = projects.filter((project) =>
-    isOverBudget(project.cost, project.budget),
-  ).length
-  const assignmentCount = projects.reduce(
-    (sum, project) => sum + project.employeeIds.length,
-    0,
-  )
-  const attention = getAssignmentAttention(employees, projects, milestones)
+export function DashboardPage({ projects, milestones, members, onOpenProject, onReview }) {
+  const user = useCurrentUser()
+  const reviews = getPendingReviews(milestones)
+  const attention = getAssignmentAttention(members)
 
   return (
     <>
       <PageHeading
         eyebrow="Manager overview"
-        title="Good morning, Maya"
+        title={`${greeting()}, ${user.first_name}`}
         description="Reviews, deadlines, assignments, and portfolio health for your active projects."
       />
       <div className="stats-grid">
         <StatCard
           label="Active projects"
-          value={`${projects.length}`}
-          note={`${assignmentCount} active assignments`}
+          value={projects.length}
+          note={`${members.length} active assignments`}
           icon={FolderKanban}
           accent
         />
         <StatCard
           label="Pending reviews"
-          value={`${reviewCount}`}
+          value={reviews.length}
           note="Milestone completion requests"
           icon={CheckCircle2}
         />
         <StatCard
           label="Approaching end date"
-          value="2"
+          value={projects.filter((project) => isEndingSoon(project)).length}
           note="Within the next 60 days"
           icon={CalendarDays}
         />
         <StatCard
           label="Projects over budget"
-          value={`${overBudgetCount}`}
+          value={projects.filter(isProjectOverBudget).length}
           note="Budget and schedule are tracked separately"
           icon={AlertTriangle}
         />
       </div>
-      <ReviewQueue
-        milestones={milestones}
-        projects={projects}
-        onReview={onReview}
-      />
+      <ReviewQueue reviews={reviews} projects={projects} onReview={onReview} />
       <Panel
         title="Active projects"
         description="Schedule phase, milestone completion, logged hours, and budget usage are separate measures."
       >
-        <ManagerProjectTable
-          projects={projects}
-          milestones={milestones}
-          onOpen={(project) => onOpenProject(project.id)}
-          compact
-        />
+        {projects.length ? (
+          <ManagerProjectTable projects={projects} onOpen={(project) => onOpenProject(project.id)} compact />
+        ) : (
+          <EmptyState title="No active projects" body="Projects an admin assigns to you appear here." />
+        )}
       </Panel>
       <div className="dashboard-lower">
         <Panel
@@ -103,17 +72,14 @@ export function DashboardPage({
           description="Employees waiting or without a milestone."
           actions={<Badge tone="Amber">{attention.length} need attention</Badge>}
         >
-          <AttentionList
-            items={attention}
-            projects={projects}
-            onOpenProject={onOpenProject}
-          />
+          {attention.length ? (
+            <AttentionList items={attention} projects={projects} onOpenProject={onOpenProject} />
+          ) : (
+            <EmptyState title="Everyone can work" body="Every employee has an available milestone." />
+          )}
         </Panel>
-        <Panel
-          title="Upcoming deadlines"
-          description="Project and milestone target dates."
-        >
-          <DeadlineList items={getDeadlineItems(projects)} />
+        <Panel title="Upcoming deadlines" description="Project and milestone end dates in the next 60 days.">
+          <UpcomingDeadlines projects={projects} milestones={milestones} />
         </Panel>
       </div>
     </>

@@ -2,7 +2,7 @@
 
 /** Case-insensitive "does text contain query". An empty query matches everything. */
 export function includesText(text, query) {
-  return text.toLowerCase().includes(query.toLowerCase())
+  return (text ?? '').toLowerCase().includes(query.toLowerCase())
 }
 
 /** pluralize(1, 'milestone') → "milestone", pluralize(3, 'milestone') → "milestones". */

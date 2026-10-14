@@ -1,12 +1,15 @@
-import { Avatar } from '../ui'
+import { Avatar, EmptyState } from '../ui'
 import './ActivityList.css'
 
-/** Audit trail entries. items: [{ time, actor, role, action, record, summary }]. */
+/** Audit trail entries. items: [{ id, time, actor, role, action, record, summary }] (see utils/activity.js). */
 export function ActivityList({ items }) {
+  if (!items.length) {
+    return <EmptyState title="No activity found" body="Changes made in the workspace appear here." />
+  }
   return (
     <div className="activity-list">
-      {items.map((item, index) => (
-        <div key={`${item.time}-${index}`}>
+      {items.map((item) => (
+        <div key={item.id}>
           <span className="activity-avatar">
             <Avatar name={item.actor} size="sm" />
           </span>

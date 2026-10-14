@@ -3,21 +3,31 @@ import './AssignmentList.css'
 
 /**
  * A person's project assignments.
- * items: [{ key, title, detail, trailing }]; trailing is any node (chevron, Badge…).
+ * items: [{ key, title, detail, trailing, onClick? }]; trailing is any node (chevron, Badge…).
+ * Items with onClick are buttons.
  */
 export function AssignmentList({ items }) {
   return (
     <div className="assignment-list">
-      {items.map((item) => (
-        <div key={item.key}>
-          <FolderKanban size={18} />
-          <p>
-            <strong>{item.title}</strong>
-            <span>{item.detail}</span>
-          </p>
-          {item.trailing}
-        </div>
-      ))}
+      {items.map((item) => {
+        const content = (
+          <>
+            <FolderKanban size={18} />
+            <p>
+              <strong>{item.title}</strong>
+              <span>{item.detail}</span>
+            </p>
+            {item.trailing}
+          </>
+        )
+        return item.onClick ? (
+          <button key={item.key} onClick={item.onClick}>
+            {content}
+          </button>
+        ) : (
+          <div key={item.key}>{content}</div>
+        )
+      })}
     </div>
   )
 }

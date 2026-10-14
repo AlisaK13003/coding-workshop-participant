@@ -1,6 +1,11 @@
 import { useState } from 'react'
-import { ProjectSummaryCards } from '../../components/projects/ProjectSummaryCards.jsx'
+import { Plus } from 'lucide-react'
+import { ProjectMilestonesTab } from '../../components/milestones/ProjectMilestonesTab.jsx'
 import { CompletionNote } from '../../components/projects/CompletionNote.jsx'
+import { ProjectOverviewTab } from '../../components/projects/ProjectOverviewTab.jsx'
+import { ProjectPeopleTab } from '../../components/projects/ProjectPeopleTab.jsx'
+import { ProjectStatusBadge } from '../../components/projects/ProjectStatusBadge.jsx'
+import { ProjectSummaryCards } from '../../components/projects/ProjectSummaryCards.jsx'
 import {
   ActionMenu,
   BackLink,
@@ -8,31 +13,32 @@ import {
   Button,
   DetailHero,
   Phase,
+  QueryContent,
   Tabs,
   Tooltip,
 } from '../../components/ui'
-import { countCompleted } from '../../utils/milestones.js'
-import { ADMIN_DIALOGS } from './adminConfig.js'
+import { DIALOGS } from '../../components/workspace/dialogKinds.js'
+import { ProjectWorkLogsTab } from '../../components/worklogs/ProjectWorkLogsTab.jsx'
+import { useApiQuery } from '../../hooks/useApiQuery.js'
+import { listMilestones } from '../../services/milestonesApi.js'
+import { formatDateRange } from '../../utils/format.js'
+import { canCompleteProject, getProjectPhase, isOpenProject } from '../../utils/projects.js'
+import { getAdminWorkLogColumns } from './adminWorkLogColumns.jsx'
 import { ActivityTab } from './tabs/ActivityTab.jsx'
-import { MilestonesTab } from './tabs/MilestonesTab.jsx'
-import { OverviewTab } from './tabs/OverviewTab.jsx'
-import { PeopleTab } from './tabs/PeopleTab.jsx'
-import { WorkLogsTab } from './tabs/WorkLogsTab.jsx'
 
 const TABS = ['Overview', 'Milestones', 'People', 'Work Logs', 'Activity']
 
-/** One project: header, completion note, summary cards and tabbed details. */
-export function ProjectDetailPage({
-  project,
-  milestones,
-  workLogs,
-  onBack,
-  onOpenDialog,
-}) {
+/**
+ * One project: header, completion note, summary cards and tabbed details.
+ * Changes need an open project, so closed and archived ones only offer archiving.
+ */
+export function ProjectDetailPage({ project, onBack, onOpenDialog }) {
   const [tab, setTab] = useState(TABS[0])
-  const completed = countCompleted(milestones)
-  const remaining = milestones.length - completed
-  const canComplete = remaining === 0
+  const milestones = useApiQuery(() => listMilestones(project.id), [project.id])
+  const open = isOpenProject(project)
+  const canComplete = canCompleteProject(project)
+  const remaining = project.milestones.total - project.milestones.completed
+  const openDialog = (kind) => () => onOpenDialog(kind, { project })
 
   return (
     <>
@@ -40,60 +46,86 @@ export function ProjectDetailPage({
       <DetailHero
         badges={
           <>
-            <Badge tone={project.status}>{project.status}</Badge>
-            {project.archived && <Badge>Archived</Badge>}
+            <ProjectStatusBadge status={project.status} />
+            {project.archived_at && <Badge>Archived</Badge>}
             <span>
-              <Phase value={project.phase} />{' '}
+              <Phase value={getProjectPhase(project)} />{' '}
               <Tooltip text="Schedule phase reflects elapsed scheduled time, not performance or budget." />
             </span>
           </>
         }
         title={project.name}
-        subtitle={`${project.manager} · ${project.start} – ${project.end}`}
+        subtitle={`${project.manager?.name ?? 'No manager'} · ${formatDateRange(project.start_date, project.end_date)}`}
         actions={
           <>
-            <Button variant="secondary">Edit project</Button>
+            {open && (
+              <Button variant="secondary" onClick={openDialog(DIALOGS.editProject)}>
+                Edit project
+              </Button>
+            )}
             <ActionMenu
               items={[
-                {
+                open && {
                   label: 'Mark completed',
                   disabled: !canComplete,
-                  title: canComplete
-                    ? undefined
-                    : 'All milestones must be complete first',
+                  title: canComplete ? undefined : 'All milestones must be complete first',
+                  onClick: openDialog(DIALOGS.completeProject),
                 },
-                { label: 'Mark abandoned' },
-                {
-                  label: 'Archive project',
-                  onClick: () => onOpenDialog(ADMIN_DIALOGS.archiveProject),
-                },
+                open && { label: 'Mark abandoned', onClick: openDialog(DIALOGS.abandonProject) },
+                project.archived_at
+                  ? { label: 'Unarchive project', onClick: openDialog(DIALOGS.unarchiveProject) }
+                  : { label: 'Archive project', onClick: openDialog(DIALOGS.archiveProject) },
               ]}
             />
           </>
         }
       />
-      {!canComplete && <CompletionNote remaining={remaining} />}
-      <ProjectSummaryCards
-        project={project}
-        completed={completed}
-        total={milestones.length}
-      />
+      {open && !canComplete && <CompletionNote remaining={remaining} />}
+      <ProjectSummaryCards project={project} />
       <Tabs tabs={TABS} active={tab} onChange={setTab} />
-      {tab === 'Overview' && (
-        <OverviewTab project={project} milestones={milestones} />
-      )}
-      {tab === 'Milestones' && (
-        <MilestonesTab milestones={milestones} onOpenDialog={onOpenDialog} />
-      )}
-      {tab === 'People' && <PeopleTab />}
+      <QueryContent query={milestones} loadingLabel="Loading milestones…">
+        {(items) => (
+          <>
+            {tab === 'Overview' && (
+              <ProjectOverviewTab
+                project={project}
+                milestones={items}
+                onEdit={open ? openDialog(DIALOGS.editProject) : undefined}
+              />
+            )}
+            {tab === 'Milestones' && (
+              <ProjectMilestonesTab
+                project={project}
+                milestones={items}
+                canManage={open}
+                onOpenDialog={onOpenDialog}
+              />
+            )}
+            {tab === 'People' && (
+              <ProjectPeopleTab
+                project={project}
+                milestones={items}
+                canManage={open}
+                onOpenDialog={onOpenDialog}
+              />
+            )}
+          </>
+        )}
+      </QueryContent>
       {tab === 'Work Logs' && (
-        <WorkLogsTab
+        <ProjectWorkLogsTab
           project={project}
-          workLogs={workLogs}
-          onOpenDialog={onOpenDialog}
+          columns={getAdminWorkLogColumns(onOpenDialog, { withProject: false })}
+          description="Historical pay rate and cost are kept on each entry."
+          actions={
+            <Button onClick={openDialog(DIALOGS.addWorkLog)}>
+              <Plus size={16} />
+              Add historical entry
+            </Button>
+          }
         />
       )}
-      {tab === 'Activity' && <ActivityTab />}
+      {tab === 'Activity' && <ActivityTab project={project} />}
     </>
   )
 }

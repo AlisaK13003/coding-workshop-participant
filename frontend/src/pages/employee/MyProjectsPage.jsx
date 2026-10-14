@@ -6,20 +6,16 @@ import {
   SearchBox,
   Select,
 } from '../../components/ui'
+import { ASSIGNMENT_STATE } from '../../utils/milestones.js'
 import { includesText } from '../../utils/text.js'
-import { ASSIGNMENT_STATE, getAssignmentState } from './employeeSelectors.js'
 import { ProjectList } from './ProjectList.jsx'
 
-const ALL_STATES = 'All assignment states'
-
 /** The employee's active projects, searchable and filterable by assignment state. */
-export function MyProjectsPage({ projects, milestones, logs, onOpenProject }) {
+export function MyProjectsPage({ assignments, logs, onOpenProject }) {
   const [search, setSearch] = useState('')
-  const [state, setState] = useState(ALL_STATES)
-  const visible = projects.filter(
-    (project) =>
-      includesText(project.name, search) &&
-      (state === ALL_STATES || getAssignmentState(milestones, project.id) === state),
+  const [state, setState] = useState('')
+  const visible = assignments.filter(
+    (item) => includesText(item.project.name, search) && (!state || item.state === state),
   )
 
   return (
@@ -31,30 +27,18 @@ export function MyProjectsPage({ projects, milestones, logs, onOpenProject }) {
       />
       <Panel>
         <div className="toolbar">
-          <SearchBox
-            value={search}
-            onChange={setSearch}
-            placeholder="Search projects"
-          />
-          <Select value={state} onChange={setState}>
-            <option>{ALL_STATES}</option>
+          <SearchBox value={search} onChange={setSearch} placeholder="Search projects" />
+          <Select value={state} onChange={setState} aria-label="Assignment state">
+            <option value="">All assignment states</option>
             {Object.values(ASSIGNMENT_STATE).map((value) => (
               <option key={value}>{value}</option>
             ))}
           </Select>
         </div>
         {visible.length ? (
-          <ProjectList
-            projects={visible}
-            milestones={milestones}
-            logs={logs}
-            onOpen={onOpenProject}
-          />
+          <ProjectList assignments={visible} logs={logs} onOpen={onOpenProject} />
         ) : (
-          <EmptyState
-            title="No projects found"
-            body="Try clearing the search or assignment-state filter."
-          />
+          <EmptyState title="No projects found" body="Try clearing the search or assignment-state filter." />
         )}
       </Panel>
     </>

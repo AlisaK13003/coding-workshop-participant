@@ -1,46 +1,35 @@
 import { ChevronRight } from 'lucide-react'
 import { MilestoneProgress } from '../../components/projects/MilestoneProgress.jsx'
 import { Phase, Progress } from '../../components/ui'
-import {
-  formatDateRange,
-  formatHours,
-  formatMoney,
-} from '../../utils/format.js'
-import { getProjectMilestones } from '../../utils/milestones.js'
+import { formatDateRange, formatHours, formatMoney } from '../../utils/format.js'
+import { getProjectPhase } from '../../utils/projects.js'
 import { getBudgetUsage } from '../../utils/schedule.js'
-import { getProjectPhase } from './managerSelectors.js'
 import './ProjectCardGrid.css'
 
 /** Card view of the manager's projects. */
-export function ProjectCardGrid({ projects, milestones, onOpen }) {
+export function ProjectCardGrid({ projects, onOpen }) {
   return (
     <div className="project-card-grid">
       {projects.map((project) => {
         const budget = getBudgetUsage(project.cost, project.budget)
         return (
-          <button
-            className="project-card"
-            key={project.id}
-            onClick={() => onOpen(project)}
-          >
+          <button className="project-card" key={project.id} onClick={() => onOpen(project)}>
             <div>
               <Phase value={getProjectPhase(project)} />
               <ChevronRight size={17} />
             </div>
             <strong>{project.name}</strong>
-            <span>{formatDateRange(project.start, project.end)}</span>
+            <span>{formatDateRange(project.start_date, project.end_date)}</span>
             <dl>
               <div>
                 <dt>Milestones</dt>
                 <dd>
-                  <MilestoneProgress
-                    milestones={getProjectMilestones(milestones, project.id)}
-                  />
+                  <MilestoneProgress counts={project.milestones} />
                 </dd>
               </div>
               <div>
                 <dt>Employees</dt>
-                <dd>{project.employeeIds.length}</dd>
+                <dd>{project.member_count}</dd>
               </div>
               <div>
                 <dt>Logged</dt>

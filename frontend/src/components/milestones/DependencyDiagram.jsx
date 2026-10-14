@@ -4,8 +4,9 @@ import { cx } from '../../utils/cx.js'
 import {
   MILESTONE_STATUS,
   getDependencyColumns,
-  getMilestoneState,
+  milestoneStatusLabel,
 } from '../../utils/milestones.js'
+import { EmptyState } from '../ui'
 import './DependencyDiagram.css'
 
 const NODE_CLASS = {
@@ -23,7 +24,7 @@ const NODE_ICON = {
  * Left-to-right milestone dependency map. Milestones are placed in columns by
  * dependency depth; parallel milestones stack in the same column.
  *
- * milestones: [{ id, name, prerequisiteIds, status }] for one project.
+ * milestones: one project's milestones from the API.
  * highlightId (optional): outlines one node and prefixes its state with highlightLabel.
  */
 export function DependencyDiagram({
@@ -32,12 +33,14 @@ export function DependencyDiagram({
   highlightLabel = 'Your milestone',
   className,
 }) {
+  if (!milestones.length) {
+    return <EmptyState title="No milestones yet" body="Milestones added to this project appear here." />
+  }
   const columns = getDependencyColumns(milestones)
   const renderNode = (milestone) => (
     <DiagramNode
       key={milestone.id}
       milestone={milestone}
-      state={getMilestoneState(milestone, milestones)}
       highlightLabel={milestone.id === highlightId ? highlightLabel : null}
     />
   )
@@ -58,18 +61,18 @@ export function DependencyDiagram({
   )
 }
 
-function DiagramNode({ milestone, state, highlightLabel }) {
-  const Icon = NODE_ICON[state] || CircleAlert
+function DiagramNode({ milestone, highlightLabel }) {
+  const Icon = NODE_ICON[milestone.status] || CircleAlert
   return (
     <div
-      className={cx('dependency-node', NODE_CLASS[state], highlightLabel && 'my-node')}
+      className={cx('dependency-node', NODE_CLASS[milestone.status], highlightLabel && 'my-node')}
     >
       <Icon size={15} />
       <span>
         {milestone.name}
         <small>
           {highlightLabel && `${highlightLabel} · `}
-          {state}
+          {milestoneStatusLabel(milestone.status)}
         </small>
       </span>
     </div>

@@ -4,7 +4,6 @@
 .employee-profile-head h2 { margin: 0 0 4px; font-size: 17px; font-weight: 600; }
 .employee-profile-head p { margin: 0; color: var(--muted); font-size: 10px; }
 .password-panel form { display: grid; gap: 16px; padding: 22px; }
-.password-error { display: flex; align-items: center; gap: 7px; padding: 10px; border-radius: 8px; background: var(--red-soft); color: var(--red); font-size: 10px; }
 
 @media (max-width: 820px) {
   .profile-layout { grid-template-columns: 1fr; }

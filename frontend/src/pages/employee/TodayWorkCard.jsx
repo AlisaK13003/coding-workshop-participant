@@ -5,28 +5,16 @@ import {
   CircleAlert,
   Clock3,
 } from 'lucide-react'
-import { Badge, Button, EmptyState, Field, Select } from '../../components/ui'
-import { TODAY_KEY, referenceToday } from '../../data/employeeData.js'
-import { findById } from '../../utils/collections.js'
+import { MilestoneStatusBadge } from '../../components/milestones/MilestoneStatusBadge.jsx'
+import { Button, EmptyState, Field, Select } from '../../components/ui'
+import { isWeekday } from '../../utils/calendar.js'
 import { formatDate } from '../../utils/format.js'
+import { ASSIGNMENT_STATE } from '../../utils/milestones.js'
 import { pluralize } from '../../utils/text.js'
-import {
-  ASSIGNMENT_STATE,
-  getAssignmentState,
-  getCurrentMilestone,
-  getLoggableProjects,
-  getProjectsInState,
-} from './employeeSelectors.js'
+import { findTodaysLog, getLoggableAssignments } from './employeeSelectors.js'
 import './TodayWorkCard.css'
 
-const TODAY_LABEL = referenceToday.toLocaleDateString('en-US', {
-  weekday: 'long',
-  month: 'long',
-  day: 'numeric',
-})
-const IS_WEEKEND = referenceToday.getDay() === 0 || referenceToday.getDay() === 6
-
-function LoggedToday({ entry, projects, milestones }) {
+function LoggedToday({ log }) {
   return (
     <div className="today-success">
       <span>
@@ -35,10 +23,9 @@ function LoggedToday({ entry, projects, milestones }) {
       <div>
         <strong>Today’s work is logged</strong>
         <p>
-          {findById(projects, entry.projectId)?.name} <ChevronRight size={13} />{' '}
-          {findById(milestones, entry.milestoneId)?.name}
+          {log.project.name} <ChevronRight size={13} /> {log.milestone.name}
         </p>
-        <small>{formatDate(entry.date)} · 8 hours</small>
+        <small>{formatDate(log.work_date)} · {log.hours} hours</small>
       </div>
     </div>
   )
@@ -56,80 +43,58 @@ function Unavailable({ icon: Icon, title, children }) {
   )
 }
 
-function getIneligibleReason(projects, milestones) {
-  const blocked = getProjectsInState(projects, milestones, ASSIGNMENT_STATE.waiting).length
-  const unassigned = getProjectsInState(projects, milestones, ASSIGNMENT_STATE.none).length
+/** Why none of the assignments can take work today, e.g. "1 assignment is waiting for prerequisites." */
+function getIneligibleReason(assignments) {
+  const count = (state) => assignments.filter((item) => item.state === state).length
+  const waiting = count(ASSIGNMENT_STATE.waiting)
+  const review = count(ASSIGNMENT_STATE.review)
+  const none = count(ASSIGNMENT_STATE.none)
   return [
-    blocked > 0 &&
-      `${blocked} ${pluralize(blocked, 'assignment is', 'assignments are')} waiting for prerequisites. `,
-    unassigned > 0 &&
-      `${unassigned} ${pluralize(unassigned, 'project needs', 'projects need')} a milestone assignment from your manager.`,
+    waiting > 0 && `${waiting} ${pluralize(waiting, 'assignment is', 'assignments are')} waiting for prerequisites.`,
+    review > 0 && `${review} ${pluralize(review, 'milestone is', 'milestones are')} awaiting your manager’s review.`,
+    none > 0 && `${none} ${pluralize(none, 'project needs', 'projects need')} a milestone assignment from your manager.`,
   ]
     .filter(Boolean)
-    .join('')
+    .join(' ')
 }
 
 /**
  * Today's logging card: shows today's entry, why logging is unavailable, or a
  * project picker with its milestone and the "Log today's work" button.
  */
-export function TodayWorkCard({
-  projects,
-  milestones,
-  logs,
-  selectedProjectId,
-  onSelectProject,
-  onLog,
-}) {
-  const todaysEntry = logs.find((log) => log.date === TODAY_KEY)
-  const eligible = getLoggableProjects(projects, milestones)
+export function TodayWorkCard({ assignments, logs, selectedProjectId, onSelectProject, onLog }) {
+  const today = new Date()
+  const todaysLog = findTodaysLog(logs)
+  const eligible = getLoggableAssignments(assignments, logs)
   const selected =
-    findById(eligible, selectedProjectId) ||
+    eligible.find(({ project }) => project.id === selectedProjectId) ??
     (eligible.length === 1 ? eligible[0] : null)
-  const selectedMilestone = selected
-    ? getCurrentMilestone(milestones, selected.id)
-    : null
 
   const renderBody = () => {
-    if (todaysEntry) {
-      return (
-        <LoggedToday entry={todaysEntry} projects={projects} milestones={milestones} />
-      )
-    }
-    if (IS_WEEKEND) {
+    if (todaysLog) return <LoggedToday log={todaysLog} />
+    if (!isWeekday(today)) {
       return (
         <Unavailable icon={CalendarDays} title="Work logging is unavailable on weekends">
-          Normal work entries can be submitted on weekdays only.
+          Work entries can be submitted on weekdays only.
         </Unavailable>
       )
     }
-    if (!projects.length) {
-      return (
-        <EmptyState
-          title="No active projects"
-          body="You do not currently have an active project assignment."
-        />
-      )
+    if (!assignments.length) {
+      return <EmptyState title="No active projects" body="You don’t have an active project assignment yet." />
     }
     if (!eligible.length) {
       return (
-        <Unavailable
-          icon={CircleAlert}
-          title="No assignment is currently eligible for logging"
-        >
-          {getIneligibleReason(projects, milestones)}
+        <Unavailable icon={CircleAlert} title="No assignment can take work today">
+          {getIneligibleReason(assignments)}
         </Unavailable>
       )
     }
     return (
       <div className="today-form">
         <Field label="Project">
-          <Select
-            value={selected?.id || ''}
-            onChange={(value) => onSelectProject(Number(value))}
-          >
+          <Select value={selected?.project.id ?? ''} onChange={(value) => onSelectProject(Number(value))}>
             {eligible.length > 1 && <option value="">Select a project</option>}
-            {eligible.map((project) => (
+            {eligible.map(({ project }) => (
               <option key={project.id} value={project.id}>
                 {project.name}
               </option>
@@ -138,18 +103,14 @@ export function TodayWorkCard({
         </Field>
         <div className="selected-milestone">
           <span>Assigned milestone</span>
-          <strong>{selectedMilestone?.name || 'Select a project'}</strong>
-          {selectedMilestone && (
-            <Badge tone={selectedMilestone.status}>
-              {getAssignmentState(milestones, selected.id)}
-            </Badge>
-          )}
+          <strong>{selected?.milestone.name ?? 'Select a project'}</strong>
+          {selected && <MilestoneStatusBadge status={selected.milestone.status} />}
         </div>
         <div className="fixed-hours">
           <span>Total</span>
           <strong>8 hours</strong>
         </div>
-        <Button disabled={!selected} onClick={onLog}>
+        <Button disabled={!selected} onClick={() => onLog(selected)}>
           <Clock3 size={16} />
           Log today’s work
         </Button>
@@ -162,15 +123,13 @@ export function TodayWorkCard({
       <div className="today-card-head">
         <div>
           <span className="eyebrow">Today’s work</span>
-          <h2>{TODAY_LABEL}</h2>
+          <h2>{today.toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' })}</h2>
         </div>
         <span className="today-hours">8 hours</span>
       </div>
       {renderBody()}
-      {!todaysEntry && eligible.length > 0 && (
-        <div className="today-rule">
-          You can submit one 8-hour entry per weekday across all projects.
-        </div>
+      {!todaysLog && eligible.length > 0 && (
+        <div className="today-rule">You can submit one 8-hour entry per weekday across all projects.</div>
       )}
     </section>
   )

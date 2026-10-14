@@ -5,3 +5,11 @@ import { getSession, subscribe } from '../services/session.js'
 export function useSession() {
   return useSyncExternalStore(subscribe, getSession)
 }
+
+/**
+ * The signed-in user: { id, display_id, username, first_name, last_name, email,
+ * job_title, role, manager_id }. Only for screens behind RequireRole, so never null there.
+ */
+export function useCurrentUser() {
+  return useSession()?.user
+}

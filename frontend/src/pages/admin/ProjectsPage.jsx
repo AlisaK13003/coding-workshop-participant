@@ -8,25 +8,39 @@ import {
   SearchBox,
   Select,
 } from '../../components/ui'
-import { managerNames } from '../../data/adminData.js'
+import { DIALOGS } from '../../components/workspace/dialogKinds.js'
+import { uniqueBy } from '../../utils/collections.js'
+import { PROJECT_STATUS, getProjectPhase, projectStatusLabel } from '../../utils/projects.js'
+import { SCHEDULE_PHASES } from '../../utils/schedule.js'
 import { includesText } from '../../utils/text.js'
-import { ADMIN_DIALOGS } from './adminConfig.js'
 import { ProjectTable } from './ProjectTable.jsx'
 
-const ALL_STATUSES = 'All statuses'
-const ALL_PHASES = 'All phases'
+const ALL = ''
+const UNASSIGNED = 'unassigned'
+
+function matchesManager(project, manager) {
+  if (manager === ALL) return true
+  if (manager === UNASSIGNED) return !project.manager
+  return String(project.manager?.id) === manager
+}
 
 /** Searchable, filterable list of every non-archived project. */
 export function ProjectsPage({ projects, onOpenProject, onOpenDialog }) {
   const [search, setSearch] = useState('')
-  const [status, setStatus] = useState(ALL_STATUSES)
-  const [phase, setPhase] = useState(ALL_PHASES)
-  const visible = projects.filter(
+  const [manager, setManager] = useState(ALL)
+  const [status, setStatus] = useState(ALL)
+  const [phase, setPhase] = useState(ALL)
+  const current = projects.filter((project) => !project.archived_at)
+  const managers = uniqueBy(
+    current.map((project) => project.manager).filter(Boolean),
+    (item) => item.id,
+  )
+  const visible = current.filter(
     (project) =>
-      !project.archived &&
       includesText(project.name, search) &&
-      (status === ALL_STATUSES || project.status === status) &&
-      (phase === ALL_PHASES || project.phase === phase),
+      matchesManager(project, manager) &&
+      (status === ALL || project.status === status) &&
+      (phase === ALL || getProjectPhase(project) === phase),
   )
 
   return (
@@ -36,7 +50,7 @@ export function ProjectsPage({ projects, onOpenProject, onOpenDialog }) {
         title="Projects"
         description="Create projects, manage assignments, and monitor delivery health."
         actions={
-          <Button onClick={() => onOpenDialog(ADMIN_DIALOGS.createProject)}>
+          <Button onClick={() => onOpenDialog(DIALOGS.createProject)}>
             <Plus size={16} />
             Create project
           </Button>
@@ -44,30 +58,30 @@ export function ProjectsPage({ projects, onOpenProject, onOpenDialog }) {
       />
       <Panel>
         <div className="toolbar">
-          <SearchBox
-            value={search}
-            onChange={setSearch}
-            placeholder="Search projects"
-          />
+          <SearchBox value={search} onChange={setSearch} placeholder="Search projects" />
           <div className="filters">
-            <Select>
-              <option>All managers</option>
-              {managerNames.map((name) => (
-                <option key={name}>{name}</option>
+            <Select value={manager} onChange={setManager} aria-label="Manager">
+              <option value={ALL}>All managers</option>
+              {managers.map((item) => (
+                <option key={item.id} value={item.id}>
+                  {item.name}
+                </option>
               ))}
-              <option>Unassigned</option>
+              <option value={UNASSIGNED}>Unassigned</option>
             </Select>
-            <Select value={status} onChange={setStatus}>
-              <option>{ALL_STATUSES}</option>
-              <option>In progress</option>
-              <option>Completed</option>
-              <option>Abandoned</option>
+            <Select value={status} onChange={setStatus} aria-label="Status">
+              <option value={ALL}>All statuses</option>
+              {Object.values(PROJECT_STATUS).map((value) => (
+                <option key={value} value={value}>
+                  {projectStatusLabel(value)}
+                </option>
+              ))}
             </Select>
-            <Select value={phase} onChange={setPhase}>
-              <option>{ALL_PHASES}</option>
-              <option>Green</option>
-              <option>Amber</option>
-              <option>Red</option>
+            <Select value={phase} onChange={setPhase} aria-label="Schedule phase">
+              <option value={ALL}>All phases</option>
+              {SCHEDULE_PHASES.map((value) => (
+                <option key={value}>{value}</option>
+              ))}
             </Select>
           </div>
         </div>

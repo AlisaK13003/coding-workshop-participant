@@ -1,15 +1,13 @@
-// Password-change rules shared by any "change password" form.
+// Password-change rules shared by any "change password" form. They match the
+// backend: 8 to 72 characters. The server checks the current password.
 
-/** Returns the first problem as a message, or '' when the change is valid. */
+/** Returns { field: message } for each problem; empty when the change can be sent. */
 export function validatePasswordChange({ current, next, confirm }) {
-  if (!current) return 'Enter your current password.'
-  if (next.length < 10) return 'New password must be at least 10 characters.'
-  if (!/[A-Z]/.test(next) || !/[0-9]/.test(next)) {
-    return 'Include at least one uppercase letter and one number.'
-  }
-  if (next !== confirm) return 'New passwords do not match.'
-  if (next === current) {
-    return 'Choose a password different from your current password.'
-  }
-  return ''
+  const errors = {}
+  if (!current) errors.current_password = 'Enter your current password.'
+  if (next.length < 8) errors.new_password = 'Use at least 8 characters.'
+  else if (new TextEncoder().encode(next).length > 72) errors.new_password = 'Use at most 72 characters.'
+  else if (next === current) errors.new_password = 'Choose a password different from your current one.'
+  if (next !== confirm) errors.confirm = 'New passwords do not match.'
+  return errors
 }

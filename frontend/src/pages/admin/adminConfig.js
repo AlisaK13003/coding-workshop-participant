@@ -5,7 +5,6 @@ import {
   FileClock,
   FolderKanban,
   LayoutDashboard,
-  Settings2,
   ShieldCheck,
   Users,
 } from 'lucide-react'
@@ -32,23 +31,4 @@ export const ADMIN_SIDEBAR_FOOTER = {
   icon: ShieldCheck,
   title: 'Admin workspace',
   subtitle: 'Full system access',
-}
-
-export const ADMIN_USER = { name: 'Elena Vasquez', subtitle: 'Administrator' }
-
-export const ADMIN_PROFILE_ACTIONS = [
-  { label: 'Profile settings', icon: Settings2 },
-  { label: 'Admin permissions', icon: ShieldCheck },
-]
-
-// Dialogs the admin workspace can open (keys for useModal).
-export const ADMIN_DIALOGS = {
-  createProject: 'createProject',
-  createUser: 'createUser',
-  addMilestone: 'addMilestone',
-  addWorkLog: 'addWorkLog',
-  completeMilestone: 'completeMilestone',
-  archiveProject: 'archiveProject',
-  unarchiveProject: 'unarchiveProject',
-  transferEmployee: 'transferEmployee',
 }

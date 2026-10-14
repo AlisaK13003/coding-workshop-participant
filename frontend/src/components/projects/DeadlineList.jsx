@@ -1,10 +1,12 @@
+import { EmptyState } from '../ui'
 import './DeadlineList.css'
 
 /**
  * Upcoming dates with a calendar tile.
  * items: [{ key, day, month, title, detail, status }]; status is any node (Badge, Phase…).
  */
-export function DeadlineList({ items }) {
+export function DeadlineList({ items, emptyBody = 'Nothing is due soon.' }) {
+  if (!items.length) return <EmptyState title="No upcoming dates" body={emptyBody} />
   return (
     <div className="deadline-list">
       {items.map((item) => (

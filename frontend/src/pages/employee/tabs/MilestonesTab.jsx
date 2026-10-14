@@ -1,14 +1,12 @@
 import { DependencyDiagram } from '../../../components/milestones/DependencyDiagram.jsx'
-import { Badge, DataTable, Panel } from '../../../components/ui'
+import { MilestoneStatusBadge } from '../../../components/milestones/MilestoneStatusBadge.jsx'
+import { DataTable, Panel } from '../../../components/ui'
 import { formatDateRange } from '../../../utils/format.js'
-import {
-  getMilestoneState,
-  getPrerequisiteNames,
-} from '../../../utils/milestones.js'
+import { getPrerequisiteNames } from '../../../utils/milestones.js'
 import './MilestonesTab.css'
 
 /** Read-only dependency map and milestone table, highlighting the employee's milestone. */
-export function MilestonesTab({ items, milestones, myMilestoneId }) {
+export function MilestonesTab({ items, myMilestoneId }) {
   const columns = [
     {
       key: 'name',
@@ -16,37 +14,28 @@ export function MilestonesTab({ items, milestones, myMilestoneId }) {
       render: (milestone) => (
         <>
           <strong>{milestone.name}</strong>
-          {milestone.id === myMilestoneId && (
-            <small className="table-note">Your milestone</small>
-          )}
+          {milestone.id === myMilestoneId && <small className="table-note">Your milestone</small>}
         </>
       ),
     },
     {
       key: 'dates',
       header: 'Dates',
-      render: (milestone) => formatDateRange(milestone.start, milestone.end),
+      render: (milestone) => formatDateRange(milestone.start_date, milestone.end_date),
     },
     {
       key: 'prerequisites',
       header: 'Prerequisites',
-      render: (milestone) => getPrerequisiteNames(milestone, milestones),
+      render: (milestone) => getPrerequisiteNames(milestone, items),
     },
-    {
-      key: 'status',
-      header: 'Status',
-      render: (milestone) => {
-        const state = getMilestoneState(milestone, milestones)
-        return <Badge tone={state}>{state}</Badge>
-      },
-    },
+    { key: 'status', header: 'Status', render: (milestone) => <MilestoneStatusBadge status={milestone.status} /> },
   ]
 
   return (
     <>
       <Panel
         title="Milestone dependencies"
-        description="Read-only project sequence. Visible milestones are not selectable for work logging."
+        description="Read-only project sequence. You can only log work on your own milestone."
       >
         <DependencyDiagram milestones={items} highlightId={myMilestoneId} />
       </Panel>
@@ -55,9 +44,7 @@ export function MilestonesTab({ items, milestones, myMilestoneId }) {
           columns={columns}
           rows={items}
           getRowKey={(milestone) => milestone.id}
-          getRowClassName={(milestone) =>
-            milestone.id === myMilestoneId ? 'my-milestone-row' : undefined
-          }
+          getRowClassName={(milestone) => (milestone.id === myMilestoneId ? 'my-milestone-row' : undefined)}
         />
       </Panel>
     </>

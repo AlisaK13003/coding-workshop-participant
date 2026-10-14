@@ -9,9 +9,8 @@ import './NotificationMenu.css'
  * items: [{ id, title, detail, read }].
  * onSelect (optional): makes each item clickable; the menu closes afterwards.
  * onMarkAllRead (optional): adds a "Mark all read" link to the header.
- * footer (optional): node rendered under the list.
  */
-export function NotificationMenu({ items, onSelect, onMarkAllRead, footer }) {
+export function NotificationMenu({ items, onSelect, onMarkAllRead }) {
   const menu = useDisclosure()
   const unread = items.filter((item) => !item.read).length
 
@@ -53,7 +52,6 @@ export function NotificationMenu({ items, onSelect, onMarkAllRead, footer }) {
           ) : (
             <p className="notification-empty">You’re all caught up.</p>
           )}
-          {footer}
         </div>
       )}
     </div>

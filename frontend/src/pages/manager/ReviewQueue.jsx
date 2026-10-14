@@ -1,12 +1,12 @@
 import { CheckCircle2 } from 'lucide-react'
 import { ReviewIcon } from '../../components/milestones/ReviewIcon.jsx'
 import { Badge, Button, EmptyState, Panel } from '../../components/ui'
-import { getPendingReviews, getProjectName } from './managerSelectors.js'
+import { findById } from '../../utils/collections.js'
+import { formatDateTime } from '../../utils/format.js'
 import './ReviewQueue.css'
 
-/** Milestones waiting for the manager's completion review. */
-export function ReviewQueue({ milestones, projects, onReview }) {
-  const reviews = getPendingReviews(milestones, projects)
+/** Milestones waiting for the manager's completion review. reviews from getPendingReviews. */
+export function ReviewQueue({ reviews, projects, onReview }) {
   return (
     <Panel
       title="Milestone review queue"
@@ -20,13 +20,13 @@ export function ReviewQueue({ milestones, projects, onReview }) {
               <ReviewIcon icon={CheckCircle2} />
               <p>
                 <strong>{milestone.name}</strong>
-                <span>{getProjectName(projects, milestone.projectId)}</span>
+                <span>{findById(projects, milestone.project_id)?.name}</span>
               </p>
               <div className="review-requester">
                 <span>Requested by</span>
-                <strong>{milestone.requester}</strong>
+                <strong>{milestone.pending_review.requested_by.name}</strong>
               </div>
-              <time>{milestone.requestDate}</time>
+              <time>{formatDateTime(milestone.pending_review.requested_at)}</time>
               <Button onClick={() => onReview(milestone)}>Review</Button>
             </div>
           ))}

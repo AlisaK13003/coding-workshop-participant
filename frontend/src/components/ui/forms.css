@@ -7,8 +7,10 @@
 .field .control { width: 100%; }
 .field small { color: var(--muted); font-size: 9px; font-weight: 450; line-height: 1.5; }
 .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; padding: 20px 0; }
-.form-single { padding: 20px 0; }
+.form-single { display: grid; gap: 15px; padding: 20px 0; }
 
 @media (max-width: 560px) {
   .form-grid { grid-template-columns: 1fr; }
 }
+.field .field-error { color: var(--red); font-weight: 600; }
+.field:has(.field-error) .control { border-color: var(--red); }

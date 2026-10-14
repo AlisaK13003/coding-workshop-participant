@@ -18,12 +18,12 @@ const DEFAULT_COPY = {
 
 /**
  * The five metric cards under a project header: hours, labor cost, budget,
- * remaining budget and milestone completion.
- * project: { hours, cost, budget }. copy (optional) overrides labels and notes.
+ * remaining budget and milestone completion, all from the project's API totals.
+ * copy (optional) overrides labels and notes.
  */
-export function ProjectSummaryCards({ project, completed, total, copy }) {
+export function ProjectSummaryCards({ project, copy }) {
   const text = { ...DEFAULT_COPY, ...copy }
-  const { hours, cost, budget } = project
+  const { hours, cost, budget, milestones } = project
   return (
     <div className="summary-grid">
       <StatCard
@@ -54,7 +54,7 @@ export function ProjectSummaryCards({ project, completed, total, copy }) {
       />
       <StatCard
         label={text.milestonesLabel}
-        value={`${completed} / ${total}`}
+        value={`${milestones.completed} / ${milestones.total}`}
         note={text.milestonesNote}
         icon={CheckCircle2}
       />

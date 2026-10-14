@@ -8,3 +8,6 @@
 .confirmation-block p { display: grid; gap: 7px; margin: 0; }
 .confirmation-block strong { font-size: 12px; }
 .confirmation-block span { color: var(--muted); font-size: 11px; line-height: 1.55; }
+.dialog-fieldset { min-width: 0; margin: 0; padding: 0; }
+.modal form > .validation-note { margin-bottom: 16px; }
+.modal > .validation-note { margin-bottom: 4px; }

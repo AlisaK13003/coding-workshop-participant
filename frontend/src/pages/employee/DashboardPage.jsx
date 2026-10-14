@@ -7,40 +7,38 @@ import {
   Panel,
   StatCard,
 } from '../../components/ui'
+import { useCurrentUser } from '../../hooks/useSession.js'
+import { greeting } from '../../utils/format.js'
+import { ASSIGNMENT_STATE } from '../../utils/milestones.js'
+import { getWeekHours } from '../../utils/workLogs.js'
 import { AssignmentCards } from './AssignmentCards.jsx'
-import {
-  ASSIGNMENT_STATE,
-  getCurrentMilestone,
-  getProjectsInState,
-  getWeekHours,
-} from './employeeSelectors.js'
 import { RecentNotifications } from './RecentNotifications.jsx'
 import { TodayWorkCard } from './TodayWorkCard.jsx'
 import './DashboardPage.css'
 
 /** Employee home: today's logging, key numbers, assignments, reviews and notifications. */
 export function DashboardPage({
-  projects,
-  milestones,
+  assignments,
   logs,
   notices,
   selectedProjectId,
   onSelectProject,
   onLog,
   onOpenProject,
+  onSelectNotice,
 }) {
-  const reviews = getProjectsInState(projects, milestones, ASSIGNMENT_STATE.review)
+  const user = useCurrentUser()
+  const reviews = assignments.filter(({ state }) => state === ASSIGNMENT_STATE.review)
 
   return (
     <>
       <PageHeading
         eyebrow="Your workspace"
-        title="Good morning, Aisha"
+        title={`${greeting()}, ${user.first_name}`}
         description="See what you can work on today and whether a milestone is ready for review."
       />
       <TodayWorkCard
-        projects={projects}
-        milestones={milestones}
+        assignments={assignments}
         logs={logs}
         selectedProjectId={selectedProjectId}
         onSelectProject={onSelectProject}
@@ -49,7 +47,7 @@ export function DashboardPage({
       <div className="employee-stats">
         <StatCard
           label="Active projects"
-          value={`${projects.length}`}
+          value={assignments.length}
           note="Only projects you can currently access"
           icon={FolderKanban}
           accent
@@ -57,39 +55,32 @@ export function DashboardPage({
         <StatCard
           label="Hours this week"
           value={`${getWeekHours(logs)} h`}
-          note="Visible active projects only"
+          note="Monday to today, visible projects only"
           icon={Clock3}
         />
         <StatCard
           label="Pending reviews"
-          value={`${reviews.length}`}
+          value={reviews.length}
           note="Awaiting your manager’s decision"
           icon={Send}
         />
       </div>
-      <Panel
-        title="My project and milestone assignments"
-        description="One current milestone per project."
-      >
-        <AssignmentCards
-          projects={projects}
-          milestones={milestones}
-          logs={logs}
-          onOpen={onOpenProject}
-        />
+      <Panel title="My project and milestone assignments" description="One current milestone per project.">
+        {assignments.length ? (
+          <AssignmentCards assignments={assignments} logs={logs} onOpen={onOpenProject} />
+        ) : (
+          <EmptyState title="No active projects" body="Your manager adds you to projects." />
+        )}
       </Panel>
       <div className="dashboard-lower">
-        <Panel
-          title="Pending milestone reviews"
-          description="Your request applies to the entire milestone."
-        >
+        <Panel title="Pending milestone reviews" description="Your request applies to the entire milestone.">
           {reviews.length ? (
             <div className="employee-review-list">
-              {reviews.map((project) => (
+              {reviews.map(({ project, milestone }) => (
                 <button key={project.id} onClick={() => onOpenProject(project)}>
                   <ReviewIcon icon={Clock3} size={17} />
                   <p>
-                    <strong>{getCurrentMilestone(milestones, project.id).name}</strong>
+                    <strong>{milestone.name}</strong>
                     <span>{project.name}</span>
                   </p>
                   <Badge tone="Awaiting review">Awaiting manager review</Badge>
@@ -104,11 +95,12 @@ export function DashboardPage({
             />
           )}
         </Panel>
-        <Panel
-          title="Recent notifications"
-          description="Assignment and milestone updates."
-        >
-          <RecentNotifications items={notices.slice(0, 4)} />
+        <Panel title="Recent notifications" description="Assignment and milestone updates.">
+          {notices.length ? (
+            <RecentNotifications items={notices.slice(0, 4)} onSelect={onSelectNotice} />
+          ) : (
+            <EmptyState title="You’re all caught up" body="New assignment and review updates appear here." />
+          )}
         </Panel>
       </div>
       <div className="scope-footnote">

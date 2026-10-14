@@ -1,38 +1,27 @@
 import { useState } from 'react'
 import { Clock3 } from 'lucide-react'
-import {
-  EmptyState,
-  Input,
-  PageHeading,
-  Panel,
-  Select,
-} from '../../components/ui'
-import { fullName } from '../../utils/format.js'
-import { ManagerWorkLogTable } from './ManagerWorkLogTable.jsx'
+import { Input, PageHeading, Panel, Select } from '../../components/ui'
+import { WorkLogTable } from '../../components/worklogs/WorkLogTable.jsx'
+import { MANAGER_WORK_LOG_COLUMNS } from './managerConfig.js'
 import './WorkLogsPage.css'
 
-const ALL_EMPLOYEES = 'All employees'
-const ALL_PROJECTS = 'All projects'
-const ALL_MILESTONES = 'All milestones'
-
-/** Read-only workdays for the manager's employees, filterable by date, person, project and milestone. */
+/**
+ * Read-only workdays for the manager's employees on their active projects
+ * (already loaded with the workspace), filtered by date, person, project and milestone.
+ */
 export function WorkLogsPage({ logs, employees, projects, milestones }) {
-  const [startDate, setStartDate] = useState('')
-  const [endDate, setEndDate] = useState('')
-  const [employee, setEmployee] = useState(ALL_EMPLOYEES)
-  const [project, setProject] = useState(ALL_PROJECTS)
-  const [milestone, setMilestone] = useState(ALL_MILESTONES)
+  const [filters, setFilters] = useState({ from: '', to: '', employee: '', project: '', milestone: '' })
+  const setFilter = (name) => (value) => setFilters((current) => ({ ...current, [name]: value }))
+  const matches = (id, value) => !value || id === Number(value)
   const visible = logs.filter(
     (log) =>
-      (!startDate || log.date >= startDate) &&
-      (!endDate || log.date <= endDate) &&
-      (employee === ALL_EMPLOYEES || log.employeeId === Number(employee)) &&
-      (project === ALL_PROJECTS || log.projectId === Number(project)) &&
-      (milestone === ALL_MILESTONES || log.milestoneId === Number(milestone)),
+      (!filters.from || log.work_date >= filters.from) &&
+      (!filters.to || log.work_date <= filters.to) &&
+      matches(log.employee.id, filters.employee) &&
+      matches(log.project.id, filters.project) &&
+      matches(log.milestone.id, filters.milestone),
   )
-  const projectMilestones = milestones.filter((item) =>
-    projects.some((projectItem) => projectItem.id === item.projectId),
-  )
+  const milestoneChoices = milestones.filter((item) => matches(item.project_id, filters.project))
 
   return (
     <>
@@ -46,35 +35,35 @@ export function WorkLogsPage({ logs, employees, projects, milestones }) {
           <div className="filters">
             <Input
               type="date"
-              value={startDate}
-              onChange={(event) => setStartDate(event.target.value)}
+              value={filters.from}
+              onChange={(event) => setFilter('from')(event.target.value)}
               aria-label="Start date"
             />
             <Input
               type="date"
-              value={endDate}
-              onChange={(event) => setEndDate(event.target.value)}
+              value={filters.to}
+              onChange={(event) => setFilter('to')(event.target.value)}
               aria-label="End date"
             />
-            <Select value={employee} onChange={setEmployee}>
-              <option>{ALL_EMPLOYEES}</option>
+            <Select value={filters.employee} onChange={setFilter('employee')} aria-label="Employee">
+              <option value="">All employees</option>
               {employees.map((item) => (
                 <option value={item.id} key={item.id}>
-                  {fullName(item)}
+                  {item.name}
                 </option>
               ))}
             </Select>
-            <Select value={project} onChange={setProject}>
-              <option>{ALL_PROJECTS}</option>
+            <Select value={filters.project} onChange={setFilter('project')} aria-label="Project">
+              <option value="">All projects</option>
               {projects.map((item) => (
                 <option value={item.id} key={item.id}>
                   {item.name}
                 </option>
               ))}
             </Select>
-            <Select value={milestone} onChange={setMilestone}>
-              <option>{ALL_MILESTONES}</option>
-              {projectMilestones.map((item) => (
+            <Select value={filters.milestone} onChange={setFilter('milestone')} aria-label="Milestone">
+              <option value="">All milestones</option>
+              {milestoneChoices.map((item) => (
                 <option value={item.id} key={item.id}>
                   {item.name}
                 </option>
@@ -85,22 +74,13 @@ export function WorkLogsPage({ logs, employees, projects, milestones }) {
         <div className="info-strip manager-log-note">
           <Clock3 size={16} />
           Each entry is one 8-hour weekday. Employees can log only one project
-          per day and cannot backdate. Hidden or absent entries do not prove an
-          employee did not work.
+          per day and can’t backdate. Closed and archived project logs aren’t shown.
         </div>
-        {visible.length ? (
-          <ManagerWorkLogTable
-            logs={visible}
-            employees={employees}
-            projects={projects}
-            milestones={milestones}
-          />
-        ) : (
-          <EmptyState
-            title="No visible work logs"
-            body="No entries match these filters. Closed and archived project logs are not available to managers."
-          />
-        )}
+        <WorkLogTable
+          logs={visible}
+          columns={MANAGER_WORK_LOG_COLUMNS}
+          emptyBody="No entries match these filters."
+        />
       </Panel>
     </>
   )

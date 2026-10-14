@@ -1,25 +1,9 @@
-import { useCallback, useEffect, useRef, useState } from 'react'
+import { createContext, useContext } from 'react'
 
-/** A single toast message that hides itself after `duration` milliseconds. */
-export function useToast(duration = 3500) {
-  const [message, setMessage] = useState('')
-  const timer = useRef(null)
+/** Filled in by ToastProvider (components/ui/ToastProvider.jsx), which wraps the app. */
+export const ToastContext = createContext({ showToast: () => {} })
 
-  const dismiss = useCallback(() => {
-    window.clearTimeout(timer.current)
-    setMessage('')
-  }, [])
-
-  const showToast = useCallback(
-    (text) => {
-      window.clearTimeout(timer.current)
-      setMessage(text)
-      timer.current = window.setTimeout(() => setMessage(''), duration)
-    },
-    [duration],
-  )
-
-  useEffect(() => () => window.clearTimeout(timer.current), [])
-
-  return { message, showToast, dismiss }
+/** { showToast(text, tone = 'success' | 'error') } for the one toast shared by the whole app. */
+export function useToast() {
+  return useContext(ToastContext)
 }

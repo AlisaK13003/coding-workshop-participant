@@ -7,128 +7,182 @@ import {
   Users,
 } from 'lucide-react'
 import { ActivityList } from '../../components/activity/ActivityList.jsx'
-import { DeadlineList } from '../../components/projects/DeadlineList.jsx'
+import { UpcomingDeadlines } from '../../components/projects/UpcomingDeadlines.jsx'
 import {
   Badge,
   Button,
+  EmptyState,
   PageHeading,
   Panel,
+  QueryContent,
   StatCard,
 } from '../../components/ui'
+import { DIALOGS } from '../../components/workspace/dialogKinds.js'
+import { combineQueries, useApiQuery } from '../../hooks/useApiQuery.js'
+import { useCurrentUser } from '../../hooks/useSession.js'
+import { listActivity } from '../../services/activityApi.js'
+import { listMilestonesForProjects } from '../../services/milestonesApi.js'
+import { listUsers } from '../../services/usersApi.js'
+import { listWorkLogs } from '../../services/workLogsApi.js'
+import { toActivityItem } from '../../utils/activity.js'
+import { daysBetween, toIsoDate, todayIso } from '../../utils/calendar.js'
+import { formatHours, greeting } from '../../utils/format.js'
+import { getPendingReviews } from '../../utils/milestones.js'
 import {
-  activities,
-  monthlyHours,
-  upcomingDeadlines,
-} from '../../data/adminData.js'
-import { ADMIN_DIALOGS } from './adminConfig.js'
+  isEndingSoon,
+  isOpenProject,
+  isProjectOverBudget,
+  needsManager,
+} from '../../utils/projects.js'
+import { pluralize } from '../../utils/text.js'
+import { ROLES } from '../../utils/users.js'
+import { getMonthlyTotals, sumHours } from '../../utils/workLogs.js'
+import { ADMIN_PAGES } from './adminConfig.js'
 import { HoursChart } from './HoursChart.jsx'
 import { ProjectTable } from './ProjectTable.jsx'
-import { isActiveProject } from './projectFilters.js'
 import './DashboardPage.css'
 
-const deadlineItems = upcomingDeadlines.map((deadline) => ({
-  ...deadline,
-  status: <Badge tone={deadline.tone}>{deadline.label}</Badge>,
-}))
+const CHART_MONTHS = 6
+
+/** "1 admin · 2 managers · 5 employees". */
+function countRoles(users) {
+  return ROLES.map((role) => {
+    const count = users.filter((user) => user.role === role).length
+    return `${count} ${pluralize(count, role)}`
+  }).join(' · ')
+}
+
+function oldestRequestNote(reviews) {
+  if (!reviews.length) return 'No requests waiting'
+  const days = daysBetween(reviews[0].pending_review.requested_at.slice(0, 10), todayIso())
+  return days ? `Oldest request is ${days} ${pluralize(days, 'day')} old` : 'Oldest request is from today'
+}
 
 /** Admin overview: key numbers, attention items, active projects, spending and activity. */
-export function DashboardPage({ projects, onOpenProject, onOpenDialog }) {
+export function DashboardPage({ projects, onOpenProject, onNavigate, onOpenDialog }) {
+  const user = useCurrentUser()
+  const active = projects.filter(isOpenProject)
+  const activeIds = active.map((project) => project.id)
+  const chartStart = new Date()
+  chartStart.setMonth(chartStart.getMonth() - (CHART_MONTHS - 1), 1)
+
+  const stats = combineQueries(
+    useApiQuery(() => listUsers(), []),
+    useApiQuery(() => listMilestonesForProjects(activeIds), [activeIds]),
+  )
+  const logs = useApiQuery(() => listWorkLogs({ from: toIsoDate(chartStart) }), [toIsoDate(chartStart)])
+  const activity = useApiQuery(() => listActivity({ limit: 4 }), [])
+
+  const unassigned = active.filter(needsManager)
+  const overBudget = active.filter(isProjectOverBudget)
+  const endingSoon = active.filter((project) => isEndingSoon(project))
+
   return (
     <>
       <PageHeading
         eyebrow="Overview"
-        title="Good morning, Elena"
+        title={`${greeting()}, ${user.first_name}`}
         description="Here’s what needs your attention across the project portfolio."
         actions={
           <>
-            <Button
-              variant="secondary"
-              onClick={() => onOpenDialog(ADMIN_DIALOGS.createUser)}
-            >
+            <Button variant="secondary" onClick={() => onOpenDialog(DIALOGS.createUser)}>
               <Plus size={16} />
               Create user
             </Button>
-            <Button onClick={() => onOpenDialog(ADMIN_DIALOGS.createProject)}>
+            <Button onClick={() => onOpenDialog(DIALOGS.createProject)}>
               <Plus size={16} />
               Create project
             </Button>
           </>
         }
       />
-      <div className="stats-grid">
-        <StatCard
-          label="Active projects"
-          value="4"
-          note="2 approaching end dates"
-          icon={FolderKanban}
-          accent
-        />
-        <StatCard
-          label="Awaiting assignment"
-          value="1"
-          note="Manager and team required"
-          icon={CircleAlert}
-        />
-        <StatCard
-          label="Total users"
-          value="28"
-          note="2 admins · 5 managers · 21 employees"
-          icon={Users}
-        />
-        <StatCard
-          label="Pending reviews"
-          value="3"
-          note="Oldest request is 2 days"
-          icon={CheckCircle2}
-        />
-      </div>
-      <Panel className="attention-panel">
-        <div>
-          <span className="attention-icon">
-            <CircleAlert size={19} />
-          </span>
-          <p>
-            <strong>3 items need attention</strong>
-            <span>
-              One project needs assignment, one is over budget, and three
-              milestone reviews are pending.
-            </span>
-          </p>
-        </div>
-        <Button variant="secondary">Review items</Button>
-      </Panel>
+      <QueryContent query={stats} loadingLabel="Loading portfolio numbers…">
+        {([users, milestones]) => {
+          const reviews = getPendingReviews(milestones)
+          const attention = unassigned.length + overBudget.length + reviews.length
+          return (
+            <>
+              <div className="stats-grid">
+                <StatCard
+                  label="Active projects"
+                  value={active.length}
+                  note={`${endingSoon.length} approaching end dates`}
+                  icon={FolderKanban}
+                  accent
+                />
+                <StatCard
+                  label="Awaiting assignment"
+                  value={unassigned.length}
+                  note="Open projects without a manager"
+                  icon={CircleAlert}
+                />
+                <StatCard label="Total users" value={users.length} note={countRoles(users)} icon={Users} />
+                <StatCard
+                  label="Pending reviews"
+                  value={reviews.length}
+                  note={oldestRequestNote(reviews)}
+                  icon={CheckCircle2}
+                />
+              </div>
+              {attention > 0 && (
+                <Panel className="attention-panel">
+                  <div>
+                    <span className="attention-icon">
+                      <CircleAlert size={19} />
+                    </span>
+                    <p>
+                      <strong>
+                        {attention} {pluralize(attention, 'item needs', 'items need')} attention
+                      </strong>
+                      <span>
+                        {unassigned.length} {pluralize(unassigned.length, 'project needs', 'projects need')} a
+                        manager, {overBudget.length} {pluralize(overBudget.length, 'is', 'are')} over budget,
+                        and {reviews.length} milestone {pluralize(reviews.length, 'review is', 'reviews are')} pending.
+                      </span>
+                    </p>
+                  </div>
+                  <Button variant="secondary" onClick={() => onNavigate(ADMIN_PAGES.projects)}>
+                    Review projects
+                  </Button>
+                </Panel>
+              )}
+            </>
+          )
+        }}
+      </QueryContent>
       <Panel
         title="Active projects"
         description="Schedule, milestones, hours, and budget at a glance."
         actions={
-          <Button variant="ghost">
+          <Button variant="ghost" onClick={() => onNavigate(ADMIN_PAGES.projects)}>
             View all <ChevronRight size={16} />
           </Button>
         }
       >
-        <ProjectTable
-          projects={projects.filter(isActiveProject)}
-          onOpen={onOpenProject}
-          compact
-        />
+        {active.length ? (
+          <ProjectTable projects={active} onOpen={onOpenProject} compact />
+        ) : (
+          <EmptyState title="No active projects" body="Create a project to get started." />
+        )}
       </Panel>
       <div className="dashboard-lower">
         <Panel
           title="Hours & labor spending"
-          description="Last six months"
-          actions={<Badge>18,604 total hours</Badge>}
+          description={`Last ${CHART_MONTHS} months, all projects`}
+          actions={logs.data && <Badge>{formatHours(sumHours(logs.data))} total</Badge>}
         >
-          <HoursChart data={monthlyHours} />
+          <QueryContent query={logs} loadingLabel="Loading work logs…">
+            {(rows) => <HoursChart data={getMonthlyTotals(rows, CHART_MONTHS)} />}
+          </QueryContent>
         </Panel>
         <Panel title="Approaching end dates" description="Within the next 60 days">
-          <DeadlineList items={deadlineItems} />
+          <UpcomingDeadlines projects={active} />
         </Panel>
       </div>
-      <Panel
-        title="Recent activity"
-        description="Administrative and manager actions"
-      >
-        <ActivityList items={activities.slice(0, 4)} />
+      <Panel title="Recent activity" description="The latest changes across the workspace">
+        <QueryContent query={activity} loadingLabel="Loading activity…">
+          {(page) => <ActivityList items={page.items.map(toActivityItem)} />}
+        </QueryContent>
       </Panel>
     </>
   )

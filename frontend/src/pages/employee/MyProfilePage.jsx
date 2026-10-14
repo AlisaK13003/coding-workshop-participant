@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { CircleAlert, LockKeyhole } from 'lucide-react'
+import { LockKeyhole } from 'lucide-react'
 import {
   Avatar,
   Button,
@@ -10,39 +10,31 @@ import {
   Panel,
   PanelNote,
 } from '../../components/ui'
-import { signedInEmployee } from '../../data/employeeData.js'
-import { fullName } from '../../utils/format.js'
+import { useMutation } from '../../hooks/useMutation.js'
+import { changePassword } from '../../services/authApi.js'
 import { validatePasswordChange } from '../../utils/password.js'
 import './MyProfilePage.css'
 
 const EMPTY_FORM = { current: '', next: '', confirm: '' }
 
-const PROFILE_ITEMS = [
-  { label: 'First name', value: signedInEmployee.first },
-  { label: 'Last name', value: signedInEmployee.last },
-  { label: 'Username', value: signedInEmployee.username },
-  { label: 'Email', value: signedInEmployee.email },
-  { label: 'Job title', value: signedInEmployee.title },
-  { label: 'Employee ID', value: <code>{signedInEmployee.employeeId}</code> },
-  { label: 'Assigned manager', value: signedInEmployee.manager },
-]
-
-/** Read-only profile details and a change-password form. */
-export function MyProfilePage({ onPasswordChanged }) {
+/** Read-only profile details (from the API) and a change-password form. */
+export function MyProfilePage({ profile }) {
   const [form, setForm] = useState(EMPTY_FORM)
-  const [error, setError] = useState('')
-  const name = fullName(signedInEmployee)
+  const [errors, setErrors] = useState({})
+  const change = useMutation(() => changePassword(form.current, form.next), {
+    success: 'Password changed successfully.',
+    onSuccess: () => setForm(EMPTY_FORM),
+  })
+  const fieldErrors = { ...errors, ...change.fieldErrors }
 
   const updateField = (field) => (event) =>
     setForm((values) => ({ ...values, [field]: event.target.value }))
 
   const handleSubmit = (event) => {
     event.preventDefault()
-    const problem = validatePasswordChange(form)
-    setError(problem)
-    if (problem) return
-    setForm(EMPTY_FORM)
-    onPasswordChanged('Password changed successfully.')
+    const problems = validatePasswordChange(form)
+    setErrors(problems)
+    if (!Object.keys(problems).length) change.run()
   }
 
   return (
@@ -55,18 +47,27 @@ export function MyProfilePage({ onPasswordChanged }) {
       <div className="profile-layout">
         <Panel>
           <div className="employee-profile-head">
-            <Avatar name={name} />
+            <Avatar name={profile.name} />
             <div>
-              <h2>{name}</h2>
+              <h2>{profile.name}</h2>
               <p>
-                {signedInEmployee.title} · Reports to {signedInEmployee.manager}
+                {profile.job_title} · Reports to {profile.manager?.name ?? 'nobody'}
               </p>
             </div>
           </div>
-          <DetailList items={PROFILE_ITEMS} />
+          <DetailList
+            items={[
+              { label: 'First name', value: profile.first_name },
+              { label: 'Last name', value: profile.last_name },
+              { label: 'Username', value: profile.username },
+              { label: 'Email', value: profile.email },
+              { label: 'Job title', value: profile.job_title },
+              { label: 'Employee ID', value: <code>{profile.display_id}</code> },
+              { label: 'Assigned manager', value: profile.manager?.name ?? '—' },
+            ]}
+          />
           <PanelNote tone="muted">
-            Contact your manager or an administrator if these details need to
-            change.
+            Contact your manager or an administrator if these details need to change.
           </PanelNote>
         </Panel>
         <Panel
@@ -75,8 +76,8 @@ export function MyProfilePage({ onPasswordChanged }) {
           description="Your existing password is never displayed."
           actions={<LockKeyhole size={19} />}
         >
-          <form onSubmit={handleSubmit}>
-            <Field label="Current password">
+          <form onSubmit={handleSubmit} noValidate>
+            <Field label="Current password" error={fieldErrors.current_password}>
               <Input
                 type="password"
                 value={form.current}
@@ -84,10 +85,7 @@ export function MyProfilePage({ onPasswordChanged }) {
                 autoComplete="current-password"
               />
             </Field>
-            <Field
-              label="New password"
-              hint="At least 10 characters, one uppercase letter, and one number."
-            >
+            <Field label="New password" hint="8 to 72 characters." error={fieldErrors.new_password}>
               <Input
                 type="password"
                 value={form.next}
@@ -95,7 +93,7 @@ export function MyProfilePage({ onPasswordChanged }) {
                 autoComplete="new-password"
               />
             </Field>
-            <Field label="Confirm new password">
+            <Field label="Confirm new password" error={fieldErrors.confirm}>
               <Input
                 type="password"
                 value={form.confirm}
@@ -103,13 +101,9 @@ export function MyProfilePage({ onPasswordChanged }) {
                 autoComplete="new-password"
               />
             </Field>
-            {error && (
-              <div className="password-error" role="alert">
-                <CircleAlert size={15} />
-                {error}
-              </div>
-            )}
-            <Button type="submit">Change password</Button>
+            <Button type="submit" disabled={change.submitting}>
+              {change.submitting ? 'Saving…' : 'Change password'}
+            </Button>
           </form>
         </Panel>
       </div>

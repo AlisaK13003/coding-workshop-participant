@@ -1,30 +1,21 @@
 import { useState } from 'react'
 import { CircleAlert } from 'lucide-react'
-import {
-  EmptyState,
-  Input,
-  PageHeading,
-  Panel,
-  Select,
-} from '../../components/ui'
-import { EmployeeWorkLogTable } from './EmployeeWorkLogTable.jsx'
+import { Input, PageHeading, Panel, Select } from '../../components/ui'
+import { WorkLogTable } from '../../components/worklogs/WorkLogTable.jsx'
+import { EMPLOYEE_WORK_LOG_COLUMNS } from './employeeConfig.js'
 import './MyWorkLogsPage.css'
 
-const ALL_PROJECTS = 'All projects'
-const ALL_MILESTONES = 'All milestones'
-
 /** The employee's own workdays, filterable by date range, project and milestone. */
-export function MyWorkLogsPage({ projects, milestones, logs }) {
-  const [start, setStart] = useState('')
-  const [end, setEnd] = useState('')
-  const [project, setProject] = useState(ALL_PROJECTS)
-  const [milestone, setMilestone] = useState(ALL_MILESTONES)
+export function MyWorkLogsPage({ assignments, milestones, logs }) {
+  const [filters, setFilters] = useState({ from: '', to: '', project: '', milestone: '' })
+  const setFilter = (name) => (value) => setFilters((current) => ({ ...current, [name]: value }))
+  const matches = (id, value) => !value || id === Number(value)
   const visible = logs.filter(
     (log) =>
-      (!start || log.date >= start) &&
-      (!end || log.date <= end) &&
-      (project === ALL_PROJECTS || log.projectId === Number(project)) &&
-      (milestone === ALL_MILESTONES || log.milestoneId === Number(milestone)),
+      (!filters.from || log.work_date >= filters.from) &&
+      (!filters.to || log.work_date <= filters.to) &&
+      matches(log.project.id, filters.project) &&
+      matches(log.milestone.id, filters.milestone),
   )
 
   return (
@@ -39,52 +30,42 @@ export function MyWorkLogsPage({ projects, milestones, logs }) {
           <div className="filters">
             <Input
               type="date"
-              value={start}
-              onChange={(event) => setStart(event.target.value)}
+              value={filters.from}
+              onChange={(event) => setFilter('from')(event.target.value)}
               aria-label="Start date"
             />
             <Input
               type="date"
-              value={end}
-              onChange={(event) => setEnd(event.target.value)}
+              value={filters.to}
+              onChange={(event) => setFilter('to')(event.target.value)}
               aria-label="End date"
             />
-            <Select value={project} onChange={setProject}>
-              <option>{ALL_PROJECTS}</option>
-              {projects.map((item) => (
-                <option key={item.id} value={item.id}>
-                  {item.name}
+            <Select value={filters.project} onChange={setFilter('project')} aria-label="Project">
+              <option value="">All projects</option>
+              {assignments.map(({ project }) => (
+                <option key={project.id} value={project.id}>
+                  {project.name}
                 </option>
               ))}
             </Select>
-            <Select value={milestone} onChange={setMilestone}>
-              <option>{ALL_MILESTONES}</option>
-              {milestones.map((item) => (
-                <option key={item.id} value={item.id}>
-                  {item.name}
-                </option>
-              ))}
+            <Select value={filters.milestone} onChange={setFilter('milestone')} aria-label="Milestone">
+              <option value="">All milestones</option>
+              {milestones
+                .filter((item) => matches(item.project_id, filters.project))
+                .map((item) => (
+                  <option key={item.id} value={item.id}>
+                    {item.name}
+                  </option>
+                ))}
             </Select>
           </div>
         </div>
         <div className="info-strip employee-log-note">
           <CircleAlert size={16} />
           For corrections or historical entries, contact an admin. Closed and
-          archived project logs are not shown here.
+          archived project logs aren’t shown here.
         </div>
-        {visible.length ? (
-          <EmployeeWorkLogTable
-            logs={visible}
-            projects={projects}
-            milestones={milestones}
-            showSubmitted
-          />
-        ) : (
-          <EmptyState
-            title="No visible entries"
-            body="No work logs match these filters."
-          />
-        )}
+        <WorkLogTable logs={visible} columns={[...EMPLOYEE_WORK_LOG_COLUMNS, 'submitted']} />
       </Panel>
     </>
   )

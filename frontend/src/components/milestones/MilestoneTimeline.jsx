@@ -1,40 +1,36 @@
 import { Check } from 'lucide-react'
 import { cx } from '../../utils/cx.js'
+import { formatDateRange } from '../../utils/format.js'
 import { MILESTONE_STATUS } from '../../utils/milestones.js'
-import { Badge } from '../ui'
+import { EmptyState } from '../ui'
+import { MilestoneStatusBadge } from './MilestoneStatusBadge.jsx'
 import './MilestoneTimeline.css'
 
-/**
- * Vertical numbered list of milestones with their dates and state.
- * getState(milestone) → status shown (default: milestone.status).
- * getDates(milestone) → date text (default: milestone.dates).
- */
-export function MilestoneTimeline({
-  milestones,
-  getState = (milestone) => milestone.status,
-  getDates = (milestone) => milestone.dates,
-}) {
+/** Vertical numbered list of milestones with their dates and status. */
+export function MilestoneTimeline({ milestones }) {
+  if (!milestones.length) {
+    return <EmptyState title="No milestones yet" body="The project plan is empty." />
+  }
   return (
     <div className="timeline">
       {milestones.map((milestone, index) => {
-        const state = getState(milestone)
-        const done = state === MILESTONE_STATUS.completed
+        const done = milestone.status === MILESTONE_STATUS.completed
         return (
           <div key={milestone.id}>
             <span
               className={cx(
                 'timeline-node',
                 done && 'done',
-                state === MILESTONE_STATUS.review && 'review',
+                milestone.status === MILESTONE_STATUS.review && 'review',
               )}
             >
               {done ? <Check size={13} /> : index + 1}
             </span>
             <p>
               <strong>{milestone.name}</strong>
-              <small>{getDates(milestone)}</small>
+              <small>{formatDateRange(milestone.start_date, milestone.end_date)}</small>
             </p>
-            <Badge tone={state}>{state}</Badge>
+            <MilestoneStatusBadge status={milestone.status} />
           </div>
         )
       })}

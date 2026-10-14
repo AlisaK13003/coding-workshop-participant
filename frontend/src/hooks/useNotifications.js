@@ -1,54 +1,37 @@
-import { useCallback, useState } from 'react'
+import { useEffect } from 'react'
+import {
+  listNotifications,
+  markAllNotificationsRead,
+  markNotificationRead,
+} from '../services/notificationsApi.js'
+import { useApiQuery } from './useApiQuery.js'
+import { useToast } from './useToast.js'
+
+// New notifications come from other people's actions, so the list is checked regularly.
+const POLL_MS = 30000
 
 /**
- * Notification list state. Items look like { id, title, detail, read }
- * plus any extra fields a role needs (e.g. projectId).
- * initialItems may be an array or a function returning one (run once).
+ * The signed-in user's notifications from the API, shared by every workspace.
+ * Items look like { id, title, detail, project_id, milestone_id, created_at, read }.
  */
-export function useNotifications(initialItems) {
-  const [notifications, setNotifications] = useState(initialItems)
+export function useNotifications() {
+  const query = useApiQuery(listNotifications, [])
+  const { showToast } = useToast()
+  const { reload } = query
 
-  const markReadWhere = useCallback(
-    (predicate) =>
-      setNotifications((items) =>
-        items.map((item) => (predicate(item) ? { ...item, read: true } : item)),
-      ),
-    [],
-  )
+  useEffect(() => {
+    const timer = window.setInterval(reload, POLL_MS)
+    return () => window.clearInterval(timer)
+  }, [reload])
 
-  const markRead = useCallback(
-    (id) => markReadWhere((item) => item.id === id),
-    [markReadWhere],
-  )
-
-  const markAllRead = useCallback(
-    () =>
-      setNotifications((items) =>
-        items.map((item) => ({ ...item, read: true })),
-      ),
-    [],
-  )
-
-  const addNotification = useCallback(
-    (notification) => setNotifications((items) => [notification, ...items]),
-    [],
-  )
-
-  const removeNotifications = useCallback(
-    (predicate) =>
-      setNotifications((items) => items.filter((item) => !predicate(item))),
-    [],
-  )
-
-  const unreadCount = notifications.filter((item) => !item.read).length
+  // Marking read isn't worth a success toast; only failures are shown.
+  const send = (request) =>
+    request.then(reload, (error) => showToast(error.message, 'error'))
 
   return {
-    notifications,
-    unreadCount,
-    markRead,
-    markReadWhere,
-    markAllRead,
-    addNotification,
-    removeNotifications,
+    items: query.data?.items ?? [],
+    unreadCount: query.data?.unread_count ?? 0,
+    markRead: (id) => send(markNotificationRead(id)),
+    markAllRead: () => send(markAllNotificationsRead()),
   }
 }

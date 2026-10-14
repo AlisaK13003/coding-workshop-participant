@@ -1,26 +1,22 @@
 import { ChevronRight } from 'lucide-react'
 import { Avatar, Badge } from '../../components/ui'
-import { fullName } from '../../utils/format.js'
-import { getProjectName } from './managerSelectors.js'
+import { findById } from '../../utils/collections.js'
 import './AttentionList.css'
 
-/** Employees waiting or without a milestone; each row opens the project. items from getAssignmentAttention. */
+/** Members waiting or without a milestone; each row opens the project. items from getAssignmentAttention. */
 export function AttentionList({ items, projects, onOpenProject }) {
   return (
     <div className="attention-list">
-      {items.map((item) => (
-        <button
-          key={`${item.employee.id}-${item.projectId}`}
-          onClick={() => onOpenProject(item.projectId)}
-        >
-          <Avatar name={fullName(item.employee)} size="sm" />
+      {items.map(({ member, state }) => (
+        <button key={`${member.project_id}-${member.id}`} onClick={() => onOpenProject(member.project_id)}>
+          <Avatar name={member.user.name} size="sm" />
           <p>
-            <strong>{fullName(item.employee)}</strong>
+            <strong>{member.user.name}</strong>
             <span>
-              {getProjectName(projects, item.projectId)} · {item.label}
+              {findById(projects, member.project_id)?.name} · {member.milestone?.name ?? 'No milestone'}
             </span>
           </p>
-          <Badge tone="Amber">{item.state}</Badge>
+          <Badge tone="Amber">{state}</Badge>
           <ChevronRight size={16} />
         </button>
       ))}

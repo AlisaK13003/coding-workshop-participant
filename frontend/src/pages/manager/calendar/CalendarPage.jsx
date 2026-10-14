@@ -8,14 +8,15 @@ import {
   ViewToggle,
 } from '../../../components/ui'
 import { addMonths, formatMonthYear } from '../../../utils/calendar.js'
-import { parseDate } from '../../../utils/format.js'
 import { includesText } from '../../../utils/text.js'
 import { MonthCalendar } from './MonthCalendar.jsx'
 import { TimelineCalendar } from './TimelineCalendar.jsx'
 import './CalendarPage.css'
 
-/** The month the calendar opens on and returns to with "Today". */
-const START_MONTH = '2025-06-01'
+/** The first day of the current month, where the calendar opens and "Today" returns. */
+function currentMonth() {
+  return addMonths(new Date(), 0)
+}
 
 const VIEW_OPTIONS = [
   { value: 'month', label: 'Month' },
@@ -24,7 +25,7 @@ const VIEW_OPTIONS = [
 
 /** Active project date ranges as a month grid or a year timeline. */
 export function CalendarPage({ projects, onOpenProject }) {
-  const [cursor, setCursor] = useState(() => parseDate(START_MONTH))
+  const [cursor, setCursor] = useState(currentMonth)
   const [view, setView] = useState('month')
   const [search, setSearch] = useState('')
   const visible = projects.filter((project) => includesText(project.name, search))
@@ -42,7 +43,7 @@ export function CalendarPage({ projects, onOpenProject }) {
           <div className="calendar-nav">
             <Button
               variant="secondary"
-              onClick={() => setCursor(parseDate(START_MONTH))}
+              onClick={() => setCursor(currentMonth())}
             >
               Today
             </Button>
@@ -84,7 +85,7 @@ export function CalendarPage({ projects, onOpenProject }) {
         {view === 'month' ? (
           <MonthCalendar month={cursor} projects={visible} onOpen={openProject} />
         ) : (
-          <TimelineCalendar projects={visible} onOpen={openProject} />
+          <TimelineCalendar year={cursor.getFullYear()} projects={visible} onOpen={openProject} />
         )}
       </Panel>
     </>

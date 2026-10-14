@@ -24,7 +24,6 @@ export function AppShell({
   notifications = [],
   onNotificationSelect,
   onMarkAllNotificationsRead,
-  notificationsFooter,
   children,
 }) {
   const mobileNav = useDisclosure()
@@ -52,7 +51,6 @@ export function AppShell({
             items={notifications}
             onSelect={onNotificationSelect}
             onMarkAllRead={onMarkAllNotificationsRead}
-            footer={notificationsFooter}
           />
           <ProfileMenu
             user={user}

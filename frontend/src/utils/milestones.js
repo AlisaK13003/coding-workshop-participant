@@ -1,44 +1,49 @@
-// Milestone rules shared by every role: derived state, prerequisites and dependency layout.
-// A milestone looks like { id, name, prerequisiteIds: number[], status },
-// plus projectId and employeeIds for the manager and employee workspaces.
+// Milestone rules shared by every role. Milestones come from the API as
+// { id, project_id, name, start_date, end_date, status, prerequisite_ids, members,
+//   hours, pending_review }. The server works out the status.
 import { findById } from './collections.js'
 
 export const MILESTONE_STATUS = {
+  blocked: 'blocked',
+  available: 'available',
+  review: 'awaiting_review',
+  completed: 'completed',
+}
+
+const STATUS_LABELS = {
   blocked: 'Blocked',
   available: 'Available',
-  review: 'Awaiting review',
+  awaiting_review: 'Awaiting review',
   completed: 'Completed',
 }
 
-/**
- * Completed and Awaiting review are stored states. Otherwise a milestone is
- * Available only when every prerequisite is Completed, else Blocked.
- */
-export function getMilestoneState(milestone, milestones) {
-  if (
-    milestone.status === MILESTONE_STATUS.completed ||
-    milestone.status === MILESTONE_STATUS.review
-  ) {
-    return milestone.status
-  }
-  const unlocked = milestone.prerequisiteIds.every(
-    (id) => findById(milestones, id)?.status === MILESTONE_STATUS.completed,
-  )
-  return unlocked ? MILESTONE_STATUS.available : MILESTONE_STATUS.blocked
+/** 'awaiting_review' → 'Awaiting review'. */
+export function milestoneStatusLabel(status) {
+  return STATUS_LABELS[status] ?? status
 }
 
-export function countCompleted(milestones) {
-  return milestones.filter((item) => item.status === MILESTONE_STATUS.completed)
-    .length
+export function isCompleted(milestone) {
+  return milestone.status === MILESTONE_STATUS.completed
 }
 
-/** "Design system, API integration", or "None" when there are no prerequisites. */
+
+/** Milestones that aren't completed (they can still take members and changes). */
+export function openMilestones(milestones) {
+  return milestones.filter((milestone) => !isCompleted(milestone))
+}
+
+/** "Design, Backend API", or "None" when there are no prerequisites. */
 export function getPrerequisiteNames(milestone, milestones) {
-  if (!milestone.prerequisiteIds.length) return 'None'
-  return milestone.prerequisiteIds
+  if (!milestone.prerequisite_ids.length) return 'None'
+  return milestone.prerequisite_ids
     .map((id) => findById(milestones, id)?.name)
     .filter(Boolean)
     .join(', ')
+}
+
+/** "Ana Lee, Jon Bell", or "Unassigned" when nobody is on the milestone. */
+export function getMemberNames(milestone) {
+  return milestone.members.map((member) => member.name).join(', ') || 'Unassigned'
 }
 
 /**
@@ -52,7 +57,7 @@ export function getDependencyColumns(milestones) {
     if (depths.has(milestone.id)) return depths.get(milestone.id)
     if (visiting.has(milestone.id)) return 0
     visiting.add(milestone.id)
-    const prerequisites = milestone.prerequisiteIds
+    const prerequisites = milestone.prerequisite_ids
       .map((id) => findById(milestones, id))
       .filter(Boolean)
     const depth = prerequisites.length
@@ -79,91 +84,42 @@ export function dependsOn(candidateId, targetId, milestones, visited = new Set()
   const candidate = findById(milestones, candidateId)
   if (!candidate) return false
   return (
-    candidate.prerequisiteIds.includes(targetId) ||
-    candidate.prerequisiteIds.some((id) =>
-      dependsOn(id, targetId, milestones, visited),
-    )
+    candidate.prerequisite_ids.includes(targetId) ||
+    candidate.prerequisite_ids.some((id) => dependsOn(id, targetId, milestones, visited))
   )
-}
-
-/**
- * Status for a new or edited milestone: Blocked until every prerequisite is
- * Completed, otherwise Available (an open review request is kept).
- */
-export function getStatusForPrerequisites(prerequisiteIds, milestones, currentStatus) {
-  const unlocked = prerequisiteIds.every(
-    (id) => findById(milestones, id)?.status === MILESTONE_STATUS.completed,
-  )
-  if (!unlocked) return MILESTONE_STATUS.blocked
-  return currentStatus === MILESTONE_STATUS.review
-    ? MILESTONE_STATUS.review
-    : MILESTONE_STATUS.available
 }
 
 /** Milestones belonging to one project. */
 export function getProjectMilestones(milestones, projectId) {
-  return milestones.filter((milestone) => milestone.projectId === projectId)
+  return milestones.filter((milestone) => milestone.project_id === projectId)
 }
 
-/** The project milestone an employee is assigned to, if any. */
-export function findEmployeeMilestone(milestones, projectId, employeeId) {
-  return milestones.find(
-    (milestone) =>
-      milestone.projectId === projectId &&
-      milestone.employeeIds.includes(employeeId),
-  )
+/** Milestones with a review request waiting for a decision, oldest request first. */
+export function getPendingReviews(milestones) {
+  return milestones
+    .filter((milestone) => milestone.pending_review)
+    .sort((a, b) => a.pending_review.requested_at.localeCompare(b.pending_review.requested_at))
 }
 
-/**
- * Mark a milestone Completed and move all of its employees to the optional
- * destination milestone. Returns a new array.
- */
-export function completeMilestone(milestones, milestoneId, destinationId) {
-  const moving = findById(milestones, milestoneId)?.employeeIds || []
-  return milestones.map((item) => {
-    if (item.id === milestoneId) {
-      return {
-        ...item,
-        status: MILESTONE_STATUS.completed,
-        requester: undefined,
-        requestDate: undefined,
-        employeeIds: [],
-      }
-    }
-    if (item.id === destinationId) {
-      return {
-        ...item,
-        employeeIds: Array.from(new Set([...item.employeeIds, ...moving])),
-      }
-    }
-    return item
-  })
+/** Where an employee stands on a project, from their current milestone. */
+export const ASSIGNMENT_STATE = {
+  available: 'Available',
+  waiting: 'Waiting on prerequisites',
+  review: 'Awaiting review',
+  none: 'No milestone assigned',
 }
 
-/** Close a pending review without completing: the milestone becomes Available again. */
-export function reopenMilestone(milestones, milestoneId) {
-  return milestones.map((item) =>
-    item.id === milestoneId
-      ? {
-          ...item,
-          status: MILESTONE_STATUS.available,
-          requester: undefined,
-          requestDate: undefined,
-        }
-      : item,
-  )
+/** milestone: the employee's current milestone ({ status }) or null. */
+export function getAssignmentState(milestone) {
+  if (!milestone) return ASSIGNMENT_STATE.none
+  if (milestone.status === MILESTONE_STATUS.blocked) return ASSIGNMENT_STATE.waiting
+  if (milestone.status === MILESTONE_STATUS.review) return ASSIGNMENT_STATE.review
+  return ASSIGNMENT_STATE.available
 }
 
-/**
- * Give an employee exactly one milestone within a project (or none when
- * milestoneId is null). Returns a new array.
- */
-export function assignEmployeeMilestone(milestones, projectId, employeeId, milestoneId) {
-  return milestones.map((item) => {
-    if (item.projectId !== projectId) return item
-    const without = item.employeeIds.filter((id) => id !== employeeId)
-    return item.id === milestoneId
-      ? { ...item, employeeIds: [...without, employeeId] }
-      : { ...item, employeeIds: without }
-  })
+/** Badge tone for an assignment state. */
+export function getAssignmentTone(state) {
+  if (state === ASSIGNMENT_STATE.available) return 'Green'
+  if (state === ASSIGNMENT_STATE.review) return 'Awaiting review'
+  return 'Amber'
 }
