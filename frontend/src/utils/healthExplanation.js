@@ -1,9 +1,10 @@
 // Plain-language reasons behind a project's health label (On track / Needs attention /
-// Urgent), for the "?" next to it. The label itself comes from getProjectHealth; this only
-// explains it, and adds other signals (budget, an approaching deadline) as context.
+// Urgent), for the "?" next to it. The label comes from getProjectHealth: schedule health,
+// raised one step when over budget. This explains both parts, plus context (an approaching
+// deadline, budget usage when it didn't change the label).
 import { daysBetween, toIsoDate } from './calendar.js'
 import { formatDate, formatMoney } from './format.js'
-import { getBudgetUsage, getProjectHealth, phaseLabel } from './schedule.js'
+import { getBudgetUsage, getProjectHealth, getScheduleHealth, isProjectOverBudget, phaseLabel } from './schedule.js'
 import { listWords, pluralize } from './text.js'
 
 const SOON_DAYS = 14
@@ -60,20 +61,21 @@ function labelReasons(project, milestones, phase, todayKey) {
   }
 }
 
-/** Budget and deadline signals that don't decide the label but are worth knowing. */
+function budgetAmounts(project) {
+  return `${getBudgetUsage(project.cost, project.budget)}% used (${formatMoney(project.cost)} of ${formatMoney(project.budget)})`
+}
+
+/** Signals worth knowing that didn't decide the label: an approaching end date, budget usage. */
 function contextNotes(project, todayKey) {
   const notes = []
   const daysLeft = daysBetween(todayKey, project.end_date)
   if (daysLeft >= 0 && daysLeft <= SOON_DAYS) {
     notes.push(`Ends ${daysLeft === 0 ? 'today' : `in ${daysLeft} ${pluralize(daysLeft, 'day')}`} (${formatDate(project.end_date)}).`)
   }
-  // Budget and cost only reach admins and managers.
-  if (project.cost != null && project.budget) {
+  // Budget and cost only reach admins and managers. Over budget is a reason, not a note.
+  if (project.cost != null && project.budget && !isProjectOverBudget(project)) {
     const used = getBudgetUsage(project.cost, project.budget)
-    const amounts = `${formatMoney(project.cost)} of ${formatMoney(project.budget)}`
-    if (used > 100) notes.push(`Over budget: ${used}% used (${amounts}).`)
-    else if (used >= 90) notes.push(`Close to budget: ${used}% used (${amounts}).`)
-    else notes.push(`Budget: ${used}% used (${amounts}).`)
+    notes.push(`${used >= 90 ? 'Close to budget' : 'Budget'}: ${budgetAmounts(project)}.`)
   }
   return notes
 }
@@ -85,10 +87,15 @@ function contextNotes(project, todayKey) {
 export function explainHealth(project, milestones = [], today = new Date()) {
   const todayKey = toIsoDate(today)
   const phase = getProjectHealth(project, today)
-  return {
-    phase,
-    label: phaseLabel(phase),
-    ...labelReasons(project, milestones, phase, todayKey),
-    notes: contextNotes(project, todayKey),
+  const scheduleExplanation = labelReasons(project, milestones, getScheduleHealth(project, today), todayKey)
+  let { headline, reasons } = scheduleExplanation
+  if (isProjectOverBudget(project)) {
+    const raised = phase !== getScheduleHealth(project, today)
+    headline = raised && getScheduleHealth(project, today) === 'Green' ? 'Over budget' : `${headline}, and over budget`
+    reasons = [
+      ...reasons,
+      `Over budget: ${budgetAmounts(project)}.${raised ? ' That raises health one step.' : ''}`,
+    ]
   }
+  return { phase, label: phaseLabel(phase), headline, reasons, notes: contextNotes(project, todayKey) }
 }

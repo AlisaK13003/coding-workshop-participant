@@ -18,21 +18,38 @@ export const SCHEDULE_PHASE_HINT =
   'Checks each milestone against its own end date. On track: every milestone on schedule. ' +
   'Needs attention: a milestone is running late (past its end date, not completed). ' +
   'Urgent: several milestones are late, or the project is past its end date with work left. ' +
-  'Projects without milestones go by how much of the schedule has passed.'
+  'Projects without milestones go by how much of the schedule has passed. ' +
+  'Being over budget raises health one step (On track to Needs attention, Needs attention to Urgent).'
 
 /**
- * Project health from its milestones: how many are past their end date but not completed
- * (`milestones.overdue`, from the API). A finished project is always on track; one past its
- * own end date with work left is urgent. Without milestones, falls back to elapsed time.
- * project: { start_date, end_date, milestones: { completed, total, overdue } }.
+ * Health from the schedule alone: how many milestones are past their end date but not
+ * completed (`milestones.overdue`, from the API). A finished project is on track; one past
+ * its own end date with work left is urgent. Without milestones, falls back to elapsed time.
  */
-export function getProjectHealth(project, today = new Date()) {
+export function getScheduleHealth(project, today = new Date()) {
   const { completed = 0, total = 0, overdue = 0 } = project.milestones ?? {}
   if (!total) return getSchedulePhase(project.start_date, project.end_date, today)
   if (completed === total) return 'Green'
   if (today.getTime() > parseDate(project.end_date).getTime() + DAY_MS) return 'Red'
   if (overdue === 0) return 'Green'
   return overdue === 1 ? 'Amber' : 'Red'
+}
+
+/** True when labor cost exceeds the budget (only admins and managers receive both). */
+export function isProjectOverBudget(project) {
+  return project.cost != null && project.budget != null && isOverBudget(project.cost, project.budget)
+}
+
+const ONE_STEP_WORSE = { Green: 'Amber', Amber: 'Red', Red: 'Red' }
+
+/**
+ * Project health: the schedule health, raised one step (On track → Needs attention →
+ * Urgent) when the project is over budget.
+ * project: { start_date, end_date, budget?, cost?, milestones: { completed, total, overdue } }.
+ */
+export function getProjectHealth(project, today = new Date()) {
+  const schedule = getScheduleHealth(project, today)
+  return isProjectOverBudget(project) ? ONE_STEP_WORSE[schedule] : schedule
 }
 
 /**

@@ -2,7 +2,10 @@
 // { id, name, start_date, end_date, status, archived_at, manager, milestones: { completed, total },
 //   member_count, hours, budget?, cost? } (budget and cost only for admins and managers).
 import { daysBetween, todayIso } from './calendar.js'
-import { getProjectHealth, isOverBudget } from './schedule.js'
+import { getProjectHealth, isProjectOverBudget } from './schedule.js'
+
+// Lives next to the health rule (which uses it); re-exported for existing callers.
+export { isProjectOverBudget }
 
 export const PROJECT_STATUS = {
   inProgress: 'in_progress',
@@ -48,10 +51,6 @@ export function getProjectPhase(project) {
 export function isEndingSoon(project, days = 60) {
   const remaining = daysBetween(todayIso(), project.end_date)
   return remaining >= 0 && remaining <= days
-}
-
-export function isProjectOverBudget(project) {
-  return isOverBudget(project.cost ?? 0, project.budget ?? 0)
 }
 
 /** True once every milestone is complete (and there is at least one), so the project can be completed. */

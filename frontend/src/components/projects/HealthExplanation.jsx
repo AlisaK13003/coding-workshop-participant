@@ -23,7 +23,7 @@ export function HealthExplanation({ project, milestones = [] }) {
         </>
       )}
       <span className="health-explanation-foot">
-        Health compares each milestone with its own end date; budget doesn’t change the label.
+        Health checks each milestone against its own end date; being over budget raises it one step.
       </span>
     </span>
   )

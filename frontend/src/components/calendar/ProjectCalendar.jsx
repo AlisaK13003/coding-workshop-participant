@@ -87,7 +87,7 @@ export function ProjectCalendar({ projects, onOpenProject, filters = null }) {
             <i className="phase-dot phase-red" /> Urgent · several milestones late, or the project is past its end date
           </span>
           <small>
-            Late: a milestone past its end date and not completed.
+            Late: a milestone past its end date and not completed. Over budget raises health one step.
           </small>
         </div>
         {view === 'month' ? (
