@@ -3,8 +3,11 @@ import { Field, TextArea } from '../../ui'
 import { useMutation } from '../../../hooks/useMutation.js'
 import { decideReview } from '../../../services/milestonesApi.js'
 
-/** Keep a reviewed milestone open, with optional feedback for the requester. */
-export function KeepOpenDialog({ milestone, onClose }) {
+/**
+ * Keep a reviewed milestone open, with optional feedback for the requester.
+ * feedback: text already typed in the review dialog, so it isn't lost.
+ */
+export function KeepOpenDialog({ milestone, feedback = '', onClose }) {
   const keepOpen = useMutation(
     (feedback) => decideReview(milestone.id, milestone.pending_review.id, { decision: 'kept_open', feedback }),
     { success: 'Milestone kept open and feedback sent.', onSuccess: onClose },
@@ -21,7 +24,12 @@ export function KeepOpenDialog({ milestone, onClose }) {
     >
       <div className="form-single">
         <Field label="Feedback (optional)" error={keepOpen.fieldErrors.feedback}>
-          <TextArea name="feedback" maxLength={2000} placeholder="Explain what still needs attention" />
+          <TextArea
+            name="feedback"
+            maxLength={2000}
+            placeholder="Explain what still needs attention"
+            defaultValue={feedback}
+          />
         </Field>
       </div>
     </FormDialog>

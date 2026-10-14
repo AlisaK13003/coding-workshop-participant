@@ -1,3 +1,4 @@
+import { useState } from 'react'
 import { FormDialog } from '../../dialogs'
 import { Button, Field, Select, TextArea } from '../../ui'
 import { DIALOGS } from '../../workspace/dialogKinds.js'
@@ -34,10 +35,12 @@ function getDetailItems(milestone, milestones) {
 /**
  * Complete a milestone and optionally move its employees to another one. With
  * `review` it decides the waiting review request instead: accept (which completes
- * the milestone) with optional feedback, or "Keep open", which opens KeepOpenDialog.
+ * the milestone) with optional feedback, or "Keep open", which opens KeepOpenDialog
+ * and carries over any feedback already typed here.
  */
 export function CompleteMilestoneDialog({ milestone, review = false, onClose, onOpenDialog }) {
   const milestones = useApiQuery(() => listMilestones(milestone.project_id), [milestone.project_id])
+  const [feedback, setFeedback] = useState('')
   const complete = useMutation(
     ({ destinationId, feedback }) =>
       review
@@ -59,7 +62,7 @@ export function CompleteMilestoneDialog({ milestone, review = false, onClose, on
   const handleSubmit = (data) =>
     complete.run({
       destinationId: data.get('destination') ? Number(data.get('destination')) : null,
-      feedback: data.get('feedback') ?? '',
+      feedback,
     })
 
   return (
@@ -77,7 +80,7 @@ export function CompleteMilestoneDialog({ milestone, review = false, onClose, on
         review && (
           <Button
             variant="secondary"
-            onClick={() => onOpenDialog(DIALOGS.keepOpen, { milestone })}
+            onClick={() => onOpenDialog(DIALOGS.keepOpen, { milestone, feedback })}
           >
             Keep open
           </Button>
@@ -101,7 +104,13 @@ export function CompleteMilestoneDialog({ milestone, review = false, onClose, on
         </Field>
         {review && (
           <Field label="Feedback for the requester (optional)" error={complete.fieldErrors.feedback}>
-            <TextArea name="feedback" maxLength={2000} placeholder="What went well" />
+            <TextArea
+              name="feedback"
+              maxLength={2000}
+              placeholder="What went well, or what still needs attention"
+              value={feedback}
+              onChange={(event) => setFeedback(event.target.value)}
+            />
           </Field>
         )}
       </div>
