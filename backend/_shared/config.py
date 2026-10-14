@@ -19,3 +19,7 @@ JWT_SECRET = os.getenv("JWT_SECRET") or (_DEV_JWT_SECRET if IS_LOCAL else None)
 
 ACCESS_TOKEN_MINUTES = int(os.getenv("ACCESS_TOKEN_MINUTES", "15"))
 REFRESH_TOKEN_DAYS = int(os.getenv("REFRESH_TOKEN_DAYS", "7"))
+
+# "Today" for rules like "employees log today only" uses the business's time zone,
+# not the server's (Lambda runs in UTC).
+TIMEZONE = os.getenv("APP_TIMEZONE", "America/New_York")

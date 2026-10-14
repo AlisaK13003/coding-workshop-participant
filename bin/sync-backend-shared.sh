@@ -16,8 +16,12 @@ shopt -s nullglob
 for function_file in "$PROJECT_ROOT"/backend/*/function.py; do
     service_dir="$(dirname "$function_file")"
     case "$(basename "$service_dir")" in _*) continue ;; esac
-    rm -rf "$service_dir/shared"
-    mkdir -p "$service_dir/shared"
-    cp "$SHARED_DIR"/*.py "$service_dir/shared/"
+    target="$service_dir/shared"
+    mkdir -p "$target"
+    # Overwrite in place (no delete-then-copy gap), then drop files removed from _shared.
+    cp -f "$SHARED_DIR"/*.py "$target/"
+    for copied in "$target"/*.py; do
+        [ -e "$SHARED_DIR/$(basename "$copied")" ] || rm -f "$copied"
+    done
     echo "  synced shared code into backend/$(basename "$service_dir")/shared"
 done

@@ -3,7 +3,8 @@
 Run from the repository root:
     .venv/bin/pytest backend/_tests
 
-Every test starts from a freshly reset `project_tracker_test` database (schema + seed).
+Every test starts from a freshly reset test database (schema + seed). It's named
+`project_tracker_test` unless TEST_DB is set, so parallel runs can use separate ones.
 """
 
 import importlib
@@ -17,7 +18,7 @@ import pytest
 
 BACKEND = Path(__file__).resolve().parents[1]
 ROOT = BACKEND.parent
-TEST_DB = "project_tracker_test"
+TEST_DB = os.getenv("TEST_DB", "project_tracker_test")
 SEED_PASSWORD = "Password123!"
 
 os.environ.update({"IS_LOCAL": "true", "POSTGRES_NAME": TEST_DB})
