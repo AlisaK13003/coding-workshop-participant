@@ -1,0 +1,1801 @@
+openapi: 3.1.0
+info:
+  title: Project Tracker API
+  version: 1.0.0
+  description: |
+    The backend of the Project Tracker: one Python Lambda per service, each under `/api/<service>/...`.
+
+    **Signing in.** Call `POST /api/auth/login` with a username and password. Send the `access_token`
+    from the answer as `Authorization: Bearer <token>` on every other request. Access tokens last
+    15 minutes; get a new pair from `POST /api/auth/refresh` with the `refresh_token` (it lasts 7 days).
+    In Swagger UI, click **Authorize** and paste just the token (without `Bearer `).
+
+    **Roles.** There are three: `admin`, `manager` and `employee`. Each operation says who may call it.
+    The role is read from the database on every request, so a role change or archiving applies at once.
+
+    **Who sees what.**
+    - Admins see every project, including completed, abandoned and archived ones.
+    - Managers see their own projects while they are in progress and not archived.
+    - Employees see the projects they are a current member of, while in progress and not archived.
+    - Something you're not allowed to see answers **404**, not 403, so its existence isn't revealed.
+    - Money is hidden from some roles: employees never get a project's `budget` or `cost`, and
+      salaries and hourly rates are shown only to admins and the employee's own manager.
+      Hidden fields are left out of the response entirely (not sent as `null`).
+
+    **Errors** always look like `{"error": {"code": "...", "message": "...", "fields": {...}}}`.
+    `fields` (field name → problem) is only present on validation errors and some 409s.
+    - 400 `validation_error` (with `fields`) or `invalid_json` / `bad_request` / `project_id_required`
+    - 401 `missing_token`, `invalid_token`, `token_expired`, `account_inactive`, `invalid_credentials`
+    - 403 `forbidden`
+    - 404 `not_found`: also returned for an unknown path, or an id that isn't a whole number
+    - 405 `method_not_allowed`: the path exists but not with that method (e.g. `DELETE /api/work-logs/1`,
+      or anything but GET on `/api/activity`). This is checked before the token.
+    - 409 `conflict` or a more specific code (see each operation)
+    - 500 `server_error`
+
+    Nothing is ever hard-deleted except milestones that have no history: `DELETE` on users and
+    projects archives them.
+servers:
+  - url: http://localhost:3002
+    description: Local API server (`.venv/bin/python bin/local-api.py`), the quickest way to run everything
+  - url: http://localhost:3001
+    description: CORS proxy in front of the LocalStack Lambdas (`./bin/start-dev.sh`)
+  - url: https://{distribution}.cloudfront.net
+    description: Deployed on AWS, through CloudFront
+    variables:
+      distribution:
+        default: d111111abcdef8
+        description: The CloudFront distribution's subdomain, printed by `bin/deploy-backend.sh`
+
+security:
+  - bearerAuth: []
+
+tags:
+  - name: auth
+    description: Sign in, refresh tokens, first-admin sign-up, and your own profile and password.
+  - name: users
+    description: People, their roles and reporting lines; DELETE archives a user, nobody is ever deleted.
+  - name: projects
+    description: Projects, their lifecycle (complete, abandon, archive) and their members.
+  - name: milestones
+    description: A project's milestones, prerequisites, completion and the employee review flow.
+  - name: work-logs
+    description: Daily 8-hour work logs; employees log today, admins enter past days and correct mistakes.
+  - name: activity
+    description: Read-only audit trail of who did what (admins only); any method but GET answers 405.
+  - name: notifications
+    description: Your own notifications, and marking them as read.
+
+paths:
+  # ------------------------------------------------------------------ auth
+  /api/auth/setup:
+    get:
+      tags: [auth]
+      operationId: getSetupStatus
+      summary: Is first-admin sign-up open?
+      description: |
+        **Public.** Sign-up is only open while the database has no users at all. With the
+        seed data loaded it is always closed.
+      security: []
+      responses:
+        '200':
+          description: Whether sign-up is open
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [signup_open]
+                properties:
+                  signup_open:
+                    type: boolean
+              example: { signup_open: false }
+
+  /api/auth/signup:
+    post:
+      tags: [auth]
+      operationId: signup
+      summary: Create the first admin
+      description: |
+        **Public**, but only works while there are no users yet; afterwards it answers 409
+        `signup_closed`. The new user is an admin, gets a generated username
+        (first initial + last name + id, lower case) and is signed in straight away.
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [first_name, last_name, email, job_title, password]
+              properties:
+                first_name: { type: string, maxLength: 100 }
+                last_name: { type: string, maxLength: 100 }
+                email: { type: string, format: email, maxLength: 254 }
+                job_title: { type: string, maxLength: 100 }
+                password: { $ref: '#/components/schemas/Password' }
+            example:
+              first_name: Alex
+              last_name: Admin
+              email: alex@example.com
+              job_title: Operations Director
+              password: Password123!
+      responses:
+        '201':
+          description: The admin was created and signed in
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Tokens' }
+        '400': { $ref: '#/components/responses/ValidationError' }
+        '409':
+          description: Sign-up is closed because users already exist (`signup_closed`)
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Error' }
+              example:
+                error: { code: signup_closed, message: Sign-up is closed. Ask an admin to create your account. }
+
+  /api/auth/login:
+    post:
+      tags: [auth]
+      operationId: login
+      summary: Sign in
+      description: |
+        **Public.** The username is case-insensitive. The same 401 is returned for a wrong
+        username, a wrong password and an archived account, so it doesn't reveal which accounts exist.
+        Copy `access_token` from the answer into **Authorize** (Swagger UI) or the collection's
+        Bearer Token (Postman).
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [username, password]
+              properties:
+                username: { type: string, maxLength: 200 }
+                password: { type: string }
+            examples:
+              admin:
+                summary: Alex Admin (admin)
+                value: { username: aadmin1, password: Password123! }
+              manager:
+                summary: Morgan Manager (manager of Customer Portal)
+                value: { username: mmanager2, password: Password123! }
+              employee:
+                summary: Emery Employee (employee on Customer Portal)
+                value: { username: eemployee3, password: Password123! }
+      responses:
+        '200':
+          description: Signed in
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Tokens' }
+        '400': { $ref: '#/components/responses/ValidationError' }
+        '401':
+          description: Wrong username or password, or the account is archived (`invalid_credentials`)
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Error' }
+              example:
+                error: { code: invalid_credentials, message: Incorrect username or password. }
+
+  /api/auth/refresh:
+    post:
+      tags: [auth]
+      operationId: refreshTokens
+      summary: Swap a refresh token for new tokens
+      description: |
+        **Public** (the refresh token itself is the proof). Returns a fresh access token and a
+        fresh refresh token. An access token sent here is rejected with `invalid_token`.
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [refresh_token]
+              properties:
+                refresh_token: { type: string, maxLength: 2000 }
+            example:
+              refresh_token: paste-the-refresh_token-from-login-here
+      responses:
+        '200':
+          description: New tokens
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Tokens' }
+        '400': { $ref: '#/components/responses/ValidationError' }
+        '401':
+          description: The refresh token is invalid (`invalid_token`) or expired (`token_expired`), or the account was archived (`account_inactive`)
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Error' }
+              example:
+                error: { code: invalid_token, message: Your session is invalid. Sign in again. }
+
+  /api/auth/me:
+    get:
+      tags: [auth]
+      operationId: getMe
+      summary: Your own profile
+      description: '**Any signed-in user.**'
+      responses:
+        '200':
+          description: The signed-in user
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Profile' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+
+  /api/auth/me/password:
+    put:
+      tags: [auth]
+      operationId: changeMyPassword
+      summary: Change your own password
+      description: |
+        **Any signed-in user.** A wrong `current_password` is a 400 with a field error on
+        `current_password`. Tokens you already have stay valid.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [current_password, new_password]
+              properties:
+                current_password: { type: string }
+                new_password: { $ref: '#/components/schemas/Password' }
+            example: { current_password: Password123!, new_password: NewPassword456! }
+      responses:
+        '204': { description: Password changed (no body) }
+        '400': { $ref: '#/components/responses/ValidationError' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+
+  # ------------------------------------------------------------------ users
+  /api/users:
+    get:
+      tags: [users]
+      operationId: listUsers
+      summary: List users
+      description: |
+        - **Admin:** everyone, sorted by last name. Archived users are left out unless
+          `include_archived=true`. Can filter by `role` and `manager_id`.
+        - **Manager:** themselves and their active employees. The filters are ignored.
+        - **Employee:** 403.
+      parameters:
+        - name: role
+          in: query
+          description: Admin only. Only users with this role.
+          schema: { $ref: '#/components/schemas/Role' }
+        - name: manager_id
+          in: query
+          description: Admin only. Only users reporting to this manager.
+          schema: { type: integer, minimum: 0 }
+        - name: include_archived
+          in: query
+          description: Admin only. `true` also returns archived users.
+          schema: { type: string, enum: ['true', 'false'], default: 'false' }
+      responses:
+        '200':
+          description: The users you may see
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: '#/components/schemas/User' }
+        '400': { $ref: '#/components/responses/ValidationError' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+    post:
+      tags: [users]
+      operationId: createUser
+      summary: Create a user
+      description: |
+        **Admin only.** Employees must have a `manager_id` (an active manager) and an
+        `annual_salary`; admins and managers must have neither. Leave out `username` to have one
+        generated (first initial + last name + id, lower case, e.g. `jsmith4`).
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/UserCreate' }
+            examples:
+              employee:
+                summary: A new employee reporting to Morgan Manager
+                value:
+                  first_name: Jamie
+                  last_name: Smith
+                  email: jamie@example.com
+                  job_title: QA Engineer
+                  role: employee
+                  password: Password123!
+                  manager_id: 2
+                  annual_salary: 72800
+              manager:
+                summary: A new manager (no manager_id or salary)
+                value:
+                  first_name: Riley
+                  last_name: Lead
+                  username: rlead
+                  email: riley@example.com
+                  job_title: Product Manager
+                  role: manager
+                  password: Password123!
+      responses:
+        '201':
+          description: The created user
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/User' }
+        '400': { $ref: '#/components/responses/ValidationError' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '409':
+          description: The username or email is already taken (case-insensitive); `fields` names which
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Error' }
+              example:
+                error:
+                  code: conflict
+                  message: This email is already in use.
+                  fields: { email: This email is already in use. }
+
+  /api/users/{id}:
+    parameters:
+      - $ref: '#/components/parameters/Id'
+    get:
+      tags: [users]
+      operationId: getUser
+      summary: One user, with their current projects
+      description: |
+        - **Admin:** anyone, archived users too.
+        - **Manager:** themselves or their own employees.
+        - **Employee:** only themselves.
+
+        Anyone else answers 404. `annual_salary` is only included for admins and the user's own
+        manager (so employees don't see their own salary here).
+      responses:
+        '200':
+          description: The user and the projects they are currently on
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/UserDetail' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '404': { $ref: '#/components/responses/NotFound' }
+    put:
+      tags: [users]
+      operationId: updateUser
+      summary: Edit a user
+      description: |
+        Send only the fields you want to change.
+        - **Admin:** any field of anyone. Can't change their own role.
+        - **Manager:** their own employees only, and not `role` or `manager_id` (403).
+
+        Rules: employees need a manager and a salary, other roles have neither. Changing an
+        employee to another role drops their manager and salary and takes them off every project.
+        A manager's role can't change while anyone (even archived employees or closed projects)
+        still refers to them (409). Changing an employee's manager notifies them.
+        The answer is the user without the `projects` list.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/UserUpdate' }
+            examples:
+              jobTitle:
+                summary: Manager or admin changes Emery's job title
+                value: { job_title: Senior Software Engineer }
+              salary:
+                summary: Manager or admin gives Emery a raise
+                value: { annual_salary: 88400 }
+      responses:
+        '200':
+          description: The updated user
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/User' }
+        '400': { $ref: '#/components/responses/ValidationError' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '409':
+          description: The username or email is taken, or a manager still has employees or projects
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Error' }
+    delete:
+      tags: [users]
+      operationId: archiveUser
+      summary: Archive a user
+      description: |
+        **Admin only.** Archived users can't sign in. You can't archive yourself (403).
+        An employee is taken off every project. A manager can only be archived once no active
+        employees report to them and no open project names them (409).
+      responses:
+        '204': { description: Archived (no body) }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '409':
+          description: Already archived, or the manager still has employees or open projects
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Error' }
+
+  /api/users/{id}/restore:
+    parameters:
+      - $ref: '#/components/parameters/Id'
+    post:
+      tags: [users]
+      operationId: restoreUser
+      summary: Un-archive a user
+      description: |
+        **Admin only.** 409 if the user isn't archived, or if their manager is archived
+        (give them a new manager first). Project memberships are not restored.
+      responses:
+        '200':
+          description: The restored user
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/User' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '409':
+          description: Not archived, or their manager is archived
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Error' }
+
+  /api/users/{id}/password:
+    parameters:
+      - $ref: '#/components/parameters/Id'
+    post:
+      tags: [users]
+      operationId: resetUserPassword
+      summary: Set a new password for someone
+      description: |
+        **Admin** (anyone), or a **manager** for their own employees. Managers who target
+        themselves get 403 (use `PUT /api/auth/me/password`). Employees get 403.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [password]
+              properties:
+                password: { $ref: '#/components/schemas/Password' }
+            example: { password: Password123! }
+      responses:
+        '204': { description: Password set (no body) }
+        '400': { $ref: '#/components/responses/ValidationError' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+
+  # ------------------------------------------------------------------ projects
+  /api/projects:
+    get:
+      tags: [projects]
+      operationId: listProjects
+      summary: List the projects you can see
+      description: |
+        **Any signed-in user**, sorted by name.
+        - **Admin:** every project; can filter by `status` and `archived`.
+        - **Manager:** their own projects that are in progress and not archived.
+        - **Employee:** projects they're a current member of, in progress and not archived;
+          without `budget` and `cost`.
+
+        The filters are ignored for managers and employees.
+      parameters:
+        - name: status
+          in: query
+          description: Admin only.
+          schema: { $ref: '#/components/schemas/ProjectStatus' }
+        - name: archived
+          in: query
+          description: Admin only. `true` = only archived, `false` = only not archived.
+          schema: { type: string, enum: ['true', 'false'] }
+      responses:
+        '200':
+          description: The visible projects
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: '#/components/schemas/Project' }
+        '400': { $ref: '#/components/responses/ValidationError' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+    post:
+      tags: [projects]
+      operationId: createProject
+      summary: Create a project
+      description: |
+        **Admin only.** The manager must be an active manager; they get a notification.
+        Project names are unique (case-insensitive).
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [name, manager_id, start_date, end_date, budget]
+              properties:
+                name: { type: string, maxLength: 200 }
+                manager_id: { type: integer, minimum: 1, description: An active manager }
+                start_date: { type: string, format: date }
+                end_date: { type: string, format: date, description: On or after start_date }
+                budget: { type: number, minimum: 0 }
+            example:
+              name: Mobile App
+              manager_id: 2
+              start_date: '2026-11-01'
+              end_date: '2027-03-31'
+              budget: 80000
+      responses:
+        '201':
+          description: The created project
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Project' }
+        '400': { $ref: '#/components/responses/ValidationError' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '409': { $ref: '#/components/responses/ProjectNameTaken' }
+
+  /api/projects/{id}:
+    parameters:
+      - $ref: '#/components/parameters/Id'
+    get:
+      tags: [projects]
+      operationId: getProject
+      summary: One project
+      description: |
+        **Any signed-in user** who can see the project (see the list rules); others get 404.
+        Employees don't get `budget` and `cost`.
+      responses:
+        '200':
+          description: The project
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Project' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '404': { $ref: '#/components/responses/NotFound' }
+    put:
+      tags: [projects]
+      operationId: updateProject
+      summary: Edit a project
+      description: |
+        **Admin**, or the project's **manager**. Send only the fields you want to change.
+        Only an admin may change `manager_id` (403 for managers); the new manager is notified.
+        The project must be open (in progress, not archived), otherwise 403. New dates must
+        still contain every milestone (400 naming the milestones that wouldn't fit).
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                name: { type: string, maxLength: 200 }
+                manager_id: { type: integer, minimum: 1, description: Admin only }
+                start_date: { type: string, format: date }
+                end_date: { type: string, format: date }
+                budget: { type: number, minimum: 0 }
+            examples:
+              budget:
+                summary: Raise the budget (admin or manager)
+                value: { budget: 55000 }
+              tooShort:
+                summary: Dates that don't fit the milestones (400)
+                value: { end_date: '2026-11-30' }
+      responses:
+        '200':
+          description: The updated project
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Project' }
+        '400': { $ref: '#/components/responses/ValidationError' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '409': { $ref: '#/components/responses/ProjectNameTaken' }
+    delete:
+      tags: [projects]
+      operationId: archiveProject
+      summary: Archive a project
+      description: |
+        **Admin only.** Archived projects disappear for managers and employees and can't be
+        changed. Any status can be archived.
+      responses:
+        '204': { description: Archived (no body) }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '409':
+          description: Already archived
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Error' }
+
+  /api/projects/{id}/complete:
+    parameters:
+      - $ref: '#/components/parameters/Id'
+    post:
+      tags: [projects]
+      operationId: completeProject
+      summary: Complete a project
+      description: |
+        **Admin**, or the project's **manager**, on an open project (otherwise 403).
+        Needs at least one milestone and every milestone completed (409 lists the unfinished
+        ones). Afterwards the manager can no longer see the project, but still gets this answer.
+      responses:
+        '200':
+          description: The completed project
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Project' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '409':
+          description: No milestones, or some aren't completed
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Error' }
+              example:
+                error: { code: conflict, message: "These milestones aren't complete yet: Design, Backend API, Frontend, Launch." }
+
+  /api/projects/{id}/abandon:
+    parameters:
+      - $ref: '#/components/parameters/Id'
+    post:
+      tags: [projects]
+      operationId: abandonProject
+      summary: Abandon a project
+      description: '**Admin only**, on an open project (in progress, not archived); otherwise 403.'
+      responses:
+        '200':
+          description: The abandoned project
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Project' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+
+  /api/projects/{id}/unarchive:
+    parameters:
+      - $ref: '#/components/parameters/Id'
+    post:
+      tags: [projects]
+      operationId: unarchiveProject
+      summary: Unarchive a project
+      description: |
+        **Admin only.** The project comes back **without a manager and without members**;
+        assign a manager with `PUT /api/projects/{id}`. Completed milestones stay completed.
+      responses:
+        '200':
+          description: The unarchived project (`manager` is null)
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Project' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '409':
+          description: The project isn't archived
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Error' }
+
+  /api/projects/{id}/members:
+    parameters:
+      - $ref: '#/components/parameters/Id'
+    get:
+      tags: [projects]
+      operationId: listMembers
+      summary: Current members of a project
+      description: '**Any signed-in user** who can see the project; others get 404. Sorted by last name.'
+      responses:
+        '200':
+          description: The current members
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: '#/components/schemas/Member' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '404': { $ref: '#/components/responses/NotFound' }
+    post:
+      tags: [projects]
+      operationId: addMember
+      summary: Add an employee to a project
+      description: |
+        **Admin**, or the project's **manager** (who may only add their own employees, else 403).
+        The project must be open (403). The employee must be active (400), not already on the
+        project (409). The optional milestone must belong to this project and not be completed.
+        The employee is notified.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [employee_id]
+              properties:
+                employee_id: { type: integer, minimum: 1, description: An active employee }
+                milestone_id: { type: [integer, 'null'], minimum: 1, description: A milestone of this project that isn't completed }
+            example: { employee_id: 4, milestone_id: 3 }
+      responses:
+        '201':
+          description: The new membership
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Member' }
+        '400': { $ref: '#/components/responses/ValidationError' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '409':
+          description: The employee is already on this project
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Error' }
+
+  /api/projects/{id}/members/{member_id}:
+    parameters:
+      - $ref: '#/components/parameters/Id'
+      - $ref: '#/components/parameters/MemberId'
+    put:
+      tags: [projects]
+      operationId: assignMember
+      summary: Change a member's milestone
+      description: |
+        **Admin**, or the project's **manager**, on an open project (403 otherwise).
+        `milestone_id` is required; send `null` to unassign. The milestone must belong to this
+        project and not be completed. The employee is notified.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [milestone_id]
+              properties:
+                milestone_id: { type: [integer, 'null'], minimum: 1 }
+            examples:
+              assign:
+                summary: Move Emery to Frontend
+                value: { milestone_id: 3 }
+              unassign:
+                summary: Take Emery off any milestone
+                value: { milestone_id: null }
+      responses:
+        '200':
+          description: The updated membership
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Member' }
+        '400': { $ref: '#/components/responses/ValidationError' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+    delete:
+      tags: [projects]
+      operationId: removeMember
+      summary: Remove a member from a project
+      description: |
+        **Admin**, or the project's **manager**, on an open project (403 otherwise). The history
+        is kept and the employee is notified.
+      responses:
+        '204': { description: Removed (no body) }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+
+  # ------------------------------------------------------------------ milestones
+  /api/milestones:
+    get:
+      tags: [milestones]
+      operationId: listMilestones
+      summary: The milestones of a project
+      description: |
+        **Any signed-in user** who can see the project (404 otherwise), ordered by start date.
+        `project_id` is required (400 `project_id_required` without it).
+      parameters:
+        - name: project_id
+          in: query
+          required: true
+          schema: { type: integer, minimum: 1 }
+          example: 1
+      responses:
+        '200':
+          description: The milestones
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: '#/components/schemas/Milestone' }
+        '400': { $ref: '#/components/responses/ValidationError' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '404': { $ref: '#/components/responses/NotFound' }
+    post:
+      tags: [milestones]
+      operationId: createMilestone
+      summary: Create a milestone
+      description: |
+        **Admin**, or the project's **manager**, on an open project (403 otherwise; 404 if you
+        can't see the project). Dates must be within the project's dates. Prerequisites must be
+        other milestones of the same project that aren't completed (409 `milestone_completed`).
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [project_id, name, start_date, end_date]
+              properties:
+                project_id: { type: integer, minimum: 1 }
+                name: { type: string, maxLength: 200 }
+                start_date: { type: string, format: date }
+                end_date: { type: string, format: date }
+                prerequisite_ids:
+                  type: [array, 'null']
+                  items: { type: integer }
+                  description: Milestones that must be completed before this one can be worked on
+            example:
+              project_id: 1
+              name: QA
+              start_date: '2026-12-01'
+              end_date: '2026-12-15'
+              prerequisite_ids: [2, 3]
+      responses:
+        '201':
+          description: The created milestone
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Milestone' }
+        '400': { $ref: '#/components/responses/ValidationError' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '409': { $ref: '#/components/responses/MilestoneConflict' }
+
+  /api/milestones/{id}:
+    parameters:
+      - $ref: '#/components/parameters/Id'
+    get:
+      tags: [milestones]
+      operationId: getMilestone
+      summary: One milestone, with its review history
+      description: '**Any signed-in user** who can see its project; others get 404.'
+      responses:
+        '200':
+          description: The milestone and its reviews, newest first
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/MilestoneDetail' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '404': { $ref: '#/components/responses/NotFound' }
+    put:
+      tags: [milestones]
+      operationId: updateMilestone
+      summary: Rename a milestone or change its dates
+      description: |
+        **Admin**, or the project's **manager**, on an open project (403 otherwise).
+        Send only the fields to change. Dates must stay within the project's dates.
+        Completed milestones can't be changed (409 `milestone_completed`).
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                name: { type: string, maxLength: 200 }
+                start_date: { type: string, format: date }
+                end_date: { type: string, format: date }
+            example: { name: Frontend (web), end_date: '2026-12-12' }
+      responses:
+        '200':
+          description: The updated milestone
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Milestone' }
+        '400': { $ref: '#/components/responses/ValidationError' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '409': { $ref: '#/components/responses/MilestoneConflict' }
+    delete:
+      tags: [milestones]
+      operationId: deleteMilestone
+      summary: Delete a milestone that has no history
+      description: |
+        **Admin**, or the project's **manager**, on an open project (403 otherwise). Really
+        deletes it, so it's refused (409 `milestone_has_history`) if the milestone is completed,
+        has work logs, members (now or before), review requests or notifications. All four seed
+        milestones have history; create a new one to try this.
+      responses:
+        '204': { description: Deleted (no body) }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '409':
+          description: The milestone has history (`milestone_has_history`)
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Error' }
+              example:
+                error:
+                  code: milestone_has_history
+                  message: Design can't be deleted because it has work logs and employees are or were assigned to it and it has review requests and notifications refer to it.
+
+  /api/milestones/{id}/dependencies:
+    parameters:
+      - $ref: '#/components/parameters/Id'
+    put:
+      tags: [milestones]
+      operationId: replaceDependencies
+      summary: Replace a milestone's prerequisites
+      description: |
+        **Admin**, or the project's **manager**, on an open project (403 otherwise).
+        Sends the complete new list (`[]` removes all). Prerequisites must be other milestones of
+        the same project (400). Completed milestones can't be added or removed as prerequisites,
+        and a completed milestone's prerequisites can't change (409 `milestone_completed`).
+        Circular dependencies are refused (409 `dependency_cycle`).
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [prerequisite_ids]
+              properties:
+                prerequisite_ids:
+                  type: array
+                  items: { type: integer }
+            examples:
+              onlyBackend:
+                summary: Launch (4) depends on Backend API only
+                value: { prerequisite_ids: [2] }
+              cycle:
+                summary: Backend API (2) depending on Launch (4) would be circular (409)
+                value: { prerequisite_ids: [1, 4] }
+      responses:
+        '200':
+          description: The milestone with its new prerequisites
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Milestone' }
+        '400': { $ref: '#/components/responses/ValidationError' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '409': { $ref: '#/components/responses/MilestoneConflict' }
+
+  /api/milestones/{id}/complete:
+    parameters:
+      - $ref: '#/components/parameters/Id'
+    post:
+      tags: [milestones]
+      operationId: completeMilestone
+      summary: Complete a milestone
+      description: |
+        **Admin**, or the project's **manager**, on an open project (403 otherwise).
+        Every prerequisite must be completed (409 `prerequisites_incomplete`). Its current members
+        move to `destination_milestone_id` (same project, not completed, not itself), or are left
+        without a milestone when it's left out. A waiting review request is marked accepted.
+        Members are notified.
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/Destination' }
+            example: { destination_milestone_id: 2 }
+      responses:
+        '200':
+          description: The completed milestone with its reviews
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/MilestoneDetail' }
+        '400': { $ref: '#/components/responses/ValidationError' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '409': { $ref: '#/components/responses/MilestoneConflict' }
+
+  /api/milestones/{id}/reviews:
+    parameters:
+      - $ref: '#/components/parameters/Id'
+    post:
+      tags: [milestones]
+      operationId: requestReview
+      summary: Ask for your milestone to be reviewed as done
+      description: |
+        **Employee only**, for the milestone they're currently assigned to (403 otherwise; 404 if
+        they can't see the project). No request body. The milestone must be `available`:
+        409 `milestone_completed`, `milestone_awaiting_review` or `milestone_blocked` otherwise.
+        The project's manager is notified. In the seed data Design already has a waiting review.
+      responses:
+        '201':
+          description: The new review request
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Review' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '409':
+          description: The milestone isn't available for review
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Error' }
+              example:
+                error: { code: milestone_awaiting_review, message: This milestone is already waiting for a review. }
+
+  /api/milestones/{id}/reviews/{review_id}/decision:
+    parameters:
+      - $ref: '#/components/parameters/Id'
+      - $ref: '#/components/parameters/ReviewId'
+    post:
+      tags: [milestones]
+      operationId: decideReview
+      summary: Accept a review request, or keep the milestone open
+      description: |
+        **Admin**, or the project's **manager**, on an open project (403 otherwise).
+        - `accepted` completes the milestone, exactly like `POST /complete` (same rules and
+          409s), optionally moving its members to `destination_milestone_id`.
+        - `kept_open` records the decision; `destination_milestone_id` isn't allowed (400).
+
+        The employee who asked is notified, with the `feedback`. A decided review answers 409
+        `review_decided`.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [decision]
+              properties:
+                decision: { type: string, enum: [accepted, kept_open] }
+                feedback: { type: [string, 'null'], maxLength: 2000 }
+                destination_milestone_id: { type: [integer, 'null'], minimum: 1, description: Only when accepting }
+            examples:
+              accept:
+                summary: Accept Design (review 1) and move Emery to Backend API
+                value: { decision: accepted, feedback: Great work on the designs!, destination_milestone_id: 2 }
+              keepOpen:
+                summary: Keep it open with feedback
+                value: { decision: kept_open, feedback: Please add the mobile layouts first. }
+      responses:
+        '200':
+          description: The decided review
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Review' }
+        '400': { $ref: '#/components/responses/ValidationError' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '409': { $ref: '#/components/responses/MilestoneConflict' }
+
+  # ------------------------------------------------------------------ work logs
+  /api/work-logs:
+    get:
+      tags: [work-logs]
+      operationId: listWorkLogs
+      summary: List the work logs you can see
+      description: |
+        **Any signed-in user**, newest first.
+        - **Admin:** every log.
+        - **Manager:** their own employees' logs on projects the manager can see.
+        - **Employee:** their own logs on projects they can still see.
+
+        `hourly_rate` and `cost` are only included for admins and the employee's own manager.
+      parameters:
+        - { name: project_id, in: query, schema: { type: integer, minimum: 1 } }
+        - { name: employee_id, in: query, schema: { type: integer, minimum: 1 } }
+        - { name: milestone_id, in: query, schema: { type: integer, minimum: 1 } }
+        - { name: from, in: query, description: 'On or after this date', schema: { type: string, format: date } }
+        - { name: to, in: query, description: 'On or before this date (not before `from`)', schema: { type: string, format: date } }
+      responses:
+        '200':
+          description: The logs
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: '#/components/schemas/WorkLog' }
+        '400': { $ref: '#/components/responses/ValidationError' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+    post:
+      tags: [work-logs]
+      operationId: createWorkLog
+      summary: Log a day of work
+      description: |
+        Every log is 8 hours, on a weekday, and an employee has at most one log per day.
+        - **Employee:** logs **today** (in the business time zone) on their **current milestone**
+          of `project_id`. The milestone must be `available` (not blocked, awaiting review or
+          completed). Send only `project_id` (and optionally `milestone_id`, which must be the
+          current one). The rate comes from their salary.
+          409 codes: `not_a_weekday`, `no_milestone`, `milestone_unavailable`, `already_logged`.
+          404 if they can't see the project.
+        - **Admin:** enters a **past or current weekday** for any active employee, on any milestone
+          of the project (membership isn't checked). `hourly_rate` defaults to salary / 2080.
+          409 `already_logged` if that employee already has a log that day.
+        - **Manager:** 403.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              anyOf:
+                - $ref: '#/components/schemas/WorkLogEmployeeCreate'
+                - $ref: '#/components/schemas/WorkLogAdminCreate'
+            examples:
+              employee:
+                summary: Employee logs today on Customer Portal
+                value: { project_id: 1 }
+              admin:
+                summary: Admin enters a past day for Emery on Design
+                value: { employee_id: 3, project_id: 1, milestone_id: 1, work_date: '2026-10-05' }
+      responses:
+        '201':
+          description: The new log
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/WorkLog' }
+        '400': { $ref: '#/components/responses/ValidationError' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '409':
+          description: Not allowed right now (see the codes above)
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Error' }
+              example:
+                error: { code: milestone_unavailable, message: You can't log work while your milestone is awaiting review. }
+
+  /api/work-logs/{id}:
+    parameters:
+      - $ref: '#/components/parameters/Id'
+    get:
+      tags: [work-logs]
+      operationId: getWorkLog
+      summary: One work log
+      description: '**Any signed-in user** who can see it (same rules as the list); others get 404.'
+      responses:
+        '200':
+          description: The log
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/WorkLog' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '404': { $ref: '#/components/responses/NotFound' }
+    put:
+      tags: [work-logs]
+      operationId: correctWorkLog
+      summary: Correct a work log
+      description: |
+        **Admin only.** Change the project, milestone or date (send only what changes). The
+        milestone must belong to the (new) project; the date must be a weekday, not in the future,
+        and not clash with another log of the same employee (409 `already_logged`). The employee
+        is notified. There's no DELETE (405): mistakes are corrected in place.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                project_id: { type: integer, minimum: 1 }
+                milestone_id: { type: integer, minimum: 1 }
+                work_date: { type: string, format: date }
+            example: { work_date: '2026-10-06' }
+      responses:
+        '200':
+          description: The corrected log
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/WorkLog' }
+        '400': { $ref: '#/components/responses/ValidationError' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '409':
+          description: The employee already has a log on that day (`already_logged`)
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Error' }
+
+  # ------------------------------------------------------------------ activity
+  /api/activity:
+    get:
+      tags: [activity]
+      operationId: listActivity
+      summary: Activity log entries
+      description: '**Admin only.** Newest first, one page at a time.'
+      parameters:
+        - { name: actor_id, in: query, schema: { type: integer, minimum: 1 } }
+        - { name: role, in: query, description: The actor's role at the time, schema: { $ref: '#/components/schemas/Role' } }
+        - { name: action, in: query, description: 'Prefix match, e.g. `project.` or `review.request`', schema: { type: string, maxLength: 100 } }
+        - { name: project_id, in: query, schema: { type: integer, minimum: 1 } }
+        - { name: entity_type, in: query, description: 'e.g. `user`, `project`, `project_member`, `milestone`, `milestone_review`, `work_log`', schema: { type: string, maxLength: 100 } }
+        - { name: entity_id, in: query, schema: { type: integer, minimum: 1 } }
+        - { name: limit, in: query, schema: { type: integer, minimum: 1, maximum: 200, default: 50 } }
+        - { name: offset, in: query, schema: { type: integer, minimum: 0, default: 0 } }
+      responses:
+        '200':
+          description: A page of entries
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ActivityPage' }
+        '400': { $ref: '#/components/responses/ValidationError' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+
+  /api/activity/{id}:
+    parameters:
+      - $ref: '#/components/parameters/Id'
+    get:
+      tags: [activity]
+      operationId: getActivityEntry
+      summary: One activity log entry
+      description: '**Admin only.**'
+      responses:
+        '200':
+          description: The entry
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ActivityEntry' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+
+  # ------------------------------------------------------------------ notifications
+  /api/notifications:
+    get:
+      tags: [notifications]
+      operationId: listNotifications
+      summary: Your notifications
+      description: |
+        **Any signed-in user**, only their own, newest first. `unread_count` always counts
+        all unread ones, even when filtering.
+      parameters:
+        - name: unread
+          in: query
+          description: '`true` returns only unread notifications; anything else returns all'
+          schema: { type: string, enum: ['true', 'false'] }
+      responses:
+        '200':
+          description: Your notifications
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/NotificationList' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+
+  /api/notifications/{id}/read:
+    parameters:
+      - $ref: '#/components/parameters/Id'
+    post:
+      tags: [notifications]
+      operationId: markNotificationRead
+      summary: Mark one notification as read
+      description: |
+        **Any signed-in user**, for their own notifications; someone else's answers 404.
+        Marking it again keeps the first `read_at`.
+      responses:
+        '200':
+          description: The notification
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Notification' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '404': { $ref: '#/components/responses/NotFound' }
+
+  /api/notifications/read-all:
+    post:
+      tags: [notifications]
+      operationId: markAllNotificationsRead
+      summary: Mark all your notifications as read
+      description: '**Any signed-in user.**'
+      responses:
+        '200':
+          description: How many were newly marked as read
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [updated]
+                properties:
+                  updated: { type: integer, minimum: 0 }
+              example: { updated: 1 }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: The `access_token` from `POST /api/auth/login` (valid for 15 minutes).
+
+  parameters:
+    Id:
+      name: id
+      in: path
+      required: true
+      description: The record's id (a whole number; anything else answers 404)
+      schema: { type: integer, minimum: 1 }
+      example: 1
+    MemberId:
+      name: member_id
+      in: path
+      required: true
+      description: The membership id (the `id` from `GET /api/projects/{id}/members`, not the user id)
+      schema: { type: integer, minimum: 1 }
+      example: 1
+    ReviewId:
+      name: review_id
+      in: path
+      required: true
+      description: The review request's id (see `pending_review.id` on the milestone)
+      schema: { type: integer, minimum: 1 }
+      example: 1
+
+  responses:
+    Unauthorized:
+      description: |
+        No valid access token: `missing_token`, `invalid_token`, `token_expired` or
+        `account_inactive` (the user was archived)
+      content:
+        application/json:
+          schema: { $ref: '#/components/schemas/Error' }
+          example:
+            error: { code: missing_token, message: Sign in to continue. }
+    Forbidden:
+      description: |
+        Your role isn't allowed to do this, or the rule forbids it (for example, the project
+        is closed or archived, or a manager acting on someone else's employee)
+      content:
+        application/json:
+          schema: { $ref: '#/components/schemas/Error' }
+          example:
+            error: { code: forbidden, message: You don't have permission to do that. }
+    NotFound:
+      description: It doesn't exist, or you aren't allowed to see it
+      content:
+        application/json:
+          schema: { $ref: '#/components/schemas/Error' }
+          example:
+            error: { code: not_found, message: Project not found. }
+    ValidationError:
+      description: |
+        The request needs fixing. `validation_error` lists every problem in `fields`;
+        `invalid_json` means the body isn't a JSON object
+      content:
+        application/json:
+          schema: { $ref: '#/components/schemas/Error' }
+          example:
+            error:
+              code: validation_error
+              message: Some fields need fixing.
+              fields:
+                name: This field is required.
+                end_date: Must be on or after the start date.
+    MethodNotAllowed:
+      description: The path exists, but not with this method (`method_not_allowed`)
+      content:
+        application/json:
+          schema: { $ref: '#/components/schemas/Error' }
+          example:
+            error: { code: method_not_allowed, message: DELETE is not supported here. }
+    ProjectNameTaken:
+      description: Another project already has this name (case-insensitive)
+      content:
+        application/json:
+          schema: { $ref: '#/components/schemas/Error' }
+          example:
+            error:
+              code: conflict
+              message: A project with this name already exists.
+              fields: { name: A project with this name already exists. }
+    MilestoneConflict:
+      description: |
+        The milestone's state doesn't allow this. Codes: `milestone_completed`,
+        `prerequisites_incomplete`, `dependency_cycle`, `review_decided`
+      content:
+        application/json:
+          schema: { $ref: '#/components/schemas/Error' }
+          example:
+            error: { code: prerequisites_incomplete, message: 'Complete its prerequisites first: Design.' }
+
+  schemas:
+    Error:
+      type: object
+      required: [error]
+      properties:
+        error:
+          type: object
+          required: [code, message]
+          properties:
+            code:
+              type: string
+              description: A stable, machine-readable code, e.g. `validation_error`, `not_found`
+            message:
+              type: string
+              description: A sentence you can show to a person
+            fields:
+              type: object
+              description: Field name → what's wrong with it. Only on validation errors and some 409s.
+              additionalProperties: { type: string }
+
+    Ref:
+      type: object
+      description: A short reference to a related record
+      required: [id, name]
+      properties:
+        id: { type: integer }
+        name: { type: string }
+
+    Role:
+      type: string
+      enum: [admin, manager, employee]
+
+    ProjectStatus:
+      type: string
+      enum: [in_progress, completed, abandoned]
+
+    MilestoneStatus:
+      type: string
+      description: |
+        Worked out from the data: `completed` (completed_at set), `awaiting_review` (a review
+        request is waiting), `blocked` (a prerequisite isn't completed), otherwise `available`
+      enum: [available, blocked, awaiting_review, completed]
+
+    Password:
+      type: string
+      minLength: 8
+      description: 8 to 72 characters (bcrypt only uses 72 bytes)
+
+    Destination:
+      type: object
+      properties:
+        destination_milestone_id:
+          type: [integer, 'null']
+          minimum: 1
+          description: Where the members go; a different, not completed milestone of the same project
+
+    Tokens:
+      type: object
+      required: [access_token, refresh_token, token_type, expires_in, user]
+      properties:
+        access_token: { type: string, description: 'Send as `Authorization: Bearer <access_token>`' }
+        refresh_token: { type: string, description: 'For `POST /api/auth/refresh` only' }
+        token_type: { type: string, const: Bearer }
+        expires_in: { type: integer, description: Seconds until the access token expires, example: 900 }
+        user: { $ref: '#/components/schemas/Profile' }
+
+    Profile:
+      type: object
+      description: The signed-in user's own profile (no salary)
+      required: [id, display_id, username, first_name, last_name, email, job_title, role, manager_id]
+      properties:
+        id: { type: integer, example: 3 }
+        display_id: { type: string, example: USR-0003 }
+        username: { type: string, example: eemployee3 }
+        first_name: { type: string, example: Emery }
+        last_name: { type: string, example: Employee }
+        email: { type: string, example: emery@example.com }
+        job_title: { type: string, example: Software Engineer }
+        role: { $ref: '#/components/schemas/Role' }
+        manager_id: { type: [integer, 'null'], example: 2 }
+
+    User:
+      type: object
+      required: [id, display_id, username, first_name, last_name, email, job_title, role, archived_at, name, manager]
+      properties:
+        id: { type: integer, example: 3 }
+        display_id: { type: string, description: 'USR- and the id, padded to 4 digits', example: USR-0003 }
+        username: { type: string, example: eemployee3 }
+        first_name: { type: string, example: Emery }
+        last_name: { type: string, example: Employee }
+        name: { type: string, example: Emery Employee }
+        email: { type: string, example: emery@example.com }
+        job_title: { type: string, example: Software Engineer }
+        role: { $ref: '#/components/schemas/Role' }
+        archived_at: { type: [string, 'null'], format: date-time }
+        manager:
+          description: Who they report to; only employees have one
+          oneOf:
+            - $ref: '#/components/schemas/Ref'
+            - type: 'null'
+        project_count:
+          type: integer
+          description: '**Employees only:** how many projects they are currently on'
+        annual_salary:
+          type: [number, 'null']
+          description: |
+            **Only for admins, and for the employee's own manager.** Left out for everyone else
+            (including the employee themselves). Only employees have a salary; it's `null` for others.
+          example: 83200
+
+    UserDetail:
+      allOf:
+        - $ref: '#/components/schemas/User'
+        - type: object
+          required: [projects]
+          properties:
+            projects:
+              type: array
+              description: The projects they are currently a member of
+              items:
+                type: object
+                required: [project, milestone]
+                properties:
+                  project: { $ref: '#/components/schemas/Ref' }
+                  milestone:
+                    oneOf:
+                      - $ref: '#/components/schemas/Ref'
+                      - type: 'null'
+
+    UserCreate:
+      type: object
+      required: [first_name, last_name, email, job_title, role, password]
+      properties:
+        first_name: { type: string, maxLength: 100 }
+        last_name: { type: string, maxLength: 100 }
+        username: { type: string, maxLength: 100, description: Optional; generated when left out }
+        email: { type: string, format: email, maxLength: 254 }
+        job_title: { type: string, maxLength: 100 }
+        role: { $ref: '#/components/schemas/Role' }
+        password: { $ref: '#/components/schemas/Password' }
+        manager_id: { type: [integer, 'null'], minimum: 1, description: Required for employees (an active manager); not allowed for other roles }
+        annual_salary: { type: [number, 'null'], minimum: 0, description: Required for employees; not allowed for other roles }
+
+    UserUpdate:
+      type: object
+      description: Only the fields you send are changed. Managers can't send `role` or `manager_id`.
+      properties:
+        first_name: { type: string, maxLength: 100 }
+        last_name: { type: string, maxLength: 100 }
+        username: { type: string, maxLength: 100 }
+        email: { type: string, format: email, maxLength: 254 }
+        job_title: { type: string, maxLength: 100 }
+        role: { $ref: '#/components/schemas/Role' }
+        manager_id: { type: [integer, 'null'], minimum: 1, description: Admin only }
+        annual_salary: { type: [number, 'null'], minimum: 0 }
+
+    Project:
+      type: object
+      required: [id, name, start_date, end_date, status, archived_at, created_at, member_count, hours, manager, milestones]
+      properties:
+        id: { type: integer, example: 1 }
+        name: { type: string, example: Customer Portal }
+        start_date: { type: string, format: date, example: '2026-10-01' }
+        end_date: { type: string, format: date, example: '2026-12-31' }
+        status: { $ref: '#/components/schemas/ProjectStatus' }
+        archived_at: { type: [string, 'null'], format: date-time }
+        created_at: { type: string, format: date-time }
+        member_count: { type: integer, description: Current members, example: 1 }
+        hours: { type: number, description: Total hours logged on the project, example: 16 }
+        manager:
+          description: The project's manager; `null` after unarchiving until an admin assigns one
+          oneOf:
+            - $ref: '#/components/schemas/Ref'
+            - type: 'null'
+        milestones:
+          type: object
+          required: [completed, total]
+          properties:
+            completed: { type: integer, example: 0 }
+            total: { type: integer, example: 4 }
+        budget:
+          type: number
+          description: '**Admins and managers only**; left out for employees.'
+          example: 50000
+        cost:
+          type: number
+          description: '**Admins and managers only**; left out for employees. Sum of hours × hourly rate.'
+          example: 640
+
+    Member:
+      type: object
+      description: A current membership of a project
+      required: [id, user, milestone, added_at]
+      properties:
+        id: { type: integer, description: 'The membership id (use it in /members/{member_id})', example: 1 }
+        user:
+          type: object
+          required: [id, name, job_title, display_id]
+          properties:
+            id: { type: integer, example: 3 }
+            name: { type: string, example: Emery Employee }
+            job_title: { type: string, example: Software Engineer }
+            display_id: { type: string, example: USR-0003 }
+        milestone:
+          description: The milestone they work on, or `null` if they're waiting for an assignment
+          oneOf:
+            - type: object
+              required: [id, name, status]
+              properties:
+                id: { type: integer, example: 1 }
+                name: { type: string, example: Design }
+                status: { $ref: '#/components/schemas/MilestoneStatus' }
+            - type: 'null'
+        added_at: { type: string, format: date-time }
+
+    Milestone:
+      type: object
+      required: [id, project_id, name, start_date, end_date, completed_at, status, prerequisite_ids, members, hours, pending_review]
+      properties:
+        id: { type: integer, example: 1 }
+        project_id: { type: integer, example: 1 }
+        name: { type: string, example: Design }
+        start_date: { type: string, format: date, example: '2026-10-01' }
+        end_date: { type: string, format: date, example: '2026-10-31' }
+        completed_at: { type: [string, 'null'], format: date-time }
+        status: { $ref: '#/components/schemas/MilestoneStatus' }
+        prerequisite_ids:
+          type: array
+          items: { type: integer }
+          description: Milestones that must be completed first
+          example: []
+        members:
+          type: array
+          description: Employees currently assigned to it
+          items: { $ref: '#/components/schemas/Ref' }
+        hours: { type: number, description: Total hours logged on it, example: 16 }
+        pending_review:
+          description: The review request waiting for a decision, if any
+          oneOf:
+            - type: object
+              required: [id, requested_by, requested_at]
+              properties:
+                id: { type: integer, example: 1 }
+                requested_by: { $ref: '#/components/schemas/Ref' }
+                requested_at: { type: string, format: date-time }
+            - type: 'null'
+
+    MilestoneDetail:
+      allOf:
+        - $ref: '#/components/schemas/Milestone'
+        - type: object
+          required: [reviews]
+          properties:
+            reviews:
+              type: array
+              description: Every review request, newest first
+              items: { $ref: '#/components/schemas/Review' }
+
+    Review:
+      type: object
+      required: [id, milestone_id, requested_by, requested_at, decision, decided_by, decided_at, feedback]
+      properties:
+        id: { type: integer, example: 1 }
+        milestone_id: { type: integer, example: 1 }
+        requested_by: { $ref: '#/components/schemas/Ref' }
+        requested_at: { type: string, format: date-time }
+        decision:
+          description: '`null` while waiting'
+          oneOf:
+            - type: string
+              enum: [accepted, kept_open]
+            - type: 'null'
+        decided_by:
+          oneOf:
+            - $ref: '#/components/schemas/Ref'
+            - type: 'null'
+        decided_at: { type: [string, 'null'], format: date-time }
+        feedback: { type: [string, 'null'] }
+
+    WorkLogEmployeeCreate:
+      type: object
+      title: Employee logs today
+      required: [project_id]
+      properties:
+        project_id: { type: integer, minimum: 1 }
+        milestone_id:
+          type: [integer, 'null']
+          minimum: 1
+          description: Optional; if sent it must be your current milestone
+
+    WorkLogAdminCreate:
+      type: object
+      title: Admin enters a past day
+      required: [employee_id, project_id, milestone_id, work_date]
+      properties:
+        employee_id: { type: integer, minimum: 1, description: An active employee }
+        project_id: { type: integer, minimum: 1 }
+        milestone_id: { type: integer, minimum: 1, description: A milestone of that project }
+        work_date: { type: string, format: date, description: A weekday, today or earlier }
+        hourly_rate: { type: [number, 'null'], minimum: 0, description: Defaults to the employee's annual salary / 2080 }
+
+    WorkLog:
+      type: object
+      required: [id, work_date, employee, project, milestone, hours, entered_by, historical, created_at]
+      properties:
+        id: { type: integer, example: 1 }
+        work_date: { type: string, format: date, example: '2026-10-01' }
+        employee: { $ref: '#/components/schemas/Ref' }
+        project: { $ref: '#/components/schemas/Ref' }
+        milestone: { $ref: '#/components/schemas/Ref' }
+        hours: { type: number, description: Always 8, example: 8 }
+        entered_by: { $ref: '#/components/schemas/Ref' }
+        historical:
+          type: boolean
+          description: '`true` when someone else (an admin) entered it rather than the employee'
+        created_at: { type: string, format: date-time }
+        hourly_rate:
+          type: number
+          description: '**Admins and the employee''s own manager only**; left out for everyone else.'
+          example: 40
+        cost:
+          type: number
+          description: '**Admins and the employee''s own manager only**; hours × hourly_rate.'
+          example: 320
+
+    ActivityEntry:
+      type: object
+      required: [id, created_at, actor, actor_role, action, entity_type, entity_id, project, summary, changes]
+      properties:
+        id: { type: integer, example: 3 }
+        created_at: { type: string, format: date-time }
+        actor: { $ref: '#/components/schemas/Ref' }
+        actor_role: { $ref: '#/components/schemas/Role' }
+        action: { type: string, description: 'A short code like `project.create` or `review.accept`', example: project.create }
+        entity_type: { type: string, example: project }
+        entity_id: { type: integer, example: 1 }
+        project:
+          oneOf:
+            - $ref: '#/components/schemas/Ref'
+            - type: 'null'
+        summary: { type: string, example: Created project Customer Portal, managed by Morgan Manager. }
+        changes:
+          description: 'For updates: `{field: {"from": old, "to": new}}`; otherwise `null`'
+          type: [object, 'null']
+          additionalProperties:
+            type: object
+            properties:
+              from: {}
+              to: {}
+
+    ActivityPage:
+      type: object
+      required: [items, total, limit, offset]
+      properties:
+        items:
+          type: array
+          items: { $ref: '#/components/schemas/ActivityEntry' }
+        total: { type: integer, description: How many entries match the filters in all, example: 5 }
+        limit: { type: integer, example: 50 }
+        offset: { type: integer, example: 0 }
+
+    Notification:
+      type: object
+      required: [id, title, detail, project_id, milestone_id, created_at, read_at, read]
+      properties:
+        id: { type: integer, example: 1 }
+        title: { type: string, example: Milestone review requested }
+        detail: { type: [string, 'null'], example: Emery Employee · Design }
+        project_id: { type: [integer, 'null'], example: 1 }
+        milestone_id: { type: [integer, 'null'], example: 1 }
+        created_at: { type: string, format: date-time }
+        read_at: { type: [string, 'null'], format: date-time }
+        read: { type: boolean }
+
+    NotificationList:
+      type: object
+      required: [items, unread_count]
+      properties:
+        items:
+          type: array
+          items: { $ref: '#/components/schemas/Notification' }
+        unread_count: { type: integer, description: All your unread notifications, whatever the filter, example: 1 }
