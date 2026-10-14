@@ -233,8 +233,9 @@ Then open http://localhost:3010.
 - [ ] **Managers can't abandon:** Morgan has no "Mark abandoned". Admin does.
 
 **Archiving:**
-- [ ] **Admin: Archive Customer Portal:**
-  - It moves to **Archive**.
+- [ ] **Archive a running project** (Customer Portal) → the Archive action is disabled ("Mark the project completed or abandoned first"). Through the API → 409 "Only completed or abandoned projects can be archived."
+- [ ] **Admin: Mark Customer Portal abandoned, then Archive it:**
+  - It moves to **Archive**, showing "Abandoned".
   - **Check as Morgan and Emery:** it's gone, and so are its work logs in their views.
 
 **Unarchiving:**

@@ -609,15 +609,16 @@ paths:
       operationId: archiveProject
       summary: Archive a project
       description: |
-        **Admin only.** Archived projects disappear for managers and employees and can't be
-        changed. Any status can be archived.
+        **Admin only.** Only **completed or abandoned** projects can be archived; mark a running
+        project completed or abandoned first (409 `project_not_closed`). Archived projects
+        disappear for managers and employees and can't be changed.
       responses:
         '204': { description: Archived (no body) }
         '401': { $ref: '#/components/responses/Unauthorized' }
         '403': { $ref: '#/components/responses/Forbidden' }
         '404': { $ref: '#/components/responses/NotFound' }
         '409':
-          description: Already archived
+          description: Already archived, or still in progress (`project_not_closed`)
           content:
             application/json:
               schema: { $ref: '#/components/schemas/Error' }

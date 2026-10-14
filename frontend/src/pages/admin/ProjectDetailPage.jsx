@@ -74,7 +74,12 @@ export function ProjectDetailPage({ project, onBack, onOpenDialog }) {
                 open && { label: 'Mark abandoned', onClick: openDialog(DIALOGS.abandonProject) },
                 project.archived_at
                   ? { label: 'Unarchive project', onClick: openDialog(DIALOGS.unarchiveProject) }
-                  : { label: 'Archive project', onClick: openDialog(DIALOGS.archiveProject) },
+                  : {
+                      label: 'Archive project',
+                      disabled: open,
+                      title: open ? 'Mark the project completed or abandoned first' : undefined,
+                      onClick: openDialog(DIALOGS.archiveProject),
+                    },
               ]}
             />
           </>

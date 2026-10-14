@@ -66,7 +66,7 @@ def test_visibility_rules(admin_token, manager_token, employee_token):
     closed = add_project("Closed")
     sql("UPDATE projects SET status = 'completed' WHERE id = %s", (closed,))
     archived = add_project("Archived")
-    sql("UPDATE projects SET archived_at = now() WHERE id = %s", (archived,))
+    sql("UPDATE projects SET status = 'abandoned', archived_at = now() WHERE id = %s", (archived,))
     sql("INSERT INTO project_members (project_id, employee_id) VALUES (%s, 3)", (closed,))
 
     ids = lambda token, query=None: {p["id"] for p in call("projects", "GET", "/", token=token, query=query).json}
@@ -181,10 +181,13 @@ def test_admin_reassigns_project(admin_token):
 
 def test_archive_project(admin_token, manager_token):
     assert call("projects", "DELETE", "/1", token=manager_token).status == 403
+    r = call("projects", "DELETE", "/1", token=admin_token)
+    assert r.status == 409 and r.json["error"]["code"] == "project_not_closed"
+    assert call("projects", "POST", "/1/abandon", token=admin_token).status == 200
     assert call("projects", "DELETE", "/1", token=admin_token).status == 204
     assert last_activity()["action"] == "project.archive"
     assert call("projects", "DELETE", "/1", token=admin_token).status == 409
-    assert call("projects", "GET", "/1", token=manager_token).status == 404
+    assert call("projects", "GET", "/1", token=admin_token).json["status"] == "abandoned"
 
 
 def test_complete_project_rules(manager_token, employee_token):
@@ -217,6 +220,7 @@ def test_abandon_project(admin_token, manager_token):
 def test_unarchive_clears_manager_and_members(admin_token, manager_token):
     complete_milestones(1)
     assert call("projects", "POST", "/1/unarchive", token=admin_token).status == 409
+    call("projects", "POST", "/1/abandon", token=admin_token)
     call("projects", "DELETE", "/1", token=admin_token)
     assert call("projects", "POST", "/1/unarchive", token=manager_token).status == 403
 
@@ -229,7 +233,10 @@ def test_unarchive_clears_manager_and_members(admin_token, manager_token):
     assert r.json["status"] == "in_progress"
     entry = last_activity()
     assert entry["action"] == "project.unarchive"
-    assert entry["changes"] == {"manager_id": {"from": 2, "to": None}}
+    assert entry["changes"] == {
+        "manager_id": {"from": 2, "to": None},
+        "status": {"from": "abandoned", "to": "in_progress"},
+    }
 
     r = call("projects", "PUT", "/1", {"manager_id": 2}, token=admin_token)
     assert r.status == 200 and r.json["manager"]["id"] == 2

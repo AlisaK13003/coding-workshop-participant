@@ -5,7 +5,7 @@ Routes (under /api/projects):
     GET    /{id}                      signed in: one visible project
     POST   /                          admin: create a project
     PUT    /{id}                      admin, or its manager: edit an open project (manager_id: admin only)
-    DELETE /{id}                      admin: archive a project
+    DELETE /{id}                      admin: archive a completed or abandoned project
     POST   /{id}/complete             admin, or its manager: complete once every milestone is complete
     POST   /{id}/abandon              admin: abandon an open project
     POST   /{id}/unarchive            admin: unarchive and reopen; clears the manager and the members
@@ -254,6 +254,10 @@ def archive_project(request):
         project = get_managed_project(conn, request.user, request.path_params["id"], lock=True)
         if project["archived_at"] is not None:
             raise conflict("This project is already archived.")
+        # Archiving files away a finished project, so a running one must be completed or abandoned first.
+        if project["status"] == "in_progress":
+            raise conflict("Only completed or abandoned projects can be archived. Mark it completed or abandoned first.",
+                           "project_not_closed")
         conn.execute("UPDATE projects SET archived_at = now() WHERE id = %s", (project["id"],))
         log_activity(conn, request.user, "project.archive", "project", project["id"],
                      f"Archived project {project['name']}.", project_id=project["id"])
