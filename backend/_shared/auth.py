@@ -17,13 +17,25 @@ ADMIN_ONLY = frozenset({ADMIN})
 ADMIN_OR_MANAGER = frozenset({ADMIN, MANAGER})
 
 _ALGORITHM = "HS256"
-# Compared against when a username doesn't exist, so a wrong username takes as
-# long as a wrong password and response times don't reveal which accounts exist.
-_DUMMY_HASH = bcrypt.hashpw(b"dummy-password", bcrypt.gensalt(12))
+
+# bcrypt work factor: each +1 doubles the time to check (or crack) a password. 10 is the
+# usual minimum; it keeps sign-in around a second on the workshop's 128 MB Lambdas, where
+# 12 took about four. Hashes made with another cost are upgraded at sign-in.
+BCRYPT_COST = 10
+
+# Compared against when a username doesn't exist, so a wrong username takes as long as a
+# wrong password and response times don't reveal which accounts exist. A fixed hash of a
+# random throwaway value (same cost as real ones), so Lambdas don't spend time making one at startup.
+_DUMMY_HASH = b"$2b$10$Gxj0GTQUIW1eRDKnF2Rdx.voU3ic0iCeyqE0oXgzkQHt8Y9Y9WJFu"
 
 
 def hash_password(password):
-    return bcrypt.hashpw(password.encode("utf-8"), bcrypt.gensalt(12)).decode("utf-8")
+    return bcrypt.hashpw(password.encode("utf-8"), bcrypt.gensalt(BCRYPT_COST)).decode("utf-8")
+
+
+def needs_rehash(password_hash):
+    """True for a hash made with a different bcrypt cost ("$2b$12$…" has cost 12)."""
+    return int(password_hash.split("$")[2]) != BCRYPT_COST
 
 
 def verify_password(password, password_hash):

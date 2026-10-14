@@ -144,3 +144,25 @@ def test_new_passwords_need_uppercase_number_and_special_character(employee_toke
     ok = call("auth", "PUT", "/me/password", {"current_password": SEED_PASSWORD, "new_password": "Period.1x"},
               token=employee_token)
     assert ok.status == 204
+
+
+def test_signing_in_upgrades_an_older_password_hash():
+    import bcrypt
+
+    old_hash = bcrypt.hashpw(SEED_PASSWORD.encode(), bcrypt.gensalt(12)).decode()
+    sql("UPDATE users SET password_hash = %s WHERE username = 'eemployee3'", (old_hash,))
+
+    wrong = call("auth", "POST", "/login", {"username": "eemployee3", "password": "Wrong.123"})
+    assert wrong.status == 401
+    assert sql("SELECT password_hash FROM users WHERE username = 'eemployee3'")[0]["password_hash"] == old_hash
+
+    assert sign_in("eemployee3")
+    [row] = sql("SELECT password_hash FROM users WHERE username = 'eemployee3'")
+    assert row["password_hash"].startswith("$2b$10$")
+    assert sign_in("eemployee3")  # still works with the upgraded hash
+
+
+def test_new_hashes_use_the_current_cost():
+    shared_auth = load_service("auth").auth
+    assert shared_auth.hash_password("Whatever.1").startswith(f"$2b${shared_auth.BCRYPT_COST}$")
+    assert not shared_auth.needs_rehash(shared_auth.hash_password("Whatever.1"))

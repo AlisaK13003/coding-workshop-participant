@@ -77,6 +77,11 @@ def login(request):
     valid = auth.verify_password(password, row["password_hash"] if row else None)
     if not valid or row["archived_at"] is not None:
         raise unauthorized("Incorrect username or password.", "invalid_credentials")
+    if auth.needs_rehash(row["password_hash"]):
+        # Older hashes (another bcrypt cost) are re-saved at the current cost, once per person.
+        with db.transaction() as conn:
+            conn.execute("UPDATE users SET password_hash = %s WHERE id = %s",
+                         (auth.hash_password(password), row["id"]))
     return signed_in(auth.load_active_user(row["id"]))
 
 
