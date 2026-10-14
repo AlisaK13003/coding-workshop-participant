@@ -8,7 +8,7 @@ import { useNotifications } from '../../hooks/useNotifications.js'
 import { useCurrentUser } from '../../hooks/useSession.js'
 import { listProjects } from '../../services/projectsApi.js'
 import { findById } from '../../utils/collections.js'
-import { isOpenProject } from '../../utils/projects.js'
+import { isNotArchived } from '../../utils/projects.js'
 import { toShellUser } from '../../utils/users.js'
 import {
   ADMIN_NAV_ITEMS,
@@ -40,7 +40,7 @@ export default function AdminApp() {
   const title = selectedProject ? ADMIN_PAGES.projects : page
   const navItems = ADMIN_NAV_ITEMS.map((item) =>
     item.name === ADMIN_PAGES.projects
-      ? { ...item, count: (projects.data ?? []).filter(isOpenProject).length }
+      ? { ...item, count: (projects.data ?? []).filter(isNotArchived).length }
       : item,
   )
 

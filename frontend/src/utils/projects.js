@@ -26,6 +26,11 @@ export function isOpenProject(project) {
   return project.status === PROJECT_STATUS.inProgress && !project.archived_at
 }
 
+/** Not archived: in progress, completed or abandoned. The admin's Projects page lists these. */
+export function isNotArchived(project) {
+  return !project.archived_at
+}
+
 /** Unarchived projects come back without a manager until an admin assigns one. */
 export function needsManager(project) {
   return !project.manager

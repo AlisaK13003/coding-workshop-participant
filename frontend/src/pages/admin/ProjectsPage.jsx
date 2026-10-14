@@ -10,7 +10,7 @@ import {
 } from '../../components/ui'
 import { DIALOGS } from '../../components/workspace/dialogKinds.js'
 import { uniqueBy } from '../../utils/collections.js'
-import { PROJECT_STATUS, getProjectPhase, projectStatusLabel } from '../../utils/projects.js'
+import { PROJECT_STATUS, getProjectPhase, isNotArchived, projectStatusLabel } from '../../utils/projects.js'
 import { SCHEDULE_PHASES, phaseLabel } from '../../utils/schedule.js'
 import { includesText } from '../../utils/text.js'
 import { ProjectTable } from './ProjectTable.jsx'
@@ -30,7 +30,7 @@ export function ProjectsPage({ projects, onOpenProject, onOpenDialog }) {
   const [manager, setManager] = useState(ALL)
   const [status, setStatus] = useState(ALL)
   const [phase, setPhase] = useState(ALL)
-  const current = projects.filter((project) => !project.archived_at)
+  const current = projects.filter(isNotArchived)
   const managers = uniqueBy(
     current.map((project) => project.manager).filter(Boolean),
     (item) => item.id,
