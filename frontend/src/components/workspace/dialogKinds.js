@@ -8,6 +8,7 @@ export const DIALOGS = {
   abandonProject: 'abandonProject',
   archiveProject: 'archiveProject',
   unarchiveProject: 'unarchiveProject',
+  assignManager: 'assignManager',
   addMember: 'addMember',
   removeMember: 'removeMember',
   // Milestones

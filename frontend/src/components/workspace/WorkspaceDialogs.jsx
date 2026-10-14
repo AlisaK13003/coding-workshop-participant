@@ -5,6 +5,7 @@ import { MilestoneFormDialog } from '../milestones/dialogs/MilestoneFormDialog.j
 import { RequestReviewDialog } from '../milestones/dialogs/RequestReviewDialog.jsx'
 import { AddMemberDialog } from '../projects/dialogs/AddMemberDialog.jsx'
 import { ArchiveProjectDialog } from '../projects/dialogs/ArchiveProjectDialog.jsx'
+import { AssignManagerDialog } from '../projects/dialogs/AssignManagerDialog.jsx'
 import { CloseProjectDialog } from '../projects/dialogs/CloseProjectDialog.jsx'
 import { ProjectFormDialog } from '../projects/dialogs/ProjectFormDialog.jsx'
 import { RemoveMemberDialog } from '../projects/dialogs/RemoveMemberDialog.jsx'
@@ -26,6 +27,7 @@ const REGISTRY = {
   [DIALOGS.abandonProject]: [CloseProjectDialog, { outcome: 'abandon' }],
   [DIALOGS.archiveProject]: [ArchiveProjectDialog],
   [DIALOGS.unarchiveProject]: [UnarchiveProjectDialog],
+  [DIALOGS.assignManager]: [AssignManagerDialog],
   [DIALOGS.addMember]: [AddMemberDialog],
   [DIALOGS.removeMember]: [RemoveMemberDialog],
   [DIALOGS.addMilestone]: [MilestoneFormDialog],

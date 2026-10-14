@@ -7,8 +7,13 @@ import { formatDate, formatDateRange, formatHours, formatMoney } from '../../uti
 import { getProjectPhase, needsManager } from '../../utils/projects.js'
 import { SCHEDULE_PHASE_HINT } from '../../utils/schedule.js'
 
-/** Admin project list. `compact` (dashboard) merges dates and adds the schedule phase. */
-export function ProjectTable({ projects, onOpen, compact = false }) {
+/**
+ * Admin project list. `compact` (dashboard) merges dates and adds the schedule phase.
+ * `rowAction(project)` puts a control (e.g. an "Assign manager" button) at the end of each
+ * row instead of the arrow; clicking it doesn't also open the project. `hideManager` drops the
+ * Manager column, e.g. for a list of projects that have none.
+ */
+export function ProjectTable({ projects, onOpen, compact = false, rowAction, hideManager = false }) {
   const columns = [
     {
       key: 'name',
@@ -20,7 +25,7 @@ export function ProjectTable({ projects, onOpen, compact = false }) {
         </>
       ),
     },
-    { key: 'manager', header: 'Manager', render: (project) => project.manager?.name ?? 'Unassigned' },
+    !hideManager && { key: 'manager', header: 'Manager', render: (project) => project.manager?.name ?? 'Unassigned' },
     compact
       ? {
           key: 'dates',
@@ -63,7 +68,18 @@ export function ProjectTable({ projects, onOpen, compact = false }) {
       header: 'Budget',
       render: (project) => <BudgetUsage cost={project.cost} budget={project.budget} />,
     },
-    { key: 'open', header: '', render: () => <ChevronRight size={17} /> },
+    {
+      key: 'open',
+      header: '',
+      render: (project) =>
+        rowAction ? (
+          <span className="row-action" onClick={(event) => event.stopPropagation()}>
+            {rowAction(project)}
+          </span>
+        ) : (
+          <ChevronRight size={17} />
+        ),
+    },
   ].filter(Boolean)
 
   return (

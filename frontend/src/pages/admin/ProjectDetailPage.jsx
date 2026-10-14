@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { Plus } from 'lucide-react'
+import { Plus, UserPlus } from 'lucide-react'
 import { ProjectMilestonesTab } from '../../components/milestones/ProjectMilestonesTab.jsx'
 import { CompletionNote } from '../../components/projects/CompletionNote.jsx'
 import { ProjectOverviewTab } from '../../components/projects/ProjectOverviewTab.jsx'
@@ -23,7 +23,7 @@ import { useApiQuery } from '../../hooks/useApiQuery.js'
 import { listMilestones } from '../../services/milestonesApi.js'
 import { formatDateRange } from '../../utils/format.js'
 import { SCHEDULE_PHASE_HINT } from '../../utils/schedule.js'
-import { canCompleteProject, getProjectPhase, isOpenProject } from '../../utils/projects.js'
+import { canCompleteProject, getProjectPhase, isOpenProject, needsManager } from '../../utils/projects.js'
 import { getAdminWorkLogColumns } from './adminWorkLogColumns.jsx'
 import { ActivityTab } from './tabs/ActivityTab.jsx'
 
@@ -59,6 +59,12 @@ export function ProjectDetailPage({ project, onBack, onOpenDialog }) {
         subtitle={`${project.manager?.name ?? 'No manager'} · ${formatDateRange(project.start_date, project.end_date)}`}
         actions={
           <>
+            {open && needsManager(project) && (
+              <Button onClick={openDialog(DIALOGS.assignManager)}>
+                <UserPlus size={15} />
+                Assign manager
+              </Button>
+            )}
             {open && (
               <Button variant="secondary" onClick={openDialog(DIALOGS.editProject)}>
                 Edit project

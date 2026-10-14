@@ -317,6 +317,8 @@ Everyone's password is `Password123!`.
 - [ ] The Activity Log shows the previous manager (Morgan) and status (completed).
 - [ ] It now counts as needing a manager.
 
+**Assign manager shortcut:** Dashboard → **Awaiting assignment** → **Assign manager** on a row (or the same button on that project's page) → choose a manager → the project leaves the list and the manager is notified.
+
 **Intranet Redesign** (already unarchived, needs a manager):
 - [ ] It shows "previously managed by Riley".
 - [ ] Assign **Riley** → Riley now manages **2** projects, sees it in My Projects and on the Calendar, and can add members (e.g. Blake back) and milestones.

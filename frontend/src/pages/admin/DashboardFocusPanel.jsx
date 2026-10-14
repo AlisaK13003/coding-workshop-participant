@@ -1,4 +1,4 @@
-import { ChevronRight } from 'lucide-react'
+import { ChevronRight, UserPlus } from 'lucide-react'
 import { ReviewQueue } from '../../components/milestones/ReviewQueue.jsx'
 import { Button, EmptyState, Pager, Panel } from '../../components/ui'
 import { UserTable } from '../../components/users/UserTable.jsx'
@@ -37,10 +37,21 @@ function FocusPanel({
       return (
         <Panel
           title="Projects awaiting a manager"
-          description="Open projects without a manager, e.g. after being unarchived. Open one and edit it to assign a manager."
+          description="Open projects without a manager, e.g. after being unarchived."
         >
           {unassigned.length ? (
-            <ProjectTable projects={pages.pageItems} onOpen={onOpenProject} compact />
+            <ProjectTable
+              projects={pages.pageItems}
+              onOpen={onOpenProject}
+              compact
+              hideManager
+              rowAction={(project) => (
+                <Button variant="secondary" onClick={() => onOpenDialog(DIALOGS.assignManager, { project })}>
+                  <UserPlus size={15} />
+                  Assign manager
+                </Button>
+              )}
+            />
           ) : (
             <EmptyState title="Every open project has a manager" body="Nothing to assign right now." />
           )}

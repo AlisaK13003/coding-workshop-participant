@@ -6,12 +6,7 @@ const COLUMNS = {
   name: {
     key: 'name',
     header: 'Name',
-    render: (user) => (
-      <>
-        <PersonCell name={user.name} />
-        {user.archived_at && <Badge>Archived</Badge>}
-      </>
-    ),
+    render: (user) => <PersonCell name={user.name} badge={user.archived_at && <Badge>Archived</Badge>} />,
   },
   username: { key: 'username', header: 'Username', render: (user) => user.username },
   email: { key: 'email', header: 'Email', render: (user) => user.email },
