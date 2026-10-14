@@ -5,10 +5,17 @@ import { requestReview } from '../../../services/milestonesApi.js'
 import { formatHours } from '../../../utils/format.js'
 import './RequestReviewDialog.css'
 
-/** Asks the project's manager to review whether the whole milestone is complete. */
+/**
+ * Asks the project's manager to review whether the whole milestone is complete.
+ * The backend also logs today's 8 hours on it, unless today is already logged.
+ */
 export function RequestReviewDialog({ project, milestone, onClose }) {
+  const manager = project.manager?.name ?? 'your manager'
   const request = useMutation(() => requestReview(milestone.id), {
-    success: `Review requested from ${project.manager?.name ?? 'your manager'}.`,
+    success: (review) =>
+      review.work_logged
+        ? `Review requested from ${manager}, and today’s 8 hours were logged.`
+        : `Review requested from ${manager}. Today’s work was already logged.`,
     onSuccess: onClose,
   })
   return (
@@ -32,6 +39,9 @@ export function RequestReviewDialog({ project, milestone, onClose }) {
         <small>
           {project.name} · {formatHours(milestone.hours)} logged on this milestone
         </small>
+      </div>
+      <div className="info-strip">
+        Requesting a review also logs today as an 8-hour workday on this milestone, unless you’ve already logged today.
       </div>
     </ConfirmDialog>
   )

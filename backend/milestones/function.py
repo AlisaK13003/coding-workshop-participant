@@ -8,7 +8,7 @@ Routes (under /api/milestones):
     DELETE /{id}                          admin or the project's manager: delete a milestone with no history
     PUT    /{id}/dependencies             admin or the project's manager: replace its prerequisites
     POST   /{id}/complete                 admin or the project's manager: complete it and move its members
-    POST   /{id}/reviews                  employee on the milestone: ask for it to be reviewed as done
+    POST   /{id}/reviews                  employee on the milestone: ask for a review (also logs today)
     POST   /{id}/reviews/{review_id}/decision
                                           admin or the project's manager: accept or keep open
 
@@ -23,7 +23,7 @@ from dependencies import (
     FIELD as PREREQUISITES, add_prerequisites, check_prerequisites, current_prerequisites,
     reject_completed, reject_cycle, remove_prerequisites,
 )
-from shared import auth, db
+from shared import auth, clock, db
 from shared.access import get_managed_project, get_visible_project, require_open_project
 from shared.activity import changed_fields, full_name, log_activity, notify
 from shared.http import bad_request, conflict, forbidden, not_found
@@ -31,6 +31,7 @@ from shared.milestones import AVAILABLE, AWAITING_REVIEW, BLOCKED, COMPLETED, mi
 from shared.router import Router
 from shared.sql import update_sql
 from shared.validation import Validator
+from shared.worklogs import is_weekday, log_day_unless_logged
 
 router = Router("milestones")
 
@@ -239,7 +240,13 @@ def complete(request):
 
 @router.route("POST", "/{id}/reviews", roles={auth.EMPLOYEE})
 def request_review(request):
+    """Flags the milestone for review and logs today's 8 hours on it, since asking for a
+    review means the employee worked on it today. Weekdays only. If they already logged
+    today (on any project), the review still goes through without a second log."""
     user = request.user
+    today = clock.today()
+    if not is_weekday(today):
+        raise conflict("You can only request a review on a weekday.", "not_a_weekday")
     try:
         with db.transaction() as conn:
             # Employees only see open projects they're a current member of; anything else is a 404.
@@ -257,6 +264,8 @@ def request_review(request):
             if status != AVAILABLE:
                 raise conflict(REVIEW_BLOCKERS[status], f"milestone_{status}")
 
+            # Logged first, while the milestone is still available to log on.
+            log_id = log_day_unless_logged(conn, user["id"], project["id"], milestone["id"], today)
             review = conn.execute(
                 "INSERT INTO milestone_reviews (milestone_id, requested_by) VALUES (%s, %s) RETURNING id",
                 (milestone["id"], user["id"]),
@@ -266,7 +275,8 @@ def request_review(request):
                        f"{full_name(user)} · {milestone['name']}", project["id"], milestone["id"])
             log_activity(conn, user, "review.request", "milestone_review", review["id"],
                          f"Requested review of {milestone['name']}.", project_id=project["id"])
-            return 201, milestone_json.review(conn, review["id"])
+            # work_logged: whether this request logged today's hours (false if already logged today).
+            return 201, {**milestone_json.review(conn, review["id"]), "work_logged": log_id is not None}
     except db.UniqueViolation:
         # one_open_review: another request for this milestone was saved first.
         raise conflict(REVIEW_BLOCKERS[AWAITING_REVIEW], f"milestone_{AWAITING_REVIEW}")

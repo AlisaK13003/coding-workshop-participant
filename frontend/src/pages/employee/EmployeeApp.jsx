@@ -80,6 +80,7 @@ export default function EmployeeApp() {
             selectedProjectId={loggingProjectId}
             onSelectProject={setLoggingProjectId}
             onLog={openLog}
+            onReview={openReview}
             onOpenProject={openProject}
             onSelectNotice={selectNotification}
           />

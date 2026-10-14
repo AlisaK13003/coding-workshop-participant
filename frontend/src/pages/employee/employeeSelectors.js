@@ -36,9 +36,9 @@ export function canLogToday(milestone, logs) {
   )
 }
 
-/** Review requests are only allowed while the milestone is available. */
+/** Reviews can be requested on weekdays while the milestone is available (requesting also logs today). */
 export function canRequestReview(milestone) {
-  return milestone?.status === MILESTONE_STATUS.available
+  return isWeekday() && milestone?.status === MILESTONE_STATUS.available
 }
 
 /** Assignments whose milestone accepts work today. */

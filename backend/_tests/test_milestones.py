@@ -3,11 +3,26 @@ has milestones 1 Design, 2 Backend API, 3 Frontend and 4 Launch. Backend API and
 depend on Design; Launch depends on both. Emery (id 3) is on Design, with two work logs and
 a waiting review request (id 1)."""
 
+from datetime import date
+
 import pytest
 
-from conftest import call, sign_in, sql
+from conftest import call, load_service, sign_in, sql
 
 DESIGN, BACKEND, FRONTEND, LAUNCH = 1, 2, 3, 4
+WEDNESDAY, SATURDAY = date(2026, 10, 14), date(2026, 10, 17)
+
+
+@pytest.fixture(autouse=True)
+def today(monkeypatch):
+    """Sets the milestones service's "today" (review requests log the day). Defaults to Wed 14 Oct 2026."""
+    clock = load_service("milestones").clock
+
+    def set_today(day):
+        monkeypatch.setattr(clock, "today", lambda: day)
+
+    set_today(WEDNESDAY)
+    return set_today
 
 
 # ---------- helpers ----------
@@ -376,6 +391,32 @@ def test_request_review(employee_token):
     assert notifications(2)[-1] == {"title": "Milestone review requested", "detail": "Emery Employee · Design",
                                     "milestone_id": DESIGN}
     assert activity("review.request")[-1]["entity_id"] == r.json["id"]
+
+
+def test_request_review_logs_todays_work(employee_token):
+    keep_design_open()
+    r = call("milestones", "POST", f"/{DESIGN}/reviews", token=employee_token)
+    assert r.status == 201 and r.json["work_logged"] is True
+    [log] = sql("SELECT project_id, milestone_id, hours, hourly_rate, entered_by FROM work_logs "
+                "WHERE employee_id = 3 AND work_date = %s", (WEDNESDAY,))
+    assert log == {"project_id": 1, "milestone_id": DESIGN, "hours": 8, "hourly_rate": 40, "entered_by": 3}
+
+
+def test_request_review_after_logging_today_skips_the_log(employee_token):
+    keep_design_open()
+    sql("INSERT INTO work_logs (employee_id, project_id, milestone_id, work_date, hourly_rate, entered_by) "
+        "VALUES (3, 1, 1, %s, 40, 3)", (WEDNESDAY,))
+    r = call("milestones", "POST", f"/{DESIGN}/reviews", token=employee_token)
+    assert r.status == 201 and r.json["work_logged"] is False
+    assert len(sql("SELECT id FROM work_logs WHERE employee_id = 3 AND work_date = %s", (WEDNESDAY,))) == 1
+
+
+def test_request_review_is_weekdays_only(today, employee_token):
+    keep_design_open()
+    today(SATURDAY)
+    r = call("milestones", "POST", f"/{DESIGN}/reviews", token=employee_token)
+    assert r.status == 409 and r.json["error"]["code"] == "not_a_weekday"
+    assert sql("SELECT count(*) AS n FROM milestone_reviews WHERE decision IS NULL")[0]["n"] == 0
 
 
 def test_request_review_needs_an_available_milestone(employee_token):

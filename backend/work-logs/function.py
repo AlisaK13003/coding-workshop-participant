@@ -14,7 +14,7 @@ Every log is 8 hours on a weekday, one per employee per day. Hourly rate and cos
 shown only to admins and to the employee's own manager.
 """
 
-from decimal import ROUND_HALF_UP, Decimal
+from decimal import Decimal
 
 from shared import clock, db
 from shared.access import get_visible_project, visible_projects_filter
@@ -26,11 +26,11 @@ from shared.query import QueryParams
 from shared.router import Router
 from shared.sql import person_json
 from shared.validation import Validator
+from shared.worklogs import hourly_rate, insert_log, is_weekday
 
 router = Router("work-logs")
 
 ADMIN_OR_EMPLOYEE = frozenset({ADMIN, EMPLOYEE})
-WORK_HOURS_PER_YEAR = 2080  # 52 weeks * 40 hours
 
 LOG_SQL = f"""
     SELECT wl.id, wl.work_date, wl.hours, wl.hourly_rate, wl.created_at,
@@ -82,16 +82,6 @@ def to_json(log, user):
     return body
 
 
-def hourly_rate(annual_salary):
-    """The salary spread over a standard working year, rounded to cents (half up, as Postgres does)."""
-    return (Decimal(annual_salary) / WORK_HOURS_PER_YEAR).quantize(Decimal("0.01"), rounding=ROUND_HALF_UP)
-
-
-def is_weekday(day):
-    """Monday to Friday."""
-    return day.isoweekday() < 6
-
-
 def fetch_log(conn, user, log_id, lock=False):
     """The log if the user can see it; otherwise 404. lock=True holds a row lock on it."""
     condition, params = visible_logs_filter(user)
@@ -102,18 +92,6 @@ def fetch_log(conn, user, log_id, lock=False):
     if log is None:
         raise not_found("Work log not found.")
     return log
-
-
-def insert_log(conn, employee_id, project_id, milestone_id, work_date, rate, entered_by):
-    """Saves a new log and returns its id."""
-    return conn.execute(
-        """
-        INSERT INTO work_logs (employee_id, project_id, milestone_id, work_date, hourly_rate, entered_by)
-        VALUES (%s, %s, %s, %s, %s, %s)
-        RETURNING id
-        """,
-        (employee_id, project_id, milestone_id, work_date, rate, entered_by),
-    ).fetchone()["id"]
 
 
 def milestone_in_project(conn, milestone_id, project_id):

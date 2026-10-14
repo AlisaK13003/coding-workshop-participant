@@ -199,7 +199,7 @@ Everyone's password is `Password123!`.
 - [ ] **Dashboard** → the review queue shows **Design (Emery)** and **Data Load (Devon)**.
 - [ ] **Open Data Load → Keep open**, with feedback → Devon gets "Milestone kept open" plus the feedback. Data Load is **Available** again.
   - **Check as Devon *and* Emery:** they can now log on Data Warehouse Migration.
-- [ ] **As Devon: Request review** again → Morgan is notified.
+- [ ] **As Devon: Request review** again (from the **Dashboard** card or the project page) → Morgan is notified, and the confirmation says **today's 8 hours were logged**. **Check:** Devon's My Work Logs and Morgan's Work Logs show today on Data Load.
 - [ ] **As Morgan: Accept**, with destination **Validation**:
   - Data Load becomes **Completed**.
   - **Both Emery and Devon** move to Validation, and each gets "Moved to Validation".
@@ -226,6 +226,11 @@ Everyone's password is `Password123!`.
 - [ ] **As Morgan, complete Build** with destination **Store Release**:
   - Emery and Casey move there.
   - Store Release becomes Available, so Devon, Emery and Casey can all log there.
+
+**Requesting a review logs the day:**
+- [ ] **Log today first, then request review** (same or another project) → the review goes through, and the message says today was already logged. No second log.
+- [ ] **On a weekend** → Request review is disabled (hover: "Reviews can be requested on weekdays"); through the API → 409 `not_a_weekday`.
+- [ ] **Dashboard cards:** each project card has **Request review**. It's disabled with a hover reason when blocked ("Waiting for prerequisites"), already waiting ("Awaiting review"), or completed. Clicking the rest of the card still opens the project.
 
 **Rules:**
 - [ ] **Completed milestones** can't be edited, reopened or added as prerequisites.

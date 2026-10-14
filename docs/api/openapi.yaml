@@ -1024,18 +1024,31 @@ paths:
         **Employee only**, for the milestone they're currently assigned to (403 otherwise; 404 if
         they can't see the project). No request body. The milestone must be `available`:
         409 `milestone_completed`, `milestone_awaiting_review` or `milestone_blocked` otherwise.
-        The project's manager is notified. In the seed data Design already has a waiting review.
+        **Weekdays only** (409 `not_a_weekday`).
+
+        Requesting a review also **logs today as an 8-hour workday** on this milestone, at the
+        employee's current rate, unless they already logged today (on any project); then only the
+        review is created. The project's manager is notified. In the seed data Design already has
+        a waiting review.
       responses:
         '201':
-          description: The new review request
+          description: The new review request, plus `work_logged`
           content:
             application/json:
-              schema: { $ref: '#/components/schemas/Review' }
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/Review'
+                  - type: object
+                    required: [work_logged]
+                    properties:
+                      work_logged:
+                        type: boolean
+                        description: True if this request logged today's 8 hours; false if today was already logged.
         '401': { $ref: '#/components/responses/Unauthorized' }
         '403': { $ref: '#/components/responses/Forbidden' }
         '404': { $ref: '#/components/responses/NotFound' }
         '409':
-          description: The milestone isn't available for review
+          description: The milestone isn't available for review, or it's a weekend
           content:
             application/json:
               schema: { $ref: '#/components/schemas/Error' }

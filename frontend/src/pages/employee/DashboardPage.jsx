@@ -24,6 +24,7 @@ export function DashboardPage({
   selectedProjectId,
   onSelectProject,
   onLog,
+  onReview,
   onOpenProject,
   onSelectNotice,
 }) {
@@ -67,7 +68,7 @@ export function DashboardPage({
       </div>
       <Panel title="My project and milestone assignments" description="One current milestone per project.">
         {assignments.length ? (
-          <AssignmentCards assignments={assignments} logs={logs} onOpen={onOpenProject} />
+          <AssignmentCards assignments={assignments} logs={logs} onOpen={onOpenProject} onReview={onReview} />
         ) : (
           <EmptyState title="No active projects" body="Your manager adds you to projects." />
         )}
