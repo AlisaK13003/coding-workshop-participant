@@ -79,7 +79,11 @@ export function DashboardPage({ projects, milestones, members, onOpenProject, on
           )}
         </Panel>
         <Panel title="Upcoming deadlines" description="Project and milestone end dates in the next 60 days.">
-          <UpcomingDeadlines projects={projects} milestones={milestones} />
+          <UpcomingDeadlines
+            projects={projects}
+            milestones={milestones}
+            onOpenProject={(project) => onOpenProject(project.id)}
+          />
         </Panel>
       </div>
     </>

@@ -1,6 +1,9 @@
 .deadline-list { padding: 6px 20px 12px; }
-.deadline-list > div { display: flex; align-items: center; gap: 13px; padding: 14px 0; border-bottom: 1px solid var(--line); }
-.deadline-list > div:last-child { border: 0; }
+.deadline-row { width: 100%; display: flex; align-items: center; gap: 13px; padding: 14px 0; border-bottom: 1px solid var(--line); }
+.deadline-row:last-child { border: 0; }
+button.deadline-row { color: inherit; text-align: left; cursor: pointer; }
+button.deadline-row:hover strong { color: var(--teal-dark); text-decoration: underline; }
+button.deadline-row:focus-visible { outline: 2px solid var(--teal); outline-offset: 2px; border-radius: 6px; }
 .date-tile { width: 43px; height: 46px; display: grid; place-items: center; padding: 5px; border: 1px solid var(--line); border-radius: 8px; color: var(--muted); font-size: 8px; }
 .date-tile b { color: var(--ink); font-size: 16px; line-height: 1; }
 .deadline-list p { flex: 1; display: grid; gap: 4px; margin: 0; }

@@ -32,10 +32,10 @@ Everyone's password is `Password123!`.
 |---|---|---|---|---|---|
 | `aadmin1` | Alex Admin | Admin | — | — | — |
 | `pshah4` | Priya Shah | Admin | — | — | — |
-| `mmanager2` | Morgan Manager | Manager | — | — | manages **3** |
+| `mmanager2` | Morgan Manager | Manager | — | — | manages **4** |
 | `rchen5` | Riley Chen | Manager | — | — | manages **1** |
 | `jpark6` | Jordan Park | Manager | — | — | manages **0** |
-| `eemployee3` | Emery Employee | Employee | Morgan | $40/h ($320/day) | on **3** |
+| `eemployee3` | Emery Employee | Employee | Morgan | $40/h ($320/day) | on **4** |
 | `dbrooks8` | Devon Brooks | Employee | Morgan | $45/h ($360/day) | on **2** |
 | `clopez7` | Casey Lopez | Employee | Morgan | $35/h ($280/day) | on **1** |
 | `akim9` | Avery Kim | Employee | Riley | $30/h ($240/day) | on **1** |
@@ -50,7 +50,8 @@ Everyone's password is `Password123!`.
 | 1 | Customer Portal | Morgan | Dec 31 | 1% | On track | Emery → Design (**awaiting review**) |
 | 2 | Mobile App Refresh | Morgan | D+7 (Oct 21) | **94%** | **Needs attention** (Build 2 days overdue) | Emery, Casey → Build (available); Devon → Store Release (**blocked**) |
 | 3 | Data Warehouse Migration | Morgan | D+30 (Nov 13) | **118%** | **Urgent** (Data Load and Index Tuning overdue) | Emery, Devon → Data Load (**awaiting review**); Index Tuning unassigned |
-| 4 | Support Portal | Riley | D+90 (Jan 12) | **35%** | **On track** | Avery → Knowledge Base, Blake → Chatbot (both available; Go Live needs both) |
+| 4 | Payroll Integration | Morgan | D+45 (Nov 28) | 0% (just started) | On track | Emery → Requirements (available) |
+| 4b | Support Portal | Riley | D+90 (Jan 12) | **35%** | **On track** | Avery → Knowledge Base, Blake → Chatbot (both available; Go Live needs both) |
 | 5 | Vendor Onboarding | Morgan | ended | 27% | — | **abandoned**, not archived (admins only) |
 | 6 | Legacy Billing Cleanup | Morgan | ended | 88% | — | **completed and archived** |
 | 7 | Intranet Redesign | **none** | D+60 | 13% | — | **unarchived, needs a manager** (previously Riley) |
@@ -93,10 +94,10 @@ Everyone's password is `Password123!`.
 ## 2. What each person sees (fresh Reset)
 
 **Projects:**
-- [ ] **Alex and Priya:** all 7 projects, including abandoned, archived and the one needing a manager.
-- [ ] **Morgan:** 3 (Customer Portal, Mobile App Refresh, Data Warehouse Migration). Not Support Portal, and none of the closed ones.
+- [ ] **Alex and Priya:** all 8 projects, including abandoned, archived and the one needing a manager.
+- [ ] **Morgan:** 4 (Customer Portal, Mobile App Refresh, Data Warehouse Migration, Payroll Integration). Not Support Portal, and none of the closed ones.
 - [ ] **Riley:** only Support Portal. **Jordan:** none, with empty states on Dashboard, My Projects and Calendar (no errors or blank pages).
-- [ ] **Emery:** 3 projects, with a **different milestone and status on each**.
+- [ ] **Emery:** 4 projects, with a **different milestone and status on each**.
 - [ ] **Devon:** 2. **Casey, Avery, Blake:** 1 each. **Quinn:** none, with empty states.
 
 **Money and pay:**
@@ -301,6 +302,8 @@ Everyone's password is `Password123!`.
 - [ ] **Calendar (timeline):** full date ranges for each project.
 - [ ] **Admin Calendar** (sidebar, after Projects): every open project's deadline, with the same month/timeline views. The **Manager** filter narrows it to one manager's projects, or **No manager** (e.g. Intranet Redesign before it's reassigned). Clicking a project opens it.
 - [ ] **Manager "hours this week"** adds up the current Monday–Sunday across all their employees.
+- [ ] **Approaching end dates** (dashboards) lists up to 4 deadlines in the next 60 days, soonest first; clicking one opens its project (a milestone opens its project).
+- [ ] **Recent activity → View all** opens the Activity Log.
 - [ ] **Admin stat cards** show real counts: users by role, open projects without a manager (**1**: Intranet Redesign), the oldest waiting review, over-budget projects.
 
 ---

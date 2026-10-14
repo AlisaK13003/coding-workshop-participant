@@ -15,6 +15,7 @@ import {
   Panel,
   QueryContent,
   StatCard,
+  ViewAllButton,
 } from '../../components/ui'
 import { DIALOGS } from '../../components/workspace/dialogKinds.js'
 import { combineQueries, useApiQuery } from '../../hooks/useApiQuery.js'
@@ -203,10 +204,14 @@ export function DashboardPage({ projects, onOpenProject, onOpenUser, onNavigate,
           </QueryContent>
         </Panel>
         <Panel title="Approaching end dates" description="Within the next 60 days">
-          <UpcomingDeadlines projects={active} />
+          <UpcomingDeadlines projects={active} onOpenProject={onOpenProject} />
         </Panel>
       </div>
-      <Panel title="Recent activity" description="The latest changes across the workspace">
+      <Panel
+        title="Recent activity"
+        description="The latest changes across the workspace"
+        actions={<ViewAllButton onClick={() => onNavigate(ADMIN_PAGES.activity)} />}
+      >
         <QueryContent query={activity} loadingLabel="Loading activity…">
           {(page) => <ActivityList items={page.items.map(toActivityItem)} />}
         </QueryContent>

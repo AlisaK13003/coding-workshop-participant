@@ -1,6 +1,6 @@
-import { ChevronRight, UserPlus } from 'lucide-react'
+import { UserPlus } from 'lucide-react'
 import { ReviewQueue } from '../../components/milestones/ReviewQueue.jsx'
-import { Button, EmptyState, Pager, Panel } from '../../components/ui'
+import { Button, EmptyState, Pager, Panel, ViewAllButton } from '../../components/ui'
 import { UserTable } from '../../components/users/UserTable.jsx'
 import { DIALOGS } from '../../components/workspace/dialogKinds.js'
 import { usePagination } from '../../hooks/usePagination.js'
@@ -8,14 +8,6 @@ import { ADMIN_PAGES, DASHBOARD_VIEWS } from './adminConfig.js'
 import { ProjectTable } from './ProjectTable.jsx'
 
 const PAGE_SIZE = 5
-
-function ViewAll({ onClick }) {
-  return (
-    <Button variant="ghost" onClick={onClick}>
-      View all <ChevronRight size={16} />
-    </Button>
-  )
-}
 
 /**
  * The list for the selected dashboard card: active projects, projects needing a manager,
@@ -63,7 +55,7 @@ function FocusPanel({
         <Panel
           title="Users"
           description="Everyone with an active account. Select someone to see their details."
-          actions={<ViewAll onClick={() => onNavigate(ADMIN_PAGES.users)} />}
+          actions={<ViewAllButton onClick={() => onNavigate(ADMIN_PAGES.users)} />}
         >
           {users.length ? (
             <UserTable users={pages.pageItems} onOpen={onOpenUser} compact />
@@ -88,7 +80,7 @@ function FocusPanel({
         <Panel
           title="Active projects"
           description="Schedule, milestones, hours, and budget at a glance."
-          actions={<ViewAll onClick={() => onNavigate(ADMIN_PAGES.projects)} />}
+          actions={<ViewAllButton onClick={() => onNavigate(ADMIN_PAGES.projects)} />}
         >
           {active.length ? (
             <ProjectTable projects={pages.pageItems} onOpen={onOpenProject} compact />

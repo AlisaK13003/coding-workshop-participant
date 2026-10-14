@@ -8,9 +8,11 @@ import { DeadlineList } from './DeadlineList.jsx'
 
 /**
  * The next end dates of open projects (and, if given, their open milestones),
- * soonest first, from today up to `withinDays` days ahead.
+ * soonest first, from today up to `withinDays` days ahead. With onOpenProject(project),
+ * each row opens its project (a milestone opens the project it belongs to).
  */
-export function UpcomingDeadlines({ projects, milestones = [], withinDays = 60, limit = 4 }) {
+export function UpcomingDeadlines({ projects, milestones = [], withinDays = 60, limit = 4, onOpenProject }) {
+  const opener = (project) => (onOpenProject && project ? () => onOpenProject(project) : undefined)
   const today = todayIso()
   const isUpcoming = (date) => {
     const days = daysBetween(today, date)
@@ -24,6 +26,7 @@ export function UpcomingDeadlines({ projects, milestones = [], withinDays = 60, 
       title: project.name,
       detail: `Predicted project end · ${project.manager?.name ?? 'No manager'}`,
       status: <Phase value={getProjectPhase(project)} />,
+      onClick: opener(project),
     }))
   const milestoneItems = openMilestones(milestones)
     .filter((milestone) => isUpcoming(milestone.end_date))
@@ -33,6 +36,7 @@ export function UpcomingDeadlines({ projects, milestones = [], withinDays = 60, 
       title: milestone.name,
       detail: `Milestone end · ${projects.find((project) => project.id === milestone.project_id)?.name ?? ''}`,
       status: <MilestoneStatusBadge status={milestone.status} />,
+      onClick: opener(projects.find((project) => project.id === milestone.project_id)),
     }))
   const items = [...projectItems, ...milestoneItems]
     .sort((a, b) => a.date.localeCompare(b.date))

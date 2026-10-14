@@ -8,7 +8,7 @@
 --   Priya Shah     admin (second admin)
 --   Riley Chen     manager of 1 project   Support Portal
 --   Jordan Park    manager of 0 projects
---   Emery          employee (Morgan)      Customer Portal, Mobile App Refresh, Data Warehouse Migration
+--   Emery          employee (Morgan)      Customer Portal, Mobile App Refresh, Data Warehouse Migration, Payroll Integration
 --   Devon Brooks   employee (Morgan)      Data Warehouse Migration, Mobile App Refresh
 --   Casey Lopez    employee (Morgan)      Mobile App Refresh
 --   Avery Kim      employee (Riley)       Support Portal
@@ -20,6 +20,7 @@
 --   Mobile App Refresh        Morgan  ends D+7    budget nearly used (~94%)   needs attention (1 milestone overdue)
 --   Data Warehouse Migration  Morgan  ends D+30   over budget (~118%)         urgent (2 milestones overdue)
 --   Support Portal            Riley   ends D+90   under budget (~35%)         on track
+--   Payroll Integration       Morgan  ends D+45   just started (no hours yet) on track
 --   Vendor Onboarding         Morgan  abandoned (admins only)
 --   Legacy Billing Cleanup    Morgan  completed and archived (Archive page)
 --   Intranet Redesign         none    unarchived, waiting for a new manager (previously Riley)
@@ -51,10 +52,10 @@ DECLARE
     morgan INT := (SELECT id FROM users WHERE username = 'mmanager2');
     emery INT := (SELECT id FROM users WHERE username = 'eemployee3');
     priya INT; riley INT; jordan INT; casey INT; devon INT; avery INT; blake INT; quinn INT; taylor INT;
-    mobile INT; warehouse INT; support INT; vendor INT; legacy INT; intranet INT;
+    mobile INT; warehouse INT; support INT; payroll INT; vendor INT; legacy INT; intranet INT;
     m_ux INT; m_build INT; m_release INT;
     m_schema INT; m_load INT; m_tuning INT; m_validation INT;
-    m_discovery INT; m_kb INT; m_chatbot INT; m_golive INT;
+    m_discovery INT; m_kb INT; m_chatbot INT; m_golive INT; m_payroll_requirements INT; m_payroll_rollout INT;
     m_research INT; m_integration INT; m_audit INT; m_cleanup INT; m_requirements INT; m_pages INT;
 BEGIN
     IF EXISTS (SELECT 1 FROM users WHERE lower(email) = 'priya@example.com') THEN
@@ -124,6 +125,15 @@ BEGIN
         (m_kb, m_discovery, support), (m_chatbot, m_discovery, support),
         (m_golive, m_kb, support), (m_golive, m_chatbot, support);
 
+    -- Payroll Integration: kicked off recently, ends within 60 days, nothing logged yet.
+    INSERT INTO projects (name, manager_id, start_date, end_date, budget, created_at)
+        VALUES ('Payroll Integration', morgan, d - 10, d + 45, 30000, d - 12) RETURNING id INTO payroll;
+    INSERT INTO milestones (project_id, name, start_date, end_date)
+        VALUES (payroll, 'Requirements', d - 10, d + 10) RETURNING id INTO m_payroll_requirements;
+    INSERT INTO milestones (project_id, name, start_date, end_date)
+        VALUES (payroll, 'Rollout', d + 11, d + 45) RETURNING id INTO m_payroll_rollout;
+    INSERT INTO milestone_dependencies VALUES (m_payroll_rollout, m_payroll_requirements, payroll);
+
     -- Vendor Onboarding: abandoned, not archived (only admins see it).
     INSERT INTO projects (name, manager_id, start_date, end_date, budget, status, created_at)
         VALUES ('Vendor Onboarding', morgan, d - 120, d - 30, 20000, 'abandoned', d - 122) RETURNING id INTO vendor;
@@ -161,6 +171,7 @@ BEGIN
         (warehouse, devon, m_load, d - 60),
         (support, avery, m_kb, d - 20),
         (support, blake, m_chatbot, d - 20),
+        (payroll, emery, m_payroll_requirements, d - 9),
         (vendor, casey, m_integration, d - 120),
         (legacy, devon, m_cleanup, d - 200);
     INSERT INTO project_members (project_id, employee_id, milestone_id, added_at, removed_at) VALUES
@@ -226,6 +237,7 @@ BEGIN
         (alex, 'admin', 'project.create', 'project', mobile, mobile, 'Created project Mobile App Refresh, managed by Morgan Manager.', NULL, d - 80),
         (alex, 'admin', 'project.create', 'project', warehouse, warehouse, 'Created project Data Warehouse Migration, managed by Morgan Manager.', NULL, d - 62),
         (priya, 'admin', 'project.create', 'project', support, support, 'Created project Support Portal, managed by Riley Chen.', NULL, d - 22),
+        (alex, 'admin', 'project.create', 'project', payroll, payroll, 'Created project Payroll Integration, managed by Morgan Manager.', NULL, d - 12),
         (riley, 'manager', 'review.accept', 'milestone', m_discovery, support, 'Accepted the review of Discovery.', NULL, d - 6),
         (morgan, 'manager', 'project.update', 'project', warehouse, warehouse, 'Updated Data Warehouse Migration.',
             jsonb_build_object('end_date', jsonb_build_object('from', d + 15, 'to', d + 30)), d - 20),
