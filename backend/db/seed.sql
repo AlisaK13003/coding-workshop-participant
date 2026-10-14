@@ -3,15 +3,19 @@
 -- Safe to run more than once: rows that already exist are skipped.
 
 -- Usernames are left out so the set_username trigger generates them.
-INSERT INTO users (first_name, last_name, email, job_title, role) VALUES
-    ('Alex',   'Admin',   'alex@example.com',   'Operations Director', 'admin'),
-    ('Morgan', 'Manager', 'morgan@example.com', 'Engineering Manager', 'manager')
+-- Every sample user's password is Password123! (local development only).
+INSERT INTO users (first_name, last_name, email, job_title, role, password_hash) VALUES
+    ('Alex',   'Admin',   'alex@example.com',   'Operations Director', 'admin',
+        '$2b$12$zacM0Ft0WDzFImimzTDWceKvGCPNPHUTpri92wx4xqBVz/oDqHGd2'),
+    ('Morgan', 'Manager', 'morgan@example.com', 'Engineering Manager', 'manager',
+        '$2b$12$zacM0Ft0WDzFImimzTDWceKvGCPNPHUTpri92wx4xqBVz/oDqHGd2')
 ON CONFLICT ((lower(email))) DO NOTHING;
 
 -- Employees are added after managers so their manager's id can be looked up by email.
-INSERT INTO users (first_name, last_name, email, job_title, role, manager_id, annual_salary) VALUES
+INSERT INTO users (first_name, last_name, email, job_title, role, manager_id, annual_salary, password_hash) VALUES
     ('Emery', 'Employee', 'emery@example.com', 'Software Engineer', 'employee',
-        (SELECT id FROM users WHERE email = 'morgan@example.com'), 83200.00)
+        (SELECT id FROM users WHERE email = 'morgan@example.com'), 83200.00,
+        '$2b$12$zacM0Ft0WDzFImimzTDWceKvGCPNPHUTpri92wx4xqBVz/oDqHGd2')
 ON CONFLICT ((lower(email))) DO NOTHING;
 
 INSERT INTO projects (name, manager_id, start_date, end_date, budget)

@@ -10,6 +10,8 @@ CREATE TABLE users (
     last_name     TEXT NOT NULL,
     -- filled in by set_username below when not given; can be edited later
     username      TEXT NOT NULL,
+    -- bcrypt hash; the plain password is never stored
+    password_hash TEXT NOT NULL,
     email         TEXT NOT NULL,
     job_title     TEXT NOT NULL,
     role          TEXT NOT NULL CHECK (role IN ('admin', 'manager', 'employee')),
