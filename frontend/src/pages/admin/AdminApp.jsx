@@ -32,6 +32,7 @@ export default function AdminApp() {
   const user = useCurrentUser()
   const [page, setPage] = useState(ADMIN_PAGES.dashboard)
   const [selectedProjectId, setSelectedProjectId] = useState(null)
+  const [selectedUserId, setSelectedUserId] = useState(null)
   const projects = useApiQuery(() => listProjects(), [])
   const notices = useNotifications()
   const dialog = useModal()
@@ -46,9 +47,14 @@ export default function AdminApp() {
 
   const navigate = (nextPage) => {
     setSelectedProjectId(null)
+    setSelectedUserId(null)
     setPage(nextPage)
   }
   const openProject = (project) => setSelectedProjectId(project.id)
+  const openUser = (person) => {
+    navigate(ADMIN_PAGES.users)
+    setSelectedUserId(person.id)
+  }
 
   const selectNotification = (notice) => {
     if (!notice.read) notices.markRead(notice.id)
@@ -78,6 +84,7 @@ export default function AdminApp() {
           <DashboardPage
             projects={items}
             onOpenProject={openProject}
+            onOpenUser={openUser}
             onNavigate={navigate}
             onOpenDialog={dialog.open}
           />
@@ -87,7 +94,15 @@ export default function AdminApp() {
           <ProjectsPage projects={items} onOpenProject={openProject} onOpenDialog={dialog.open} />
         ))
       case ADMIN_PAGES.users:
-        return <UsersPage projects={projects.data ?? []} onOpenProject={openProject} onOpenDialog={dialog.open} />
+        return (
+          <UsersPage
+            projects={projects.data ?? []}
+            selectedId={selectedUserId}
+            onSelectUser={setSelectedUserId}
+            onOpenProject={openProject}
+            onOpenDialog={dialog.open}
+          />
+        )
       case ADMIN_PAGES.workLogs:
         return <WorkLogsPage onOpenDialog={dialog.open} />
       case ADMIN_PAGES.activity:

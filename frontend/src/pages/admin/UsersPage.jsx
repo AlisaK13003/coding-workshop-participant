@@ -1,14 +1,11 @@
 import { useState } from 'react'
-import { ChevronRight, Plus } from 'lucide-react'
-import { RoleBadge } from '../../components/users/RoleBadge.jsx'
+import { Plus } from 'lucide-react'
+import { UserTable } from '../../components/users/UserTable.jsx'
 import {
-  Badge,
   Button,
-  DataTable,
   EmptyState,
   PageHeading,
   Panel,
-  PersonCell,
   QueryContent,
   SearchBox,
   Select,
@@ -22,33 +19,15 @@ import { UserDetailPage } from './UserDetailPage.jsx'
 
 const ALL = ''
 
-const COLUMNS = [
-  {
-    key: 'name',
-    header: 'Name',
-    render: (user) => (
-      <>
-        <PersonCell name={user.name} />
-        {user.archived_at && <Badge>Archived</Badge>}
-      </>
-    ),
-  },
-  { key: 'username', header: 'Username', render: (user) => user.username },
-  { key: 'email', header: 'Email', render: (user) => user.email },
-  { key: 'role', header: 'Role', render: (user) => <RoleBadge role={user.role} /> },
-  { key: 'title', header: 'Job title', render: (user) => user.job_title },
-  { key: 'manager', header: 'Manager', render: (user) => user.manager?.name ?? '—' },
-  { key: 'id', header: 'User ID', render: (user) => <code>{user.display_id}</code> },
-  { key: 'open', header: '', render: () => <ChevronRight size={17} /> },
-]
-
-/** User directory; selecting a row opens that user's detail page. */
-export function UsersPage({ projects, onOpenProject, onOpenDialog }) {
+/**
+ * User directory; selecting a row opens that user's detail page. The open user is kept by
+ * AdminApp (selectedId / onSelectUser), so other pages such as the dashboard can open one.
+ */
+export function UsersPage({ projects, selectedId, onSelectUser, onOpenProject, onOpenDialog }) {
   const [search, setSearch] = useState('')
   const [role, setRole] = useState(ALL)
   const [managerId, setManagerId] = useState(ALL)
   const [showArchived, setShowArchived] = useState(false)
-  const [selectedId, setSelectedId] = useState(null)
   const users = useApiQuery(
     () => listUsers({ role, manager_id: managerId, include_archived: showArchived ? 'true' : undefined }),
     [role, managerId, showArchived],
@@ -60,7 +39,7 @@ export function UsersPage({ projects, onOpenProject, onOpenDialog }) {
       <UserDetailPage
         userId={selectedId}
         projects={projects}
-        onBack={() => setSelectedId(null)}
+        onBack={() => onSelectUser(null)}
         onOpenProject={onOpenProject}
         onOpenDialog={onOpenDialog}
       />
@@ -116,12 +95,7 @@ export function UsersPage({ projects, onOpenProject, onOpenDialog }) {
               includesText(`${user.name} ${user.email} ${user.username}`, search),
             )
             return visible.length ? (
-              <DataTable
-                columns={COLUMNS}
-                rows={visible}
-                getRowKey={(user) => user.id}
-                onRowClick={(user) => setSelectedId(user.id)}
-              />
+              <UserTable users={visible} onOpen={(user) => onSelectUser(user.id)} />
             ) : (
               <EmptyState title="No users found" body="Try clearing a filter or using a different search term." />
             )

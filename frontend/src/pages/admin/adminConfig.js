@@ -32,3 +32,11 @@ export const ADMIN_SIDEBAR_FOOTER = {
   title: 'Admin workspace',
   subtitle: 'Full system access',
 }
+
+/** Which list the dashboard shows under its stat cards; each card selects one. */
+export const DASHBOARD_VIEWS = {
+  active: 'active',
+  unassigned: 'unassigned',
+  users: 'users',
+  reviews: 'reviews',
+}

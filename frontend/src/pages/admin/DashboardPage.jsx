@@ -1,6 +1,6 @@
+import { useState } from 'react'
 import {
   CheckCircle2,
-  ChevronRight,
   CircleAlert,
   FolderKanban,
   Plus,
@@ -11,7 +11,6 @@ import { UpcomingDeadlines } from '../../components/projects/UpcomingDeadlines.j
 import {
   Badge,
   Button,
-  EmptyState,
   PageHeading,
   Panel,
   QueryContent,
@@ -37,9 +36,9 @@ import {
 import { pluralize } from '../../utils/text.js'
 import { ROLES } from '../../utils/users.js'
 import { getMonthlyTotals, sumHours } from '../../utils/workLogs.js'
-import { ADMIN_PAGES } from './adminConfig.js'
+import { ADMIN_PAGES, DASHBOARD_VIEWS } from './adminConfig.js'
+import { DashboardFocusPanel } from './DashboardFocusPanel.jsx'
 import { HoursChart } from './HoursChart.jsx'
-import { ProjectTable } from './ProjectTable.jsx'
 import './DashboardPage.css'
 
 const CHART_MONTHS = 6
@@ -58,9 +57,14 @@ function oldestRequestNote(reviews) {
   return days ? `Oldest request is ${days} ${pluralize(days, 'day')} old` : 'Oldest request is from today'
 }
 
-/** Admin overview: key numbers, attention items, active projects, spending and activity. */
-export function DashboardPage({ projects, onOpenProject, onNavigate, onOpenDialog }) {
+/**
+ * Admin overview: key numbers, attention items, spending and activity. Each stat card
+ * selects what the list under the cards shows (active projects by default).
+ */
+export function DashboardPage({ projects, onOpenProject, onOpenUser, onNavigate, onOpenDialog }) {
   const user = useCurrentUser()
+  const [view, setView] = useState(DASHBOARD_VIEWS.active)
+  const cardProps = (cardView) => ({ selected: view === cardView, onSelect: () => setView(cardView) })
   const active = projects.filter(isOpenProject)
   const activeIds = active.map((project) => project.id)
   const chartStart = new Date()
@@ -108,20 +112,28 @@ export function DashboardPage({ projects, onOpenProject, onNavigate, onOpenDialo
                   value={active.length}
                   note={`${endingSoon.length} approaching end dates`}
                   icon={FolderKanban}
-                  accent
+                  {...cardProps(DASHBOARD_VIEWS.active)}
                 />
                 <StatCard
                   label="Awaiting assignment"
                   value={unassigned.length}
                   note="Open projects without a manager"
                   icon={CircleAlert}
+                  {...cardProps(DASHBOARD_VIEWS.unassigned)}
                 />
-                <StatCard label="Total users" value={users.length} note={countRoles(users)} icon={Users} />
+                <StatCard
+                  label="Total users"
+                  value={users.length}
+                  note={countRoles(users)}
+                  icon={Users}
+                  {...cardProps(DASHBOARD_VIEWS.users)}
+                />
                 <StatCard
                   label="Pending reviews"
                   value={reviews.length}
                   note={oldestRequestNote(reviews)}
                   icon={CheckCircle2}
+                  {...cardProps(DASHBOARD_VIEWS.reviews)}
                 />
               </div>
               {attention > 0 && (
@@ -146,25 +158,21 @@ export function DashboardPage({ projects, onOpenProject, onNavigate, onOpenDialo
                   </Button>
                 </Panel>
               )}
+              <DashboardFocusPanel
+                view={view}
+                active={active}
+                unassigned={unassigned}
+                users={users}
+                reviews={reviews}
+                onOpenProject={onOpenProject}
+                onOpenUser={onOpenUser}
+                onNavigate={onNavigate}
+                onOpenDialog={onOpenDialog}
+              />
             </>
           )
         }}
       </QueryContent>
-      <Panel
-        title="Active projects"
-        description="Schedule, milestones, hours, and budget at a glance."
-        actions={
-          <Button variant="ghost" onClick={() => onNavigate(ADMIN_PAGES.projects)}>
-            View all <ChevronRight size={16} />
-          </Button>
-        }
-      >
-        {active.length ? (
-          <ProjectTable projects={active} onOpen={onOpenProject} compact />
-        ) : (
-          <EmptyState title="No active projects" body="Create a project to get started." />
-        )}
-      </Panel>
       <div className="dashboard-lower">
         <Panel
           title="Hours & labor spending"

@@ -1,11 +1,11 @@
 import { CheckCircle2 } from 'lucide-react'
-import { ReviewIcon } from '../../components/milestones/ReviewIcon.jsx'
-import { Badge, Button, EmptyState, Panel } from '../../components/ui'
+import { Badge, Button, EmptyState, Panel } from '../ui'
 import { findById } from '../../utils/collections.js'
 import { formatDateTime } from '../../utils/format.js'
+import { ReviewIcon } from './ReviewIcon.jsx'
 import './ReviewQueue.css'
 
-/** Milestones waiting for the manager's completion review. reviews from getPendingReviews. */
+/** Milestones waiting for a completion review (managers and admins). reviews from getPendingReviews. */
 export function ReviewQueue({ reviews, projects, onReview }) {
   return (
     <Panel

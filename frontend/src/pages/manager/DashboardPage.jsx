@@ -13,7 +13,7 @@ import { isEndingSoon, isProjectOverBudget } from '../../utils/projects.js'
 import { AttentionList } from './AttentionList.jsx'
 import { getAssignmentAttention } from './managerSelectors.js'
 import { ManagerProjectTable } from './ManagerProjectTable.jsx'
-import { ReviewQueue } from './ReviewQueue.jsx'
+import { ReviewQueue } from '../../components/milestones/ReviewQueue.jsx'
 
 /** Manager overview: reviews, active projects, assignment attention and deadlines. */
 export function DashboardPage({ projects, milestones, members, onOpenProject, onReview }) {
