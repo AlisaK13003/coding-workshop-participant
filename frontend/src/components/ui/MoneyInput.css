@@ -1,0 +1,6 @@
+.money-input { position: relative; display: block; }
+.money-input .control { width: 100%; padding-left: 22px; padding-right: 32px; }
+.money-prefix { position: absolute; top: 50%; left: 11px; transform: translateY(-50%); color: var(--muted); font-size: 11px; pointer-events: none; }
+.money-steppers { position: absolute; top: 3px; right: 3px; bottom: 3px; display: grid; grid-template-rows: 1fr 1fr; width: 24px; }
+.money-steppers button { display: grid; place-items: center; border-radius: 5px; color: var(--muted); }
+.money-steppers button:hover { background: var(--soft); color: var(--ink); }

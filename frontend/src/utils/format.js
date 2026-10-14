@@ -86,3 +86,19 @@ export function greeting(now = new Date()) {
   if (hour < 18) return 'Good afternoon'
   return 'Good evening'
 }
+
+/** "100,000.50" → 100000.5; anything that isn't a plain amount → null. */
+export function parseAmount(text) {
+  const cleaned = String(text ?? '').replace(/[$,\s]/g, '')
+  if (!cleaned || !/^\d*\.?\d{0,2}$/.test(cleaned) || cleaned === '.') return null
+  return Number(cleaned)
+}
+
+/** For editing amounts: 100000 → "100,000"; 37.5 → "37.50" (no $ sign). */
+export function formatAmount(amount) {
+  if (amount == null) return ''
+  return amount.toLocaleString('en-US', {
+    minimumFractionDigits: Number.isInteger(amount) ? 0 : 2,
+    maximumFractionDigits: 2,
+  })
+}

@@ -1,5 +1,5 @@
 import { FormDialog, ValidationNote } from '../../dialogs'
-import { Field, Input, Select } from '../../ui'
+import { Field, MoneyInput, Select } from '../../ui'
 import { useApiQuery } from '../../../hooks/useApiQuery.js'
 import { useMutation } from '../../../hooks/useMutation.js'
 import { listUsers } from '../../../services/usersApi.js'
@@ -55,7 +55,7 @@ export function AddWorkLogDialog({ project, onClose }) {
           hint="Leave empty to use the employee’s current salary."
           error={errors.hourly_rate}
         >
-          <Input name="hourly_rate" type="number" min="0" step="0.01" />
+          <MoneyInput name="hourly_rate" step={1} />
         </Field>
       </div>
     </FormDialog>

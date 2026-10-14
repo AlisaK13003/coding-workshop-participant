@@ -132,6 +132,7 @@ Everyone's password is `Password123!`.
   - email `RILEY@example.com` → already in use (emails ignore capitals)
   - username `DBROOKS8` → taken
   - password under 8 characters → error
+- [ ] **Money fields** (salary, project budget, hourly rate on Add workday): typing `100,000` or `$100,000` works and is tidied to `100,000` when you leave the field; letters can't be typed. The ▲▼ buttons and the arrow keys add/subtract **$10,000** (salary, budget) or **$1** (hourly rate), never below 0.
 
 **Editing:**
 - [ ] **Edit Casey's job title** → saved. Activity Log: `user.update` with before → after.

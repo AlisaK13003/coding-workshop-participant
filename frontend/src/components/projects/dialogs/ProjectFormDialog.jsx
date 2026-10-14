@@ -1,5 +1,5 @@
 import { FormDialog } from '../../dialogs'
-import { Field, Input, Select } from '../../ui'
+import { Field, Input, MoneyInput, Select } from '../../ui'
 import { useApiQuery } from '../../../hooks/useApiQuery.js'
 import { useMutation } from '../../../hooks/useMutation.js'
 import { useCurrentUser } from '../../../hooks/useSession.js'
@@ -88,7 +88,7 @@ export function ProjectFormDialog({ project, onClose }) {
           <Input name="end_date" type="date" defaultValue={project?.end_date} required />
         </Field>
         <Field label="Estimated budget" error={errors.budget}>
-          <Input name="budget" type="number" min="0" step="0.01" defaultValue={project?.budget} placeholder="150000" required />
+          <MoneyInput name="budget" defaultValue={project?.budget} placeholder="150,000" required />
         </Field>
       </div>
     </FormDialog>

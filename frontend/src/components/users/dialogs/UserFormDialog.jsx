@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { FormDialog } from '../../dialogs'
-import { Field, Input, Select } from '../../ui'
+import { Field, Input, MoneyInput, Select } from '../../ui'
 import { useApiQuery } from '../../../hooks/useApiQuery.js'
 import { useMutation } from '../../../hooks/useMutation.js'
 import { useCurrentUser } from '../../../hooks/useSession.js'
@@ -94,7 +94,7 @@ export function UserFormDialog({ user, onClose }) {
             hint="Changes apply to future work logs; recorded costs stay unchanged."
             error={errors.annual_salary}
           >
-            <Input name="annual_salary" type="number" min="0" step="0.01" defaultValue={user?.annual_salary} required />
+            <MoneyInput name="annual_salary" defaultValue={user?.annual_salary} placeholder="95,000" required />
           </Field>
         )}
         {isEmployee && (
