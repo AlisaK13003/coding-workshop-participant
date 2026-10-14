@@ -1,0 +1,9 @@
+.pick-list { margin: 0; padding: 0; border: 0; min-width: 0; }
+.pick-list legend { margin-bottom: 7px; padding: 0; }
+.pick-list-items { display: grid; gap: 6px; margin: 2px 0 0; padding: 0; list-style: none; }
+.pick-list-items li { display: flex; align-items: center; justify-content: space-between; gap: 8px; min-height: 32px; padding: 0 6px 0 11px; border: 1px solid var(--line); border-radius: 8px; background: var(--soft); font-weight: 560; }
+.pick-list-items li.locked { background: transparent; border-style: dashed; padding-right: 11px; }
+.pick-list-items li small { color: var(--muted); font-size: 9px; font-weight: 500; }
+.pick-list-items button { display: grid; place-items: center; width: 22px; height: 22px; border-radius: 6px; color: var(--muted); }
+.pick-list-items button:hover { background: var(--line); color: var(--ink); }
+.pick-list-items button:focus-visible { outline: 2px solid var(--teal); outline-offset: 1px; }
