@@ -51,7 +51,7 @@ export function formatDateTime(timestamp) {
 }
 
 /** Join two already-formatted dates, e.g. "Feb 03, 2025 – Aug 29, 2025". */
-export function formatRange(start, end) {
+function formatRange(start, end) {
   return `${start} – ${end}`
 }
 

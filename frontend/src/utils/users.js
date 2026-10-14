@@ -1,7 +1,10 @@
 // User helpers. Users come from the API as { id, display_id, username, first_name,
 // last_name, name, email, job_title, role, manager, archived_at, annual_salary? }.
 
-export const ROLES = ['admin', 'manager', 'employee']
+/** The three roles; compare with these rather than typing the strings. */
+export const ROLE = { admin: 'admin', manager: 'manager', employee: 'employee' }
+
+export const ROLES = Object.values(ROLE)
 
 /** 'manager' → 'Manager'. */
 export function roleLabel(role) {

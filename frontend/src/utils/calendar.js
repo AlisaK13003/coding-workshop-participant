@@ -22,7 +22,7 @@ export function isWeekday(date = new Date()) {
 }
 
 /** The date `amount` days after `date`. */
-export function addDays(date, amount) {
+function addDays(date, amount) {
   const next = new Date(date)
   next.setDate(next.getDate() + amount)
   return next

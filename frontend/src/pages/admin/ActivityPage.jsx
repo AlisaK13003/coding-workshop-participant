@@ -9,6 +9,7 @@ import {
   Select,
 } from '../../components/ui'
 import { useApiQuery } from '../../hooks/useApiQuery.js'
+import { useFilters } from '../../hooks/useFilters.js'
 import { listActivity } from '../../services/activityApi.js'
 import { listUsers } from '../../services/usersApi.js'
 import { ACTION_TYPES, toActivityItem } from '../../utils/activity.js'
@@ -20,17 +21,14 @@ const PAGE_SIZE = 50
 /** Searchable audit trail of every change, filtered by the API, 50 entries per page. */
 export function ActivityPage() {
   const [search, setSearch] = useState('')
-  const [filters, setFilters] = useState({ actor_id: '', role: '', action: '' })
   const [offset, setOffset] = useState(0)
+  // Changing a filter goes back to the first page.
+  const { filters, setFilter } = useFilters({ actor_id: '', role: '', action: '' }, () => setOffset(0))
   const activity = useApiQuery(
     () => listActivity({ ...filters, limit: PAGE_SIZE, offset }),
     [filters, offset],
   )
   const actors = useApiQuery(() => listUsers({ include_archived: 'true' }), [])
-  const setFilter = (name) => (value) => {
-    setFilters((current) => ({ ...current, [name]: value }))
-    setOffset(0)
-  }
 
   return (
     <>

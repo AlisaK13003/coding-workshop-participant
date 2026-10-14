@@ -3,6 +3,7 @@ import { useCurrentUser } from '../../hooks/useSession.js'
 import { loadPortfolio } from '../../services/portfolioApi.js'
 import { listUsers } from '../../services/usersApi.js'
 import { listWorkLogs } from '../../services/workLogsApi.js'
+import { ROLE } from '../../utils/users.js'
 
 /**
  * Everything the manager workspace shows, from the API: their active projects with
@@ -23,7 +24,7 @@ export function useManagerData() {
     ...query,
     data: query.data && {
       ...portfolio,
-      employees: users.filter(({ role }) => role === 'employee'),
+      employees: users.filter(({ role }) => role === ROLE.employee),
       logs,
       profile: users.find(({ id }) => id === user.id),
     },

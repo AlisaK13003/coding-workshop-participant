@@ -3,10 +3,11 @@ import { Field, Select } from '../../ui'
 import { useApiQuery } from '../../../hooks/useApiQuery.js'
 import { useMutation } from '../../../hooks/useMutation.js'
 import { listUsers, updateUser } from '../../../services/usersApi.js'
+import { ROLE } from '../../../utils/users.js'
 
 /** Admin: move an employee to another reporting manager. */
 export function TransferEmployeeDialog({ user, onClose }) {
-  const managers = useApiQuery(() => listUsers({ role: 'manager' }), [])
+  const managers = useApiQuery(() => listUsers({ role: ROLE.manager }), [])
   const transfer = useMutation((managerId) => updateUser(user.id, { manager_id: managerId }), {
     success: `${user.name} now reports to their new manager.`,
     onSuccess: onClose,

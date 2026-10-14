@@ -5,6 +5,7 @@ import { useMutation } from '../../../hooks/useMutation.js'
 import { addMember, listMembers } from '../../../services/projectsApi.js'
 import { listUsers } from '../../../services/usersApi.js'
 import './AddMemberDialog.css'
+import { ROLE } from '../../../utils/users.js'
 
 /**
  * Pick an employee who isn't on the project yet. The API decides who is eligible:
@@ -12,7 +13,7 @@ import './AddMemberDialog.css'
  */
 export function AddMemberDialog({ project, onClose }) {
   const query = combineQueries(
-    useApiQuery(() => listUsers({ role: 'employee' }), []),
+    useApiQuery(() => listUsers({ role: ROLE.employee }), []),
     useApiQuery(() => listMembers(project.id), [project.id]),
   )
   const add = useMutation((employee) => addMember(project.id, employee.id), {
@@ -30,7 +31,7 @@ export function AddMemberDialog({ project, onClose }) {
         {([users, members]) => {
           const eligible = users.filter(
             (user) =>
-              user.role === 'employee' &&
+              user.role === ROLE.employee &&
               !user.archived_at &&
               !members.some((member) => member.user.id === user.id),
           )

@@ -4,6 +4,7 @@ import RequireRole from './components/auth/RequireRole.jsx'
 import { LoadingState } from './components/ui'
 import LoginPage from './pages/LoginPage.jsx'
 import SignupPage from './pages/SignupPage.jsx'
+import { ROLE } from './utils/users.js'
 
 // Each workspace is its own download, fetched on sign-in, so the sign-in page stays small
 // and people only load the screens for their role.
@@ -18,9 +19,9 @@ export default function App() {
       <Routes>
         <Route path="/" element={<LoginPage />} />
         <Route path="/signup" element={<SignupPage />} />
-        <Route path="/admin/*" element={<RequireRole role="admin"><AdminApp /></RequireRole>} />
-        <Route path="/manager/*" element={<RequireRole role="manager"><ManagerApp /></RequireRole>} />
-        <Route path="/employee/*" element={<RequireRole role="employee"><EmployeeApp /></RequireRole>} />
+        <Route path="/admin/*" element={<RequireRole role={ROLE.admin}><AdminApp /></RequireRole>} />
+        <Route path="/manager/*" element={<RequireRole role={ROLE.manager}><ManagerApp /></RequireRole>} />
+        <Route path="/employee/*" element={<RequireRole role={ROLE.employee}><EmployeeApp /></RequireRole>} />
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
     </Suspense>

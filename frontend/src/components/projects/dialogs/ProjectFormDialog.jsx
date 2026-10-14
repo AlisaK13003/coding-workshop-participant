@@ -5,6 +5,7 @@ import { useMutation } from '../../../hooks/useMutation.js'
 import { useCurrentUser } from '../../../hooks/useSession.js'
 import { createProject, updateProject } from '../../../services/projectsApi.js'
 import { listUsers } from '../../../services/usersApi.js'
+import { ROLE } from '../../../utils/users.js'
 
 /** Only the fields that differ from the project (all of them when creating). */
 function changedValues(values, project) {
@@ -22,8 +23,8 @@ function changedValues(values, project) {
  */
 export function ProjectFormDialog({ project, onClose }) {
   const user = useCurrentUser()
-  const isAdmin = user.role === 'admin'
-  const managers = useApiQuery(() => (isAdmin ? listUsers({ role: 'manager' }) : []), [isAdmin])
+  const isAdmin = user.role === ROLE.admin
+  const managers = useApiQuery(() => (isAdmin ? listUsers({ role: ROLE.manager }) : []), [isAdmin])
   const save = useMutation(
     (values) => (project ? updateProject(project.id, changedValues(values, project)) : createProject(values)),
     {

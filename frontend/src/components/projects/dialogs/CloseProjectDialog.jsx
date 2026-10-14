@@ -3,6 +3,7 @@ import { ConfirmDialog } from '../../dialogs'
 import { useMutation } from '../../../hooks/useMutation.js'
 import { useCurrentUser } from '../../../hooks/useSession.js'
 import { abandonProject, completeProject } from '../../../services/projectsApi.js'
+import { ROLE } from '../../../utils/users.js'
 
 /** Close `project` as completed or (admins only) abandoned. outcome: 'complete' | 'abandon'. */
 export function CloseProjectDialog({ project, outcome, onClose }) {
@@ -19,7 +20,7 @@ export function CloseProjectDialog({ project, outcome, onClose }) {
       icon={completing ? CheckCircle2 : AlertTriangle}
       heading={completing ? 'Close this project as completed?' : 'Close this project as abandoned?'}
       message={
-        user.role === 'manager'
+        user.role === ROLE.manager
           ? 'It leaves your workspace, with its logs. Administrators keep the complete history.'
           : 'Its milestones, assignments and work logs stay available to administrators.'
       }

@@ -1,8 +1,10 @@
-import { useState } from 'react'
 import { Clock3 } from 'lucide-react'
-import { Input, PageHeading, Panel, Select } from '../../components/ui'
+import { PageHeading, Panel } from '../../components/ui'
+import { WorkLogFilters } from '../../components/worklogs/WorkLogFilters.jsx'
 import { WorkLogTable } from '../../components/worklogs/WorkLogTable.jsx'
+import { useFilters } from '../../hooks/useFilters.js'
 import { uniqueBy } from '../../utils/collections.js'
+import { matchesWorkLogFilters } from '../../utils/workLogs.js'
 import { MANAGER_WORK_LOG_COLUMNS } from './managerConfig.js'
 
 /**
@@ -10,18 +12,9 @@ import { MANAGER_WORK_LOG_COLUMNS } from './managerConfig.js'
  * manager (shown without pay), filtered by date, person, project and milestone.
  */
 export function WorkLogsPage({ logs, employees, projects, milestones }) {
-  const [filters, setFilters] = useState({ from: '', to: '', employee: '', project: '', milestone: '' })
-  const setFilter = (name) => (value) => setFilters((current) => ({ ...current, [name]: value }))
-  const matches = (id, value) => !value || id === Number(value)
-  const visible = logs.filter(
-    (log) =>
-      (!filters.from || log.work_date >= filters.from) &&
-      (!filters.to || log.work_date <= filters.to) &&
-      matches(log.employee.id, filters.employee) &&
-      matches(log.project.id, filters.project) &&
-      matches(log.milestone.id, filters.milestone),
-  )
-  const milestoneChoices = milestones.filter((item) => matches(item.project_id, filters.project))
+  const { filters, setFilter } = useFilters({ from: '', to: '', employee: '', project: '', milestone: '' })
+  const visible = logs.filter((log) => matchesWorkLogFilters(log, filters))
+  const projectId = Number(filters.project)
   // Your employees, plus anyone else who logged time on your projects.
   const people = uniqueBy([...employees, ...logs.map((log) => log.employee)], (person) => person.id)
     .sort((a, b) => a.name.localeCompare(b.name))
@@ -35,44 +28,20 @@ export function WorkLogsPage({ logs, employees, projects, milestones }) {
       />
       <Panel>
         <div className="toolbar toolbar-wrap">
-          <div className="filters">
-            <Input
-              type="date"
-              value={filters.from}
-              onChange={(event) => setFilter('from')(event.target.value)}
-              aria-label="Start date"
-            />
-            <Input
-              type="date"
-              value={filters.to}
-              onChange={(event) => setFilter('to')(event.target.value)}
-              aria-label="End date"
-            />
-            <Select value={filters.employee} onChange={setFilter('employee')} aria-label="Employee">
-              <option value="">All employees</option>
-              {people.map((item) => (
-                <option value={item.id} key={item.id}>
-                  {item.name}
-                </option>
-              ))}
-            </Select>
-            <Select value={filters.project} onChange={setFilter('project')} aria-label="Project">
-              <option value="">All projects</option>
-              {projects.map((item) => (
-                <option value={item.id} key={item.id}>
-                  {item.name}
-                </option>
-              ))}
-            </Select>
-            <Select value={filters.milestone} onChange={setFilter('milestone')} aria-label="Milestone">
-              <option value="">All milestones</option>
-              {milestoneChoices.map((item) => (
-                <option value={item.id} key={item.id}>
-                  {item.name}
-                </option>
-              ))}
-            </Select>
-          </div>
+          <WorkLogFilters
+            filters={filters}
+            setFilter={setFilter}
+            selects={[
+              { name: 'employee', label: 'Employee', allLabel: 'All employees', options: people },
+              { name: 'project', label: 'Project', allLabel: 'All projects', options: projects },
+              {
+                name: 'milestone',
+                label: 'Milestone',
+                allLabel: 'All milestones',
+                options: milestones.filter((item) => !projectId || item.project_id === projectId),
+              },
+            ]}
+          />
         </div>
         <div className="info-strip in-panel">
           <Clock3 size={16} />

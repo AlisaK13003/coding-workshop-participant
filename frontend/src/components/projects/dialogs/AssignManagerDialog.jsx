@@ -4,10 +4,11 @@ import { useApiQuery } from '../../../hooks/useApiQuery.js'
 import { useMutation } from '../../../hooks/useMutation.js'
 import { updateProject } from '../../../services/projectsApi.js'
 import { listUsers } from '../../../services/usersApi.js'
+import { ROLE } from '../../../utils/users.js'
 
 /** Admin: give a project without a manager (e.g. after unarchiving) a manager in one step. */
 export function AssignManagerDialog({ project, onClose }) {
-  const managers = useApiQuery(() => listUsers({ role: 'manager' }), [])
+  const managers = useApiQuery(() => listUsers({ role: ROLE.manager }), [])
   const assign = useMutation((managerId) => updateProject(project.id, { manager_id: managerId }), {
     success: (saved) => `${saved.manager?.name ?? 'The manager'} now manages ${project.name}.`,
     onSuccess: onClose,

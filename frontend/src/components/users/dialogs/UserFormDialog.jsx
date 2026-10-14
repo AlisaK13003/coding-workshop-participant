@@ -5,7 +5,7 @@ import { useApiQuery } from '../../../hooks/useApiQuery.js'
 import { useMutation } from '../../../hooks/useMutation.js'
 import { useCurrentUser } from '../../../hooks/useSession.js'
 import { createUser, listUsers, updateUser } from '../../../services/usersApi.js'
-import { ROLES, roleLabel } from '../../../utils/users.js'
+import { ROLE, ROLES, roleLabel } from '../../../utils/users.js'
 import { PASSWORD_HINT } from '../../../utils/password.js'
 
 /**
@@ -15,15 +15,15 @@ import { PASSWORD_HINT } from '../../../utils/password.js'
  */
 export function UserFormDialog({ user, onClose }) {
   const me = useCurrentUser()
-  const isAdmin = me.role === 'admin'
-  const [role, setRole] = useState(user?.role ?? 'employee')
-  const managers = useApiQuery(() => (isAdmin ? listUsers({ role: 'manager' }) : []), [isAdmin])
+  const isAdmin = me.role === ROLE.admin
+  const [role, setRole] = useState(user?.role ?? ROLE.employee)
+  const managers = useApiQuery(() => (isAdmin ? listUsers({ role: ROLE.manager }) : []), [isAdmin])
   const save = useMutation((values) => (user ? updateUser(user.id, values) : createUser(values)), {
     success: user ? 'Profile updated. Historical labor costs were kept.' : 'User created with a generated ID.',
     onSuccess: onClose,
   })
   const errors = save.fieldErrors
-  const isEmployee = role === 'employee'
+  const isEmployee = role === ROLE.employee
   const showsSalary = isEmployee && (!user || 'annual_salary' in user)
 
   const handleSubmit = (data) => {

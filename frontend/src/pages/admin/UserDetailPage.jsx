@@ -21,6 +21,7 @@ import { getUser } from '../../services/usersApi.js'
 import { formatMoney } from '../../utils/format.js'
 import { projectStatusLabel } from '../../utils/projects.js'
 import { pluralize } from '../../utils/text.js'
+import { ROLE } from '../../utils/users.js'
 
 /** An employee's current projects, or the projects a manager runs (from the admin's project list). */
 function getAssignments(user, projects, onOpenProject) {
@@ -28,7 +29,7 @@ function getAssignments(user, projects, onOpenProject) {
     const project = projects.find((item) => item.id === projectId)
     return project ? () => onOpenProject(project) : undefined
   }
-  if (user.role === 'employee') {
+  if (user.role === ROLE.employee) {
     return user.projects.map(({ project, milestone }) => ({
       key: project.id,
       title: project.name,
@@ -111,7 +112,7 @@ export function UserDetailPage({ userId, projects, onBack, onOpenProject, onOpen
                       },
                     ]}
                   />
-                  {user.role === 'employee' && !user.archived_at && (
+                  {user.role === ROLE.employee && !user.archived_at && (
                     <PanelFooter>
                       <Button variant="secondary" onClick={open(DIALOGS.transferEmployee)}>
                         Transfer manager
@@ -120,10 +121,10 @@ export function UserDetailPage({ userId, projects, onBack, onOpenProject, onOpen
                   )}
                 </Panel>
                 <Panel
-                  title={user.role === 'manager' ? 'Managed projects' : 'Current assignments'}
+                  title={user.role === ROLE.manager ? 'Managed projects' : 'Current assignments'}
                   description="Project and milestone participation."
                 >
-                  {user.role === 'admin' ? (
+                  {user.role === ROLE.admin ? (
                     <EmptyState
                       title="No project assignments"
                       body="Administrators manage system records but aren’t assigned to project work."
@@ -135,7 +136,7 @@ export function UserDetailPage({ userId, projects, onBack, onOpenProject, onOpen
                   )}
                 </Panel>
               </div>
-              {user.role === 'manager' && <DirectReportsPanel manager={user} onOpenUser={onOpenUser} />}
+              {user.role === ROLE.manager && <DirectReportsPanel manager={user} onOpenUser={onOpenUser} />}
             </>
           )
         }}

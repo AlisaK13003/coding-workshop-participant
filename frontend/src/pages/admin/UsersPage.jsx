@@ -14,7 +14,7 @@ import { DIALOGS } from '../../components/workspace/dialogKinds.js'
 import { useApiQuery } from '../../hooks/useApiQuery.js'
 import { listUsers } from '../../services/usersApi.js'
 import { includesText } from '../../utils/text.js'
-import { ROLES, roleLabel } from '../../utils/users.js'
+import { ROLE, ROLES, roleLabel } from '../../utils/users.js'
 import { UserDetailPage } from './UserDetailPage.jsx'
 
 const ALL = ''
@@ -32,7 +32,7 @@ export function UsersPage({ projects, selectedId, onSelectUser, onOpenProject, o
     () => listUsers({ role, manager_id: managerId, include_archived: showArchived ? 'true' : undefined }),
     [role, managerId, showArchived],
   )
-  const managers = useApiQuery(() => listUsers({ role: 'manager' }), [])
+  const managers = useApiQuery(() => listUsers({ role: ROLE.manager }), [])
 
   if (selectedId) {
     return (

@@ -5,10 +5,11 @@ import { useMutation } from '../../../hooks/useMutation.js'
 import { listUsers } from '../../../services/usersApi.js'
 import { addWorkLog } from '../../../services/workLogsApi.js'
 import { WorkLogFields } from './WorkLogFields.jsx'
+import { ROLE } from '../../../utils/users.js'
 
 /** Admin: enter a past workday for any employee. project (optional) pre-selects the project. */
 export function AddWorkLogDialog({ project, onClose }) {
-  const employees = useApiQuery(() => listUsers({ role: 'employee' }), [])
+  const employees = useApiQuery(() => listUsers({ role: ROLE.employee }), [])
   const add = useMutation(addWorkLog, {
     success: 'Historical workday added with an activity record.',
     onSuccess: onClose,

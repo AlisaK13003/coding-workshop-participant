@@ -1,31 +1,25 @@
 import { useState } from 'react'
 import { Clock3, Plus } from 'lucide-react'
-import {
-  Button,
-  Input,
-  PageHeading,
-  Panel,
-  QueryContent,
-  SearchBox,
-  Select,
-} from '../../components/ui'
+import { Button, PageHeading, Panel, QueryContent, SearchBox } from '../../components/ui'
 import { DIALOGS } from '../../components/workspace/dialogKinds.js'
+import { WorkLogFilters } from '../../components/worklogs/WorkLogFilters.jsx'
 import { WorkLogTable } from '../../components/worklogs/WorkLogTable.jsx'
 import { useApiQuery } from '../../hooks/useApiQuery.js'
+import { useFilters } from '../../hooks/useFilters.js'
 import { listProjects } from '../../services/projectsApi.js'
 import { listUsers } from '../../services/usersApi.js'
 import { listWorkLogs } from '../../services/workLogsApi.js'
 import { includesText } from '../../utils/text.js'
+import { ROLE } from '../../utils/users.js'
 import { getAdminWorkLogColumns } from './adminWorkLogColumns.jsx'
 
 /** Every workday across all projects, filtered by the API, with historical entry and correction. */
 export function WorkLogsPage({ onOpenDialog }) {
   const [search, setSearch] = useState('')
-  const [filters, setFilters] = useState({ from: '', to: '', employee_id: '', project_id: '' })
+  const { filters, setFilter } = useFilters({ from: '', to: '', employee_id: '', project_id: '' })
   const logs = useApiQuery(() => listWorkLogs(filters), [filters])
-  const employees = useApiQuery(() => listUsers({ role: 'employee', include_archived: 'true' }), [])
+  const employees = useApiQuery(() => listUsers({ role: ROLE.employee, include_archived: 'true' }), [])
   const projects = useApiQuery(() => listProjects(), [])
-  const setFilter = (name) => (value) => setFilters((current) => ({ ...current, [name]: value }))
 
   return (
     <>
@@ -43,36 +37,14 @@ export function WorkLogsPage({ onOpenDialog }) {
       <Panel>
         <div className="toolbar toolbar-wrap">
           <SearchBox value={search} onChange={setSearch} placeholder="Search employee, project, or milestone" />
-          <div className="filters">
-            <Input
-              type="date"
-              value={filters.from}
-              onChange={(event) => setFilter('from')(event.target.value)}
-              aria-label="From date"
-            />
-            <Input
-              type="date"
-              value={filters.to}
-              onChange={(event) => setFilter('to')(event.target.value)}
-              aria-label="To date"
-            />
-            <Select value={filters.employee_id} onChange={setFilter('employee_id')} aria-label="Employee">
-              <option value="">All employees</option>
-              {(employees.data ?? []).map((employee) => (
-                <option key={employee.id} value={employee.id}>
-                  {employee.name}
-                </option>
-              ))}
-            </Select>
-            <Select value={filters.project_id} onChange={setFilter('project_id')} aria-label="Project">
-              <option value="">All projects</option>
-              {(projects.data ?? []).map((project) => (
-                <option key={project.id} value={project.id}>
-                  {project.name}
-                </option>
-              ))}
-            </Select>
-          </div>
+          <WorkLogFilters
+            filters={filters}
+            setFilter={setFilter}
+            selects={[
+              { name: 'employee_id', label: 'Employee', allLabel: 'All employees', options: employees.data ?? [] },
+              { name: 'project_id', label: 'Project', allLabel: 'All projects', options: projects.data ?? [] },
+            ]}
+          />
         </div>
         <div className="info-strip in-panel">
           <Clock3 size={16} />

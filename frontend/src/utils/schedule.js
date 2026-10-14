@@ -2,7 +2,7 @@
 import { parseDate } from './format.js'
 
 // Health is 'Green' | 'Amber' | 'Red' internally (it picks the colour); people see these labels.
-export const SCHEDULE_PHASE_LABELS = {
+const SCHEDULE_PHASE_LABELS = {
   Green: 'On track',
   Amber: 'Needs attention',
   Red: 'Urgent',
@@ -57,7 +57,7 @@ export function getProjectHealth(project, today = new Date()) {
  * 50–75% amber, the rest red. Used for projects that have no milestones yet.
  * start and end are ISO dates; today defaults to the current date.
  */
-export function getSchedulePhase(start, end, today = new Date()) {
+function getSchedulePhase(start, end, today = new Date()) {
   const startTime = parseDate(start).getTime()
   const endTime = parseDate(end).getTime()
   const now = today.getTime()

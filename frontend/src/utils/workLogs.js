@@ -64,3 +64,18 @@ export function getMonthlyTotals(logs, count = 6, today = new Date()) {
     }
   })
 }
+
+/**
+ * Whether a log passes client-side filters { from, to, employee, project, milestone }
+ * (dates as YYYY-MM-DD, ids as select values; '' or missing means any).
+ */
+export function matchesWorkLogFilters(log, { from, to, employee, project, milestone }) {
+  const matches = (id, value) => !value || id === Number(value)
+  return (
+    (!from || log.work_date >= from) &&
+    (!to || log.work_date <= to) &&
+    matches(log.employee.id, employee) &&
+    matches(log.project.id, project) &&
+    matches(log.milestone.id, milestone)
+  )
+}
