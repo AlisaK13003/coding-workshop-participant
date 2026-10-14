@@ -80,6 +80,7 @@ Everyone's password is `Password123!`.
 - [ ] **Profile menu → Sign out** → back to sign-in. The browser's Back button doesn't get you back in.
 - [ ] **Wrong workspace:** as Emery, go to `localhost:3010/#/admin` → sent to `/#/employee`. As Riley, go to `/#/employee` → sent to `/#/manager`.
 - [ ] **Signed out**, go to `/#/manager` → sent to sign-in.
+- [ ] **My Profile** (employees and managers, in the sidebar) shows your details read-only and lets you change your password. Emery: "Software Engineer · Reports to Morgan Manager", Employee ID, Assigned manager. Morgan: "Engineering Manager · 3 direct reports", Manager ID, Direct reports, and "An administrator maintains your profile details."
 - [ ] **Refresh on any page** (e.g. `/#/manager`) → you stay on it.
 - [ ] **Sign-up is closed:** go to `/#/signup` → "This workspace is already set up."
 - [ ] **Session refresh** *(optional, slow)*: stay signed in for 20+ minutes (the access token lasts 15), then click around → it still works.
@@ -398,6 +399,7 @@ See [api/README.md](api/README.md) for setup. Ids for reference:
 - [ ] **Loading states** appear briefly. **Stop the API server** → a friendly error with **Retry**. Restart the server and click Retry → recovers.
 - [ ] **Forms** disable their buttons while saving, and errors appear next to the field they're about.
 - [ ] **Disabled buttons look disabled** (faded, "not allowed" cursor).
+- [ ] **Employee project page → Prerequisites row:** each prerequisite is one chip with a round check (or clock) icon, its name and a normal status pill.
 - [ ] **Keyboard:** Tab through dialogs, and Esc or Cancel closes them.
 
 ---

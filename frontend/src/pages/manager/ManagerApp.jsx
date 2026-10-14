@@ -21,6 +21,7 @@ import { MyEmployeesPage } from './MyEmployeesPage.jsx'
 import { MyProjectsPage } from './MyProjectsPage.jsx'
 import { ProjectDetailPage } from './ProjectDetailPage.jsx'
 import { useManagerData } from './useManagerData.js'
+import { MyProfilePage } from '../shared/MyProfilePage.jsx'
 import { WorkLogsPage } from './WorkLogsPage.jsx'
 
 /**
@@ -67,7 +68,7 @@ export default function ManagerApp() {
     else openProject(notice.project_id)
   }
 
-  const renderPage = ({ logs, members }) => {
+  const renderPage = ({ logs, members, profile }) => {
     if (selectedProject) {
       return (
         <ProjectDetailPage
@@ -110,6 +111,14 @@ export default function ManagerApp() {
             members={members}
             logs={logs}
             onSelectEmployee={setSelectedEmployeeId}
+          />
+        )
+      case MANAGER_PAGES.profile:
+        return (
+          <MyProfilePage
+            profile={profile}
+            relation={`${employees.length} direct ${pluralize(employees.length, 'report')}`}
+            extraDetails={[{ label: 'Direct reports', value: employees.length }]}
           />
         )
       default:

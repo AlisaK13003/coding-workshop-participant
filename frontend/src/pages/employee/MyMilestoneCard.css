@@ -12,8 +12,8 @@
 .prerequisite-list { display: flex; align-items: center; gap: 11px; padding: 15px 24px; border-bottom: 1px solid var(--line); }
 .prerequisite-list > span { margin-right: 5px; }
 .prerequisite-list > div { display: flex; align-items: center; gap: 6px; padding: 6px 8px; border: 1px solid var(--line); border-radius: 8px; }
-.prerequisite-list > div > span { width: 19px; height: 19px; display: grid; place-items: center; border-radius: 50%; background: var(--amber-soft); color: var(--amber); }
-.prerequisite-list > div > span.done { background: var(--green-soft); color: var(--green); }
+.prerequisite-icon { flex: none; width: 19px; height: 19px; display: grid; place-items: center; border-radius: 50%; background: var(--amber-soft); color: var(--amber); }
+.prerequisite-icon.done { background: var(--green-soft); color: var(--green); }
 .prerequisite-list strong { font-size: 10px; }
 .blocked-explanation, .review-pending-state { display: flex; gap: 10px; margin: 16px 24px 0; padding: 12px; border-radius: 9px; background: var(--amber-soft); color: var(--amber); }
 .review-pending-state { background: var(--teal-soft); color: var(--teal-dark); }

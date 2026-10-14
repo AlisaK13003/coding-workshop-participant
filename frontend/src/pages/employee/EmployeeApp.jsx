@@ -13,11 +13,11 @@ import {
   EMPLOYEE_PAGES,
   EMPLOYEE_SIDEBAR_FOOTER,
 } from './employeeConfig.js'
-import { MyProfilePage } from './MyProfilePage.jsx'
 import { MyProjectsPage } from './MyProjectsPage.jsx'
 import { MyWorkLogsPage } from './MyWorkLogsPage.jsx'
 import { ProjectDetailPage } from './ProjectDetailPage.jsx'
 import { useEmployeeData } from './useEmployeeData.js'
+import { MyProfilePage } from '../shared/MyProfilePage.jsx'
 
 /**
  * Employee workspace. Sub-pages switch with in-app state inside the shared
@@ -90,7 +90,13 @@ export default function EmployeeApp() {
       case EMPLOYEE_PAGES.workLogs:
         return <MyWorkLogsPage assignments={assignments} milestones={milestones} logs={logs} />
       default:
-        return <MyProfilePage profile={profile} />
+        return (
+          <MyProfilePage
+            profile={profile}
+            relation={`Reports to ${profile.manager?.name ?? 'nobody'}`}
+            extraDetails={[{ label: 'Assigned manager', value: profile.manager?.name ?? '—' }]}
+          />
+        )
     }
   }
 

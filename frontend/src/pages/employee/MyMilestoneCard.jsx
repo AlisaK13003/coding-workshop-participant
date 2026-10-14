@@ -22,7 +22,7 @@ function Prerequisites({ milestone, milestones }) {
           const done = item.status === MILESTONE_STATUS.completed
           return (
             <div key={item.id}>
-              <span className={done ? 'done' : undefined}>
+              <span className={cx('prerequisite-icon', done && 'done')}>
                 {done ? <Check size={12} /> : <Clock3 size={12} />}
               </span>
               <strong>{item.name}</strong>

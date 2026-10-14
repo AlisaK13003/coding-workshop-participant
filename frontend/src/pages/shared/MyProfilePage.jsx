@@ -13,12 +13,24 @@ import {
 import { useMutation } from '../../hooks/useMutation.js'
 import { changePassword } from '../../services/authApi.js'
 import { PASSWORD_HINT, validatePasswordChange } from '../../utils/password.js'
+import { capitalize } from '../../utils/text.js'
 import './MyProfilePage.css'
 
 const EMPTY_FORM = { current: '', next: '', confirm: '' }
 
-/** Read-only profile details (from the API) and a change-password form. */
-export function MyProfilePage({ profile }) {
+// Who can change an employee's or a manager's details.
+const MAINTAINED_BY = {
+  employee: 'your manager or an administrator',
+  manager: 'an administrator',
+}
+
+/**
+ * Read-only profile details (from the API) and a change-password form, for employees and managers.
+ * profile: the user from the API. relation: the line under the name, e.g. "Reports to Morgan Manager".
+ * extraDetails: role-specific rows added to the details list.
+ */
+export function MyProfilePage({ profile, relation, extraDetails = [] }) {
+  const maintainedBy = MAINTAINED_BY[profile.role] ?? 'an administrator'
   const [form, setForm] = useState(EMPTY_FORM)
   const [errors, setErrors] = useState({})
   const change = useMutation(() => changePassword(form.current, form.next), {
@@ -42,16 +54,16 @@ export function MyProfilePage({ profile }) {
       <PageHeading
         eyebrow="Account"
         title="My profile"
-        description="Your manager or an administrator maintains your profile details."
+        description={`${capitalize(maintainedBy)} maintains your profile details.`}
       />
       <div className="profile-layout">
         <Panel>
-          <div className="employee-profile-head">
+          <div className="profile-head">
             <Avatar name={profile.name} />
             <div>
               <h2>{profile.name}</h2>
               <p>
-                {profile.job_title} · Reports to {profile.manager?.name ?? 'nobody'}
+                {[profile.job_title, relation].filter(Boolean).join(' · ')}
               </p>
             </div>
           </div>
@@ -62,12 +74,12 @@ export function MyProfilePage({ profile }) {
               { label: 'Username', value: profile.username },
               { label: 'Email', value: profile.email },
               { label: 'Job title', value: profile.job_title },
-              { label: 'Employee ID', value: <code>{profile.display_id}</code> },
-              { label: 'Assigned manager', value: profile.manager?.name ?? '—' },
+              { label: `${capitalize(profile.role)} ID`, value: <code>{profile.display_id}</code> },
+              ...extraDetails,
             ]}
           />
           <PanelNote tone="muted">
-            Contact your manager or an administrator if these details need to change.
+            Contact {maintainedBy} if these details need to change.
           </PanelNote>
         </Panel>
         <Panel

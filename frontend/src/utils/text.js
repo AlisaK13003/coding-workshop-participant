@@ -14,3 +14,8 @@ export function pluralize(count, singular, plural = `${singular}s`) {
 export function listWords(items) {
   return items.length <= 1 ? (items[0] ?? '') : `${items.slice(0, -1).join(', ')} and ${items.at(-1)}`
 }
+
+/** 'manager' → 'Manager'. */
+export function capitalize(word) {
+  return word ? word[0].toUpperCase() + word.slice(1) : ''
+}

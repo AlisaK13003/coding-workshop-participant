@@ -5,6 +5,7 @@ import {
   Clock3,
   FolderKanban,
   LayoutDashboard,
+  UserRound,
   Users,
 } from 'lucide-react'
 
@@ -14,6 +15,7 @@ export const MANAGER_PAGES = {
   calendar: 'Calendar',
   employees: 'My Employees',
   workLogs: 'Work Logs',
+  profile: 'My Profile',
 }
 
 export const MANAGER_NAV_ITEMS = [
@@ -22,6 +24,7 @@ export const MANAGER_NAV_ITEMS = [
   { name: MANAGER_PAGES.calendar, icon: CalendarDays },
   { name: MANAGER_PAGES.employees, icon: Users },
   { name: MANAGER_PAGES.workLogs, icon: Clock3 },
+  { name: MANAGER_PAGES.profile, icon: UserRound },
 ]
 
 export const MANAGER_SIDEBAR_FOOTER = {
