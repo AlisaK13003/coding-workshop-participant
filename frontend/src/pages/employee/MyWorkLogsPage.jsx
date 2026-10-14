@@ -3,7 +3,6 @@ import { CircleAlert } from 'lucide-react'
 import { Input, PageHeading, Panel, Select } from '../../components/ui'
 import { WorkLogTable } from '../../components/worklogs/WorkLogTable.jsx'
 import { EMPLOYEE_WORK_LOG_COLUMNS } from './employeeConfig.js'
-import './MyWorkLogsPage.css'
 
 /** The employee's own workdays, filterable by date range, project and milestone. */
 export function MyWorkLogsPage({ assignments, milestones, logs }) {
@@ -60,7 +59,7 @@ export function MyWorkLogsPage({ assignments, milestones, logs }) {
             </Select>
           </div>
         </div>
-        <div className="info-strip employee-log-note">
+        <div className="info-strip in-panel">
           <CircleAlert size={16} />
           For corrections or historical entries, contact an admin. Closed and
           archived project logs aren’t shown here.

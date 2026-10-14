@@ -74,7 +74,7 @@ export function WorkLogsPage({ onOpenDialog }) {
             </Select>
           </div>
         </div>
-        <div className="info-strip">
+        <div className="info-strip in-panel">
           <Clock3 size={16} />
           Work date is distinct from the date an entry was created or corrected.
           Historical rates stay unchanged after salary updates.

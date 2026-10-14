@@ -3,7 +3,6 @@ import { Clock3 } from 'lucide-react'
 import { Input, PageHeading, Panel, Select } from '../../components/ui'
 import { WorkLogTable } from '../../components/worklogs/WorkLogTable.jsx'
 import { MANAGER_WORK_LOG_COLUMNS } from './managerConfig.js'
-import './WorkLogsPage.css'
 
 /**
  * Read-only workdays for the manager's employees on their active projects
@@ -71,7 +70,7 @@ export function WorkLogsPage({ logs, employees, projects, milestones }) {
             </Select>
           </div>
         </div>
-        <div className="info-strip manager-log-note">
+        <div className="info-strip in-panel">
           <Clock3 size={16} />
           Each entry is one 8-hour weekday. Employees can log only one project
           per day and can’t backdate. Closed and archived project logs aren’t shown.

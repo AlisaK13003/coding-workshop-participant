@@ -60,6 +60,8 @@ code { padding: 3px 6px; border-radius: 5px; background: var(--soft); color: var
 .toolbar { min-height: 72px; display: flex; align-items: center; justify-content: space-between; gap: 14px; padding: 15px 18px; border-bottom: 1px solid var(--line); }
 .toolbar-wrap { flex-wrap: wrap; }
 .filters { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+/* An info strip directly inside a panel (above a table) gets the panel's side padding. */
+.info-strip.in-panel { margin: 14px 18px; }
 .inline-note, .info-strip { display: flex; align-items: center; gap: 8px; margin: -8px 0 18px; padding: 10px 13px; border: 1px solid #eadab3; border-radius: 9px; background: var(--amber-soft); color: var(--amber); font-size: 11px; }
 
 @media (max-width: 1180px) {
