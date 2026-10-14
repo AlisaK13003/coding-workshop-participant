@@ -74,7 +74,7 @@ def call(service, method, path, body=None, token=None, query=None):
 
 @pytest.fixture(autouse=True)
 def fresh_db():
-    subprocess.run([str(BACKEND / "db" / "reset.sh"), TEST_DB], check=True, capture_output=True)
+    subprocess.run([str(BACKEND / "db" / "reset.sh"), TEST_DB, "--seed-only"], check=True, capture_output=True)
 
 
 def sign_in(username, password=SEED_PASSWORD):

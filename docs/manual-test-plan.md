@@ -26,6 +26,16 @@ Then open http://localhost:3010.
 | `mmanager2` | Morgan Manager | Manager of Emery and of Customer Portal |
 | `eemployee3` | Emery Employee | Employee ($83,200/year, so $40/hour) |
 
+**More accounts:** `reset.sh` also loads `backend/db/demo.sql` (same password):
+- a second admin, `pshah4`
+- managers with 1 and 0 projects, `rchen5` and `jpark6`
+- employees on 2, 1 and 0 projects
+- an archived employee
+- projects ending in 1 week, 1 month and 3 months that are nearly at, over and under budget
+- an abandoned project, a completed archived one, and an unarchived one waiting for a manager
+
+The list at the top of `demo.sql` shows who's on what. The tests below use the seed people (Alex, Morgan, Emery) unless they say otherwise.
+
 **Starting data after a reset:**
 - **Project:** Customer Portal, Oct 1 – Dec 31 2026, budget $50,000, managed by Morgan.
 - **Milestones:**
