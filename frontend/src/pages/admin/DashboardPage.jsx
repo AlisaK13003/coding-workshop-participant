@@ -68,7 +68,7 @@ function oldestRequestNote(reviews) {
 }
 
 /**
- * Admin overview: key numbers, attention items, spending and activity. Each stat card
+ * Admin overview: attention items, key numbers, spending and activity. Each stat card
  * selects what the list under the cards shows (active projects by default).
  */
 export function DashboardPage({ projects, onOpenProject, onOpenUser, onNavigate, onOpenDialog }) {
@@ -116,6 +116,30 @@ export function DashboardPage({ projects, onOpenProject, onOpenUser, onNavigate,
           const attention = unassigned.length + overBudget.length + reviews.length
           return (
             <>
+              {attention > 0 && (
+                <Panel className="attention-panel">
+                  <div>
+                    <span className="attention-icon">
+                      <CircleAlert size={19} />
+                    </span>
+                    <p>
+                      <strong>
+                        {attention} {pluralize(attention, 'item needs', 'items need')} attention
+                      </strong>
+                      <span>
+                        {attentionSummary({
+                          unassigned: unassigned.length,
+                          overBudget: overBudget.length,
+                          reviews: reviews.length,
+                        })}
+                      </span>
+                    </p>
+                  </div>
+                  <Button variant="secondary" onClick={() => onNavigate(ADMIN_PAGES.projects)}>
+                    Review projects
+                  </Button>
+                </Panel>
+              )}
               <div className="stats-grid">
                 <StatCard
                   label="Active projects"
@@ -146,30 +170,6 @@ export function DashboardPage({ projects, onOpenProject, onOpenUser, onNavigate,
                   {...cardProps(DASHBOARD_VIEWS.reviews)}
                 />
               </div>
-              {attention > 0 && (
-                <Panel className="attention-panel">
-                  <div>
-                    <span className="attention-icon">
-                      <CircleAlert size={19} />
-                    </span>
-                    <p>
-                      <strong>
-                        {attention} {pluralize(attention, 'item needs', 'items need')} attention
-                      </strong>
-                      <span>
-                        {attentionSummary({
-                          unassigned: unassigned.length,
-                          overBudget: overBudget.length,
-                          reviews: reviews.length,
-                        })}
-                      </span>
-                    </p>
-                  </div>
-                  <Button variant="secondary" onClick={() => onNavigate(ADMIN_PAGES.projects)}>
-                    Review projects
-                  </Button>
-                </Panel>
-              )}
               <DashboardFocusPanel
                 view={view}
                 active={active}
