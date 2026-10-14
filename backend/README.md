@@ -45,6 +45,11 @@ Sample accounts (local only, password `Password123!`): admins `aadmin1`, `pshah4
 .venv/bin/pytest            # resets the project_tracker_test database for every test
 ```
 
+188 tests cover every route: permissions per role, validation errors, status codes, the
+business rules (milestone prerequisites, one 8-hour log per weekday, archiving) and the
+notifications and activity entries each change creates. Coverage of the services' own code
+is about 93% (measured with pytest-cov, which isn't installed by default).
+
 ### On LocalStack
 
 `./bin/start-dev.sh` deploys every service as a Lambda. Those Lambdas use the database named `postgres`, so load it once with `backend/db/reset.sh postgres`.

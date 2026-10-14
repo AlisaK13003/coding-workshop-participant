@@ -139,6 +139,27 @@ To deploy your frontend to AWS:
 
 To view your application, open the browser and navigate to CloudFront URL.
 
+## Testing
+
+```sh
+npm test            # Vitest, once (npm run test:watch reruns on save)
+npm run lint
+```
+
+Tests sit next to the code they cover (`*.test.js` / `*.test.jsx`) and run in jsdom with
+React Testing Library; `src/test/` holds the setup and a small `fetch` stand-in.
+
+- **Business rules** (`utils/`): project and milestone health, password rules, work log
+  filters, text helpers.
+- **API client** (`services/apiClient.test.js`): the token is sent, an expired token is
+  refreshed once (shared by parallel requests) and retried, a dead refresh signs you out,
+  and errors become readable `ApiError`s.
+- **Components**: the … menu, notification bell, selectable stat cards, work log filters, and
+  the sign-in form (validation, refused sign-in, success opens the right workspace).
+
+End-to-end journeys are covered by the manual test plan in
+[docs/manual-test-plan.md](../docs/manual-test-plan.md).
+
 ## Clean Up
 
 To remove all deployed resources (including frontend):
