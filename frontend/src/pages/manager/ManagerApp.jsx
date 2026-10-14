@@ -86,6 +86,7 @@ export default function ManagerApp() {
             members={members}
             onOpenProject={openProject}
             onReview={openReview}
+            onOpenCalendar={() => navigate(MANAGER_PAGES.calendar)}
           />
         )
       case MANAGER_PAGES.projects:

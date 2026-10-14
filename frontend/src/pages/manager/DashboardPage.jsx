@@ -4,7 +4,7 @@ import {
   CheckCircle2,
   FolderKanban,
 } from 'lucide-react'
-import { UpcomingDeadlines } from '../../components/projects/UpcomingDeadlines.jsx'
+import { DeadlinesPanel } from '../../components/projects/DeadlinesPanel.jsx'
 import { Badge, EmptyState, PageHeading, Panel, StatCard } from '../../components/ui'
 import { useCurrentUser } from '../../hooks/useSession.js'
 import { greeting } from '../../utils/format.js'
@@ -16,7 +16,7 @@ import { ManagerProjectTable } from './ManagerProjectTable.jsx'
 import { ReviewQueue } from '../../components/milestones/ReviewQueue.jsx'
 
 /** Manager overview: reviews, active projects, assignment attention and deadlines. */
-export function DashboardPage({ projects, milestones, members, onOpenProject, onReview }) {
+export function DashboardPage({ projects, milestones, members, onOpenProject, onReview, onOpenCalendar }) {
   const user = useCurrentUser()
   const reviews = getPendingReviews(milestones)
   const attention = getAssignmentAttention(members)
@@ -78,13 +78,14 @@ export function DashboardPage({ projects, milestones, members, onOpenProject, on
             <EmptyState title="Everyone can work" body="Every employee has an available milestone." />
           )}
         </Panel>
-        <Panel title="Upcoming deadlines" description="Project and milestone end dates in the next 60 days.">
-          <UpcomingDeadlines
-            projects={projects}
-            milestones={milestones}
-            onOpenProject={(project) => onOpenProject(project.id)}
-          />
-        </Panel>
+        <DeadlinesPanel
+          title="Upcoming deadlines"
+          description="Project and milestone end dates in the next 60 days."
+          projects={projects}
+          milestones={milestones}
+          onOpenProject={(project) => onOpenProject(project.id)}
+          onViewAll={onOpenCalendar}
+        />
       </div>
     </>
   )

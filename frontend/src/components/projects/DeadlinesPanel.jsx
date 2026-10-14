@@ -1,5 +1,5 @@
 import { MilestoneStatusBadge } from '../milestones/MilestoneStatusBadge.jsx'
-import { Phase } from '../ui'
+import { Panel, Phase, ViewAllButton } from '../ui'
 import { daysBetween, todayIso } from '../../utils/calendar.js'
 import { toDateTile } from '../../utils/format.js'
 import { openMilestones } from '../../utils/milestones.js'
@@ -7,11 +7,14 @@ import { getProjectPhase, isOpenProject } from '../../utils/projects.js'
 import { DeadlineList } from './DeadlineList.jsx'
 
 /**
- * The next end dates of open projects (and, if given, their open milestones),
- * soonest first, from today up to `withinDays` days ahead. With onOpenProject(project),
- * each row opens its project (a milestone opens the project it belongs to).
+ * Panel of the next end dates of open projects (and, if given, their open milestones),
+ * soonest first, from today up to `withinDays` days ahead, showing at most `limit`.
+ * With onOpenProject(project), each row opens its project (a milestone opens its project).
+ * "View all" calls onViewAll (e.g. the calendar) and is disabled when nothing is hidden.
  */
-export function UpcomingDeadlines({ projects, milestones = [], withinDays = 60, limit = 4, onOpenProject }) {
+export function DeadlinesPanel({
+  title, description, projects, milestones = [], withinDays = 60, limit = 3, onOpenProject, onViewAll,
+}) {
   const opener = (project) => (onOpenProject && project ? () => onOpenProject(project) : undefined)
   const today = todayIso()
   const isUpcoming = (date) => {
@@ -38,10 +41,25 @@ export function UpcomingDeadlines({ projects, milestones = [], withinDays = 60, 
       status: <MilestoneStatusBadge status={milestone.status} />,
       onClick: opener(projects.find((project) => project.id === milestone.project_id)),
     }))
-  const items = [...projectItems, ...milestoneItems]
-    .sort((a, b) => a.date.localeCompare(b.date))
-    .slice(0, limit)
-    .map((item) => ({ ...item, ...toDateTile(item.date) }))
+  const all = [...projectItems, ...milestoneItems].sort((a, b) => a.date.localeCompare(b.date))
+  const items = all.slice(0, limit).map((item) => ({ ...item, ...toDateTile(item.date) }))
+  const hidden = all.length - items.length
 
-  return <DeadlineList items={items} emptyBody={`Nothing ends in the next ${withinDays} days.`} />
+  return (
+    <Panel
+      title={title}
+      description={description}
+      actions={
+        onViewAll && (
+          <ViewAllButton
+            onClick={onViewAll}
+            disabled={hidden === 0}
+            title={hidden === 0 ? 'Everything coming up is shown' : `${hidden} more in the calendar`}
+          />
+        )
+      }
+    >
+      <DeadlineList items={items} emptyBody={`Nothing ends in the next ${withinDays} days.`} />
+    </Panel>
+  )
 }

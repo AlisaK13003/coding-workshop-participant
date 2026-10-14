@@ -7,7 +7,7 @@ import {
   Users,
 } from 'lucide-react'
 import { ActivityList } from '../../components/activity/ActivityList.jsx'
-import { UpcomingDeadlines } from '../../components/projects/UpcomingDeadlines.jsx'
+import { DeadlinesPanel } from '../../components/projects/DeadlinesPanel.jsx'
 import {
   Badge,
   Button,
@@ -203,9 +203,13 @@ export function DashboardPage({ projects, onOpenProject, onOpenUser, onNavigate,
             {(rows) => <HoursChart data={getMonthlyTotals(rows, CHART_MONTHS)} />}
           </QueryContent>
         </Panel>
-        <Panel title="Approaching end dates" description="Within the next 60 days">
-          <UpcomingDeadlines projects={active} onOpenProject={onOpenProject} />
-        </Panel>
+        <DeadlinesPanel
+          title="Approaching end dates"
+          description="Within the next 60 days"
+          projects={active}
+          onOpenProject={onOpenProject}
+          onViewAll={() => onNavigate(ADMIN_PAGES.calendar)}
+        />
       </div>
       <Panel
         title="Recent activity"

@@ -302,7 +302,7 @@ Everyone's password is `Password123!`.
 - [ ] **Calendar (timeline):** full date ranges for each project.
 - [ ] **Admin Calendar** (sidebar, after Projects): every open project's deadline, with the same month/timeline views. The **Manager** filter narrows it to one manager's projects, or **No manager** (e.g. Intranet Redesign before it's reassigned). Clicking a project opens it.
 - [ ] **Manager "hours this week"** adds up the current Monday–Sunday across all their employees.
-- [ ] **Approaching end dates** (dashboards) lists up to 4 deadlines in the next 60 days, soonest first; clicking one opens its project (a milestone opens its project).
+- [ ] **Approaching end dates / Upcoming deadlines** (dashboards) show at most 3 deadlines in the next 60 days, soonest first; clicking one opens its project (a milestone opens its project). **View all** opens the Calendar, and is disabled (hover: "Everything coming up is shown") when there are 3 or fewer — e.g. Riley's dashboard.
 - [ ] **Recent activity → View all** opens the Activity Log.
 - [ ] **Admin stat cards** show real counts: users by role, open projects without a manager (**1**: Intranet Redesign), the oldest waiting review, over-budget projects.
 
