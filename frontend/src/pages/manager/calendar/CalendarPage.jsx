@@ -23,7 +23,7 @@ const VIEW_OPTIONS = [
   { value: 'timeline', label: 'Timeline' },
 ]
 
-/** Active project date ranges as a month grid or a year timeline. */
+/** Active project deadlines on a month grid, or full date ranges on a year timeline. */
 export function CalendarPage({ projects, onOpenProject }) {
   const [cursor, setCursor] = useState(currentMonth)
   const [view, setView] = useState('month')
@@ -36,7 +36,7 @@ export function CalendarPage({ projects, onOpenProject }) {
       <PageHeading
         eyebrow="Portfolio schedule"
         title="Calendar"
-        description="Active project ranges and overlaps. Closed and archived projects are excluded."
+        description="Month view shows each project on its deadline; the timeline shows full date ranges. Closed and archived projects are excluded."
       />
       <Panel>
         <div className="calendar-toolbar">

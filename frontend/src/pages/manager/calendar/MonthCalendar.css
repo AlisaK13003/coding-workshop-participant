@@ -6,3 +6,4 @@
 .calendar-day > div { display: grid; gap: 4px; }
 .calendar-bar { width: 100%; min-height: 20px; overflow: hidden; padding: 3px 5px; border: 0; border-radius: 4px; color: var(--ink); text-align: left; text-overflow: ellipsis; white-space: nowrap; font-size: 8px; }
 .calendar-day.today > span { color: var(--teal-dark); font-weight: 800; }
+.calendar-more { margin: 0 5px; color: var(--muted); font-size: 8px; }

@@ -1,14 +1,14 @@
 import { cx } from '../../../utils/cx.js'
 import { getMonthGrid, toIsoDate, todayIso } from '../../../utils/calendar.js'
-import { formatDateRange } from '../../../utils/format.js'
+import { formatDate } from '../../../utils/format.js'
 import { getProjectPhase } from '../../../utils/projects.js'
 import './MonthCalendar.css'
 
 const WEEKDAYS = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat']
 
 /**
- * Six-week month grid. Each day lists up to three active projects as
- * phase-coloured bars; the name shows on Sundays and on the start day.
+ * Six-week month grid showing each active project on its deadline (end date)
+ * as a phase-coloured label. Days with more than three deadlines show "+N more".
  */
 export function MonthCalendar({ month, projects, onOpen }) {
   const today = todayIso()
@@ -21,9 +21,7 @@ export function MonthCalendar({ month, projects, onOpen }) {
       ))}
       {getMonthGrid(month).map((day) => {
         const key = toIsoDate(day)
-        const active = projects.filter(
-          (project) => project.start_date <= key && project.end_date >= key,
-        )
+        const due = projects.filter((project) => project.end_date === key)
         return (
           <div
             className={cx(
@@ -35,16 +33,17 @@ export function MonthCalendar({ month, projects, onOpen }) {
           >
             <span>{day.getDate()}</span>
             <div>
-              {active.slice(0, 3).map((project) => (
+              {due.slice(0, 3).map((project) => (
                 <button
                   className={`calendar-bar phase-bg-${getProjectPhase(project).toLowerCase()}`}
                   key={project.id}
                   onClick={() => onOpen(project)}
-                  title={`${project.name}: ${formatDateRange(project.start_date, project.end_date)}`}
+                  title={`${project.name} is due ${formatDate(project.end_date)}`}
                 >
-                  {day.getDay() === 0 || project.start_date === key ? project.name : ''}
+                  {project.name}
                 </button>
               ))}
+              {due.length > 3 && <small className="calendar-more">+{due.length - 3} more</small>}
             </div>
           </div>
         )
