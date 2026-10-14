@@ -1,10 +1,10 @@
-import { useState } from 'react'
 import { AppShell } from '../../components/layout/AppShell.jsx'
 import { QueryContent } from '../../components/ui'
 import { DIALOGS } from '../../components/workspace/dialogKinds.js'
 import { WorkspaceDialogs } from '../../components/workspace/WorkspaceDialogs.jsx'
 import { useModal } from '../../hooks/useModal.js'
 import { useNotifications } from '../../hooks/useNotifications.js'
+import { useWorkspaceLocation } from '../../hooks/useWorkspaceLocation.js'
 import { useCurrentUser } from '../../hooks/useSession.js'
 import { findById } from '../../utils/collections.js'
 import { pluralize } from '../../utils/text.js'
@@ -25,17 +25,18 @@ import { MyProfilePage } from '../shared/MyProfilePage.jsx'
 import { WorkLogsPage } from './WorkLogsPage.jsx'
 
 /**
- * Manager workspace. Sub-pages switch with in-app state inside the shared AppShell;
- * the data comes from useManagerData and dialogs save through the API.
+ * Manager workspace inside the shared AppShell. The page and the open project or employee
+ * live in the URL (#/manager/my-employees?employee=3), so a refresh returns there; the data
+ * comes from useManagerData and dialogs save through the API.
  * Managers only see their own projects while they're in progress.
  */
 export default function ManagerApp() {
   const user = useCurrentUser()
   const data = useManagerData()
   const notices = useNotifications()
-  const [page, setPage] = useState(MANAGER_PAGES.dashboard)
-  const [selectedProjectId, setSelectedProjectId] = useState(null)
-  const [selectedEmployeeId, setSelectedEmployeeId] = useState(null)
+  const { page, ids, go } = useWorkspaceLocation('/manager', MANAGER_PAGES)
+  const selectedProjectId = ids.project ?? null
+  const selectedEmployeeId = ids.employee ?? null
   const dialog = useModal()
 
   const { projects = [], milestones = [], employees = [] } = data.data ?? {}
@@ -44,15 +45,9 @@ export default function ManagerApp() {
     item.name === MANAGER_PAGES.dashboard ? { ...item, count: notices.unreadCount } : item,
   )
 
-  const navigate = (nextPage) => {
-    setPage(nextPage)
-    setSelectedProjectId(null)
-    setSelectedEmployeeId(null)
-  }
-  const openProject = (projectId) => {
-    setSelectedProjectId(projectId)
-    setPage(MANAGER_PAGES.projects)
-  }
+  const navigate = (nextPage) => go({ page: nextPage })
+  const openProject = (projectId) => go({ page: MANAGER_PAGES.projects, project: projectId })
+  const selectEmployee = (employeeId) => go({ employee: employeeId })
 
   /** Opens the milestone's project and its review dialog. */
   const openReview = (milestone) => {
@@ -73,7 +68,7 @@ export default function ManagerApp() {
       return (
         <ProjectDetailPage
           project={selectedProject}
-          onBack={() => setSelectedProjectId(null)}
+          onBack={() => go({ project: null })}
           onOpenDialog={dialog.open}
         />
       )
@@ -101,7 +96,7 @@ export default function ManagerApp() {
             projects={projects}
             milestones={milestones}
             logs={logs}
-            onBack={() => setSelectedEmployeeId(null)}
+            onBack={() => selectEmployee(null)}
             onOpenProject={openProject}
             onOpenDialog={dialog.open}
           />
@@ -110,7 +105,7 @@ export default function ManagerApp() {
             employees={employees}
             members={members}
             logs={logs}
-            onSelectEmployee={setSelectedEmployeeId}
+            onSelectEmployee={selectEmployee}
           />
         )
       case MANAGER_PAGES.profile:

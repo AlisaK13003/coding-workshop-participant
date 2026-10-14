@@ -76,7 +76,7 @@ Everyone's password is `Password123!`.
 - [ ] **Unknown username** → the same message.
 - [ ] **Taylor** (`treed12`, archived) → the same message.
 - [ ] **Empty fields** → "Enter your username." / "Enter your password.", under each field.
-- [ ] **Refresh while signed in** → you stay signed in.
+- [ ] **Refresh while signed in** → you stay signed in **on the same page**, with the same project, user or employee open (the URL shows it, e.g. `#/admin/users?user=2`). The browser's **Back** button steps back through pages you visited.
 - [ ] **Profile menu → Sign out** → back to sign-in. The browser's Back button doesn't get you back in.
 - [ ] **Wrong workspace:** as Emery, go to `localhost:3010/#/admin` → sent to `/#/employee`. As Riley, go to `/#/employee` → sent to `/#/manager`.
 - [ ] **Signed out**, go to `/#/manager` → sent to sign-in.

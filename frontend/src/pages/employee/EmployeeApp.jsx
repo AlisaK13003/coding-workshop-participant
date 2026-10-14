@@ -5,6 +5,7 @@ import { DIALOGS } from '../../components/workspace/dialogKinds.js'
 import { WorkspaceDialogs } from '../../components/workspace/WorkspaceDialogs.jsx'
 import { useModal } from '../../hooks/useModal.js'
 import { useNotifications } from '../../hooks/useNotifications.js'
+import { useWorkspaceLocation } from '../../hooks/useWorkspaceLocation.js'
 import { useCurrentUser } from '../../hooks/useSession.js'
 import { toShellUser } from '../../utils/users.js'
 import { DashboardPage } from './DashboardPage.jsx'
@@ -20,15 +21,16 @@ import { useEmployeeData } from './useEmployeeData.js'
 import { MyProfilePage } from '../shared/MyProfilePage.jsx'
 
 /**
- * Employee workspace. Sub-pages switch with in-app state inside the shared
- * AppShell; the data comes from useEmployeeData and dialogs save through the API.
+ * Employee workspace inside the shared AppShell. The page and open project live in the URL
+ * (#/employee/my-projects?project=1), so a refresh returns there; the data comes from
+ * useEmployeeData and dialogs save through the API.
  */
 export default function EmployeeApp() {
   const user = useCurrentUser()
   const data = useEmployeeData()
   const notices = useNotifications()
-  const [page, setPage] = useState(EMPLOYEE_PAGES.dashboard)
-  const [selectedProjectId, setSelectedProjectId] = useState(null)
+  const { page, ids, go } = useWorkspaceLocation('/employee', EMPLOYEE_PAGES)
+  const selectedProjectId = ids.project ?? null
   const [loggingProjectId, setLoggingProjectId] = useState(null)
   const dialog = useModal()
 
@@ -39,14 +41,8 @@ export default function EmployeeApp() {
     item.name === EMPLOYEE_PAGES.dashboard ? { ...item, count: notices.unreadCount } : item,
   )
 
-  const navigate = (nextPage) => {
-    setPage(nextPage)
-    setSelectedProjectId(null)
-  }
-  const openProject = (project) => {
-    setSelectedProjectId(project.id)
-    setPage(EMPLOYEE_PAGES.projects)
-  }
+  const navigate = (nextPage) => go({ page: nextPage })
+  const openProject = (project) => go({ page: EMPLOYEE_PAGES.projects, project: project.id })
   const openLog = ({ project, milestone }) => dialog.open(DIALOGS.logWork, { project, milestone })
   const openReview = ({ project, milestone }) => dialog.open(DIALOGS.requestReview, { project, milestone })
 
@@ -64,7 +60,7 @@ export default function EmployeeApp() {
           milestones={milestones}
           members={members}
           logs={logs}
-          onBack={() => setSelectedProjectId(null)}
+          onBack={() => go({ project: null })}
           onLog={() => openLog(selected)}
           onReview={() => openReview(selected)}
         />

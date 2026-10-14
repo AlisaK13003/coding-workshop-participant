@@ -1,10 +1,10 @@
-import { useState } from 'react'
 import { AppShell } from '../../components/layout/AppShell.jsx'
 import { QueryContent } from '../../components/ui'
 import { WorkspaceDialogs } from '../../components/workspace/WorkspaceDialogs.jsx'
 import { useApiQuery } from '../../hooks/useApiQuery.js'
 import { useModal } from '../../hooks/useModal.js'
 import { useNotifications } from '../../hooks/useNotifications.js'
+import { useWorkspaceLocation } from '../../hooks/useWorkspaceLocation.js'
 import { useCurrentUser } from '../../hooks/useSession.js'
 import { listProjects } from '../../services/projectsApi.js'
 import { findById } from '../../utils/collections.js'
@@ -25,15 +25,16 @@ import { UsersPage } from './UsersPage.jsx'
 import { WorkLogsPage } from './WorkLogsPage.jsx'
 
 /**
- * Admin workspace. Sub-pages switch with in-app state (not URLs), inside the
- * shared AppShell. Loads every project once for the pages that list them;
- * pages load the rest themselves, and dialogs save through the API.
+ * Admin workspace inside the shared AppShell. The page and the open project or user live in
+ * the URL (#/admin/users?user=3), so a refresh or the Back button returns there. Loads every
+ * project once for the pages that list them; pages load the rest themselves, and dialogs
+ * save through the API.
  */
 export default function AdminApp() {
   const user = useCurrentUser()
-  const [page, setPage] = useState(ADMIN_PAGES.dashboard)
-  const [selectedProjectId, setSelectedProjectId] = useState(null)
-  const [selectedUserId, setSelectedUserId] = useState(null)
+  const { page, ids, go } = useWorkspaceLocation('/admin', ADMIN_PAGES)
+  const selectedProjectId = ids.project ?? null
+  const selectedUserId = ids.user ?? null
   const projects = useApiQuery(() => listProjects(), [])
   const notices = useNotifications()
   const dialog = useModal()
@@ -46,20 +47,15 @@ export default function AdminApp() {
       : item,
   )
 
-  const navigate = (nextPage) => {
-    setSelectedProjectId(null)
-    setSelectedUserId(null)
-    setPage(nextPage)
-  }
-  const openProject = (project) => setSelectedProjectId(project.id)
-  const openUser = (person) => {
-    navigate(ADMIN_PAGES.users)
-    setSelectedUserId(person.id)
-  }
+  const navigate = (nextPage) => go({ page: nextPage })
+  const openProject = (project) => go({ project: project.id })
+  const closeProject = () => go({ project: null })
+  const selectUser = (userId) => go({ user: userId })
+  const openUser = (person) => go({ page: ADMIN_PAGES.users, user: person.id })
 
   const selectNotification = (notice) => {
     if (!notice.read) notices.markRead(notice.id)
-    if (notice.project_id) setSelectedProjectId(notice.project_id)
+    if (notice.project_id) go({ project: notice.project_id })
   }
 
   // Pages that list projects share the one projects query.
@@ -74,7 +70,7 @@ export default function AdminApp() {
       return (
         <ProjectDetailPage
           project={selectedProject}
-          onBack={() => setSelectedProjectId(null)}
+          onBack={closeProject}
           onOpenDialog={dialog.open}
         />
       )
@@ -101,7 +97,7 @@ export default function AdminApp() {
           <UsersPage
             projects={projects.data ?? []}
             selectedId={selectedUserId}
-            onSelectUser={setSelectedUserId}
+            onSelectUser={selectUser}
             onOpenProject={openProject}
             onOpenDialog={dialog.open}
           />
