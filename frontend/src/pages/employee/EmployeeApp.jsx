@@ -83,6 +83,7 @@ export default function EmployeeApp() {
             onReview={openReview}
             onOpenProject={openProject}
             onSelectNotice={selectNotification}
+            onNavigate={navigate}
           />
         )
       case EMPLOYEE_PAGES.projects:

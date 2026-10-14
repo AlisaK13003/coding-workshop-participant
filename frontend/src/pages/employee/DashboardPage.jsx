@@ -1,22 +1,20 @@
-import { ChevronRight, CircleAlert, Clock3, FolderKanban, Send } from 'lucide-react'
-import { ReviewIcon } from '../../components/milestones/ReviewIcon.jsx'
-import {
-  Badge,
-  EmptyState,
-  PageHeading,
-  Panel,
-  StatCard,
-} from '../../components/ui'
+import { useState } from 'react'
+import { CircleAlert, Clock3, FolderKanban, Send } from 'lucide-react'
+import { EmptyState, PageHeading, Panel, StatCard } from '../../components/ui'
 import { useCurrentUser } from '../../hooks/useSession.js'
 import { greeting } from '../../utils/format.js'
 import { ASSIGNMENT_STATE } from '../../utils/milestones.js'
-import { getWeekHours } from '../../utils/workLogs.js'
-import { AssignmentCards } from './AssignmentCards.jsx'
+import { getWeekLogs, sumHours } from '../../utils/workLogs.js'
+import { DashboardFocusPanel } from './DashboardFocusPanel.jsx'
+import { EMPLOYEE_DASHBOARD_VIEWS } from './employeeConfig.js'
 import { RecentNotifications } from './RecentNotifications.jsx'
 import { TodayWorkCard } from './TodayWorkCard.jsx'
 import './DashboardPage.css'
 
-/** Employee home: today's logging, key numbers, assignments, reviews and notifications. */
+/**
+ * Employee home: today's logging, key numbers and notifications. Each stat card selects what
+ * the list under the cards shows (assignments by default).
+ */
 export function DashboardPage({
   assignments,
   logs,
@@ -27,9 +25,13 @@ export function DashboardPage({
   onReview,
   onOpenProject,
   onSelectNotice,
+  onNavigate,
 }) {
   const user = useCurrentUser()
+  const [view, setView] = useState(EMPLOYEE_DASHBOARD_VIEWS.projects)
+  const cardProps = (cardView) => ({ selected: view === cardView, onSelect: () => setView(cardView) })
   const reviews = assignments.filter(({ state }) => state === ASSIGNMENT_STATE.review)
+  const weekLogs = getWeekLogs(logs)
 
   return (
     <>
@@ -51,59 +53,40 @@ export function DashboardPage({
           value={assignments.length}
           note="Only projects you can currently access"
           icon={FolderKanban}
-          accent
+          {...cardProps(EMPLOYEE_DASHBOARD_VIEWS.projects)}
         />
         <StatCard
           label="Hours this week"
-          value={`${getWeekHours(logs)} h`}
+          value={`${sumHours(weekLogs)} h`}
           note="Monday to today, visible projects only"
           icon={Clock3}
+          {...cardProps(EMPLOYEE_DASHBOARD_VIEWS.hours)}
         />
         <StatCard
           label="Pending reviews"
           value={reviews.length}
           note="Awaiting your manager’s decision"
           icon={Send}
+          {...cardProps(EMPLOYEE_DASHBOARD_VIEWS.reviews)}
         />
       </div>
-      <Panel title="My project and milestone assignments" description="One current milestone per project.">
-        {assignments.length ? (
-          <AssignmentCards assignments={assignments} logs={logs} onOpen={onOpenProject} onReview={onReview} />
+      <DashboardFocusPanel
+        view={view}
+        assignments={assignments}
+        weekLogs={weekLogs}
+        logs={logs}
+        reviews={reviews}
+        onOpenProject={onOpenProject}
+        onReview={onReview}
+        onNavigate={onNavigate}
+      />
+      <Panel title="Recent notifications" description="Assignment and milestone updates.">
+        {notices.length ? (
+          <RecentNotifications items={notices.slice(0, 4)} onSelect={onSelectNotice} />
         ) : (
-          <EmptyState title="No active projects" body="Your manager adds you to projects." />
+          <EmptyState title="You’re all caught up" body="New assignment and review updates appear here." />
         )}
       </Panel>
-      <div className="dashboard-lower">
-        <Panel title="Pending milestone reviews" description="Your request applies to the entire milestone.">
-          {reviews.length ? (
-            <div className="employee-review-list">
-              {reviews.map(({ project, milestone }) => (
-                <button key={project.id} onClick={() => onOpenProject(project)}>
-                  <ReviewIcon icon={Clock3} size={17} />
-                  <p>
-                    <strong>{milestone.name}</strong>
-                    <span>{project.name}</span>
-                  </p>
-                  <Badge tone="Awaiting review">Awaiting manager review</Badge>
-                  <ChevronRight size={16} />
-                </button>
-              ))}
-            </div>
-          ) : (
-            <EmptyState
-              title="No pending reviews"
-              body="You have no milestone review requests waiting for a manager."
-            />
-          )}
-        </Panel>
-        <Panel title="Recent notifications" description="Assignment and milestone updates.">
-          {notices.length ? (
-            <RecentNotifications items={notices.slice(0, 4)} onSelect={onSelectNotice} />
-          ) : (
-            <EmptyState title="You’re all caught up" body="New assignment and review updates appear here." />
-          )}
-        </Panel>
-      </div>
       <div className="scope-footnote">
         <CircleAlert size={15} />
         Weekly totals include only visible active projects. Hidden historical

@@ -1,3 +1,4 @@
+import { useState } from 'react'
 import {
   AlertTriangle,
   CalendarDays,
@@ -11,14 +12,24 @@ import { greeting } from '../../utils/format.js'
 import { getPendingReviews } from '../../utils/milestones.js'
 import { isEndingSoon, isProjectOverBudget } from '../../utils/projects.js'
 import { AttentionList } from './AttentionList.jsx'
+import { DashboardFocusPanel } from './DashboardFocusPanel.jsx'
+import { MANAGER_DASHBOARD_VIEWS } from './managerConfig.js'
 import { getAssignmentAttention } from './managerSelectors.js'
-import { ManagerProjectTable } from './ManagerProjectTable.jsx'
-import { ReviewQueue } from '../../components/milestones/ReviewQueue.jsx'
 
-/** Manager overview: reviews, active projects, assignment attention and deadlines. */
+/**
+ * Manager overview: key numbers, assignment attention and deadlines. Each stat card selects
+ * what the list under the cards shows (active projects by default).
+ */
 export function DashboardPage({ projects, milestones, members, onOpenProject, onReview, onOpenCalendar }) {
   const user = useCurrentUser()
-  const reviews = getPendingReviews(milestones)
+  const [view, setView] = useState(MANAGER_DASHBOARD_VIEWS.active)
+  const cardProps = (cardView) => ({ selected: view === cardView, onSelect: () => setView(cardView) })
+  const lists = {
+    active: projects,
+    reviews: getPendingReviews(milestones),
+    endingSoon: projects.filter((project) => isEndingSoon(project)),
+    overBudget: projects.filter(isProjectOverBudget),
+  }
   const attention = getAssignmentAttention(members)
 
   return (
@@ -34,38 +45,37 @@ export function DashboardPage({ projects, milestones, members, onOpenProject, on
           value={projects.length}
           note={`${members.length} active assignments`}
           icon={FolderKanban}
-          accent
+          {...cardProps(MANAGER_DASHBOARD_VIEWS.active)}
         />
         <StatCard
           label="Pending reviews"
-          value={reviews.length}
+          value={lists.reviews.length}
           note="Milestone completion requests"
           icon={CheckCircle2}
+          {...cardProps(MANAGER_DASHBOARD_VIEWS.reviews)}
         />
         <StatCard
           label="Approaching end date"
-          value={projects.filter((project) => isEndingSoon(project)).length}
+          value={lists.endingSoon.length}
           note="Within the next 60 days"
           icon={CalendarDays}
+          {...cardProps(MANAGER_DASHBOARD_VIEWS.endingSoon)}
         />
         <StatCard
           label="Projects over budget"
-          value={projects.filter(isProjectOverBudget).length}
-          note="Budget and schedule are tracked separately"
+          value={lists.overBudget.length}
+          note="Over budget raises health one step"
           icon={AlertTriangle}
+          {...cardProps(MANAGER_DASHBOARD_VIEWS.overBudget)}
         />
       </div>
-      <ReviewQueue reviews={reviews} projects={projects} onReview={onReview} />
-      <Panel
-        title="Active projects"
-        description="Health, milestone completion, logged hours, and budget usage are separate measures."
-      >
-        {projects.length ? (
-          <ManagerProjectTable projects={projects} onOpen={(project) => onOpenProject(project.id)} compact />
-        ) : (
-          <EmptyState title="No active projects" body="Projects an admin assigns to you appear here." />
-        )}
-      </Panel>
+      <DashboardFocusPanel
+        view={view}
+        lists={lists}
+        projects={projects}
+        onOpenProject={onOpenProject}
+        onReview={onReview}
+      />
       <div className="dashboard-lower">
         <Panel
           title="Assignment attention"

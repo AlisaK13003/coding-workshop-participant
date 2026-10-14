@@ -14,16 +14,20 @@ export function sumCost(logs) {
   return sumBy(logs, (log) => log.cost ?? 0)
 }
 
-/** Hours logged this week (Monday to Sunday), optionally for one employee. */
-export function getWeekHours(logs, employeeId) {
+/** Logs dated this week (Monday to Sunday), optionally for one employee. */
+export function getWeekLogs(logs, employeeId) {
   const { start, end } = getWeekRange()
-  return sumHours(
-    logs,
+  return logs.filter(
     (log) =>
       log.work_date >= start &&
       log.work_date <= end &&
       (employeeId === undefined || log.employee.id === employeeId),
   )
+}
+
+/** Hours logged this week (Monday to Sunday), optionally for one employee. */
+export function getWeekHours(logs, employeeId) {
+  return sumHours(getWeekLogs(logs, employeeId))
 }
 
 /** A log as a display-ready row for WorkLogTable; `log` keeps the original for actions. */

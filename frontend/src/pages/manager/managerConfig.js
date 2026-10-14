@@ -33,4 +33,12 @@ export const MANAGER_SIDEBAR_FOOTER = {
   subtitle: 'Your active portfolio',
 }
 
+/** What the list under the dashboard's stat cards shows; each card selects one. */
+export const MANAGER_DASHBOARD_VIEWS = {
+  active: 'active',
+  reviews: 'reviews',
+  endingSoon: 'endingSoon',
+  overBudget: 'overBudget',
+}
+
 export const MANAGER_WORK_LOG_COLUMNS = ['date', 'employee', 'project', 'milestone', 'hours', 'laborCost']

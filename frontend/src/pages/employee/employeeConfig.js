@@ -21,4 +21,11 @@ export const EMPLOYEE_SIDEBAR_FOOTER = {
   subtitle: 'Your active assignments',
 }
 
+/** What the list under the dashboard's stat cards shows; each card selects one. */
+export const EMPLOYEE_DASHBOARD_VIEWS = {
+  projects: 'projects',
+  hours: 'hours',
+  reviews: 'reviews',
+}
+
 export const EMPLOYEE_WORK_LOG_COLUMNS = ['date', 'project', 'milestone', 'hours']

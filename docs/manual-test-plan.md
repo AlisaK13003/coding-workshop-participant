@@ -205,7 +205,7 @@ Everyone's password is `Password123!`.
 ## 6. Reviews and milestone flow
 
 **Data Load: one review moves two people** (as Morgan):
-- [ ] **Dashboard** → the review queue shows **Design (Emery)** and **Data Load (Devon)**.
+- [ ] **Dashboard → Pending reviews card** → the review queue shows **Design (Emery)** and **Data Load (Devon)**.
 - [ ] **Open Data Load → Keep open**, with feedback → Devon gets "Milestone kept open" plus the feedback. Data Load is **Available** again.
   - **Check as Devon *and* Emery:** they can now log on Data Warehouse Migration.
 - [ ] **As Devon: Request review** again (from the **Dashboard** card or the project page) → Morgan is notified, and the confirmation says **today's 8 hours were logged**. **Check:** Devon's My Work Logs and Morgan's Work Logs show today on Data Load.
@@ -309,6 +309,8 @@ Everyone's password is `Password123!`.
 - [ ] **Approaching end dates / Upcoming deadlines** (dashboards) show at most 3 deadlines in the next 60 days, soonest first; clicking one opens its project (a milestone opens its project). **View all** opens the Calendar, and is disabled (hover: "Everything coming up is shown") when there are 3 or fewer — e.g. Riley's dashboard.
 - [ ] **Recent activity → View all** opens the Activity Log.
 - [ ] **Admin stat cards** show real counts: users by role, open projects without a manager (**1**: Intranet Redesign), the oldest waiting review, over-budget projects.
+- [ ] **Manager stat cards are clickable** (Morgan): each one switches the list under the cards, and the chosen card gets the teal border. Active projects (default) → project table; Pending reviews → the review queue; Approaching end date → projects ending in 60 days; Projects over budget → those projects (or "Everything is within budget"). Lists page 5 at a time.
+- [ ] **Employee stat cards are clickable** (Emery): Active projects (default) → assignment cards; Hours this week → this week's logs, with **View all** to My Work Logs; Pending reviews → milestones waiting for the manager. Recent notifications stay below.
 
 ---
 
