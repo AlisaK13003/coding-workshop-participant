@@ -17,6 +17,7 @@ One Python Lambda per area, all backed by PostgreSQL:
 Other folders:
 
 - `_shared/` — code every service uses (router, auth and role checks, validation, database, activity log). `bin/sync-backend-shared.sh` copies it into each service as `shared/` (each Lambda is packaged from its own folder); `start-dev.sh` and `deploy-backend.sh` run it for you. **Edit `_shared/`, never a service's `shared/` copy.**
+  - `_shared/db.py` talks to PostgreSQL through [pg8000](https://pypi.org/project/pg8000/), a driver written in pure Python. Because it has no compiled code, the packages pip installs on your machine also load in the Lambdas, whatever Python version each one runs. Queries use `%s` placeholders, rows come back as dicts, and a broken unique, foreign-key or check constraint raises `db.UniqueViolation`, `db.ForeignKeyViolation` or `db.CheckViolation` with the constraint's name.
 - `db/` — `schema.sql` (tables and the rules the database enforces), `seed.sql` (sample data), `reset.sh` (rebuilds a database from both).
 - `_tests/` — pytest suite that calls each service's `handler()` against a throwaway database.
 

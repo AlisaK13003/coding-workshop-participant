@@ -97,10 +97,10 @@ def require_no_reports(conn, manager, action, current_only=False):
     projects_filter = " AND status = 'in_progress' AND archived_at IS NULL" if current_only else ""
     counts = conn.execute(
         f"""
-        SELECT (SELECT count(*) FROM users WHERE manager_id = %(id)s{employees_filter}) AS employees,
-               (SELECT count(*) FROM projects WHERE manager_id = %(id)s{projects_filter}) AS projects
+        SELECT (SELECT count(*) FROM users WHERE manager_id = %s{employees_filter}) AS employees,
+               (SELECT count(*) FROM projects WHERE manager_id = %s{projects_filter}) AS projects
         """,
-        {"id": manager["id"]},
+        (manager["id"], manager["id"]),
     ).fetchone()
     if counts["employees"]:
         raise conflict(f"Reassign {full_name(manager)}'s employees to another manager before {action}.")

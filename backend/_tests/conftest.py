@@ -100,10 +100,16 @@ def employee_token():
 
 def sql(query, params=None):
     """Runs SQL directly against the test database, for setting up or checking state."""
-    import psycopg
-    from psycopg.rows import dict_row
+    import pg8000.dbapi
 
-    with psycopg.connect(host="localhost", user="postgres", password="postgres123", dbname=TEST_DB,
-                         row_factory=dict_row, autocommit=True) as conn:
-        cursor = conn.execute(query, params)
-        return cursor.fetchall() if cursor.description else None
+    conn = pg8000.dbapi.connect(host="localhost", user="postgres", password="postgres123", database=TEST_DB)
+    try:
+        conn.autocommit = True
+        cursor = conn.cursor()
+        cursor.execute(query, params or ())
+        if not cursor.description:
+            return None
+        columns = [column[0] for column in cursor.description]
+        return [dict(zip(columns, row)) for row in cursor.fetchall()]
+    finally:
+        conn.close()

@@ -17,8 +17,6 @@ changed, deleted or reopened. Completion rules live in completion.py, prerequisi
 in dependencies.py, and the response shapes in milestone_json.py.
 """
 
-from psycopg import errors
-
 import milestone_json
 from completion import DESTINATION, complete_milestone
 from dependencies import (
@@ -193,7 +191,7 @@ def delete_milestone(request):
             log_activity(conn, request.user, "milestone.delete", "milestone", milestone["id"],
                          f"Deleted milestone {milestone['name']} from {project['name']}.", project_id=project["id"],
                          changes={PREREQUISITES: {"from": prerequisite_ids, "to": []}} if prerequisite_ids else None)
-    except errors.ForeignKeyViolation:
+    except db.ForeignKeyViolation:
         # Something else still points at the milestone; the checks above should catch it first.
         raise conflict("This milestone can't be deleted because other records refer to it.", "milestone_has_history")
     return 204, None
@@ -269,7 +267,7 @@ def request_review(request):
             log_activity(conn, user, "review.request", "milestone_review", review["id"],
                          f"Requested review of {milestone['name']}.", project_id=project["id"])
             return 201, milestone_json.review(conn, review["id"])
-    except errors.UniqueViolation:
+    except db.UniqueViolation:
         # one_open_review: another request for this milestone was saved first.
         raise conflict(REVIEW_BLOCKERS[AWAITING_REVIEW], f"milestone_{AWAITING_REVIEW}")
 

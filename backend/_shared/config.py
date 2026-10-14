@@ -9,7 +9,7 @@ POSTGRES = {
     "port": os.getenv("POSTGRES_PORT", "5432"),
     "user": os.getenv("POSTGRES_USER", "postgres"),
     "password": os.getenv("POSTGRES_PASS", "postgres123"),
-    "dbname": os.getenv("POSTGRES_NAME", "project_tracker"),
+    "database": os.getenv("POSTGRES_NAME", "project_tracker"),
 }
 
 # Signing key for JWTs. Terraform generates one per deployment. A fixed key is only

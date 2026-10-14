@@ -1,9 +1,13 @@
 """Helpers for building and running SQL that several services share."""
 
-from psycopg import sql
-from psycopg.errors import UniqueViolation
-
+from .db import UniqueViolation
 from .http import ApiError
+
+
+def quote_identifier(name):
+    """A table or column name quoted for SQL: wrapped in double quotes, with any double
+    quote inside it doubled, so the name can't end the quoting and add its own SQL."""
+    return '"' + name.replace('"', '""') + '"'
 
 
 def person_json(alias):
@@ -20,7 +24,7 @@ def update_sql(table, row_id, values, allowed):
 
     values is {column: new value}. Every column must be in `allowed`, a fixed list written
     in the code, so a column name can never come from the request; names are also quoted
-    with sql.Identifier. Only the values are passed as parameters.
+    with quote_identifier. Only the values are passed as parameters.
 
         query, params = update_sql("projects", 5, {"name": "New name"}, EDITABLE)
         # UPDATE "projects" SET "name" = %s WHERE id = %s RETURNING id
@@ -28,8 +32,8 @@ def update_sql(table, row_id, values, allowed):
     unknown = set(values) - set(allowed)
     if unknown:
         raise ValueError(f"Not editable columns of {table}: {', '.join(sorted(unknown))}")
-    assignments = sql.SQL(", ").join(sql.SQL("{} = %s").format(sql.Identifier(column)) for column in values)
-    query = sql.SQL("UPDATE {} SET {} WHERE id = %s RETURNING id").format(sql.Identifier(table), assignments)
+    assignments = ", ".join(f"{quote_identifier(column)} = %s" for column in values)
+    query = f"UPDATE {quote_identifier(table)} SET {assignments} WHERE id = %s RETURNING id"
     return query, (*values.values(), row_id)
 
 
@@ -42,5 +46,5 @@ def save(conn, query, params, unique_fields):
     try:
         return conn.execute(query, params).fetchone()
     except UniqueViolation as error:
-        field, message = unique_fields[error.diag.constraint_name]
+        field, message = unique_fields[error.constraint]
         raise ApiError(409, "conflict", message, {field: message})

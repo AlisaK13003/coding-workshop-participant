@@ -16,8 +16,6 @@ shown only to admins and to the employee's own manager.
 
 from decimal import ROUND_HALF_UP, Decimal
 
-from psycopg.errors import UniqueViolation
-
 from shared import clock, db
 from shared.access import get_visible_project, visible_projects_filter
 from shared.activity import changed_fields, full_name, log_activity, notify
@@ -177,7 +175,7 @@ def create_log(request):
         if request.user["role"] == EMPLOYEE:
             return log_today(request)
         return enter_past_day(request)
-    except UniqueViolation:
+    except db.UniqueViolation:
         # The one_log_per_day constraint: one log per employee per day.
         if request.user["role"] == EMPLOYEE:
             raise conflict("You've already logged work today.", "already_logged")
@@ -325,7 +323,7 @@ def correct_log(request):
                          f"Corrected work log {record}. {sentence}", project_id=log["project_id"], changes=changes)
             notify(conn, before["employee_id"], "Work log corrected", f"{record}. {sentence}",
                    project_id=log["project_id"], milestone_id=log["milestone_id"])
-    except UniqueViolation:
+    except db.UniqueViolation:
         raise conflict("This employee already has a work log on that day.", "already_logged")
     return to_json(log, admin)
 
