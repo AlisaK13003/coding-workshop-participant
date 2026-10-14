@@ -78,16 +78,16 @@ export function ProjectCalendar({ projects, onOpenProject, filters = null }) {
         </div>
         <div className="schedule-legend">
           <span>
-            <i className="phase-dot phase-green" /> On track · no overdue milestones
+            <i className="phase-dot phase-green" /> On track · every milestone on schedule
           </span>
           <span>
-            <i className="phase-dot phase-amber" /> Needs attention · 1 overdue
+            <i className="phase-dot phase-amber" /> Needs attention · a milestone is running late
           </span>
           <span>
-            <i className="phase-dot phase-red" /> Urgent · 2+ overdue or past the end date
+            <i className="phase-dot phase-red" /> Urgent · several milestones late, or the project is past its end date
           </span>
           <small>
-            Overdue means past a milestone’s end date and not completed.
+            Late: a milestone past its end date and not completed.
           </small>
         </div>
         {view === 'month' ? (

@@ -15,9 +15,10 @@ export const phaseLabel = (phase) => SCHEDULE_PHASE_LABELS[phase] ?? phase
 const DAY_MS = 24 * 60 * 60 * 1000
 
 export const SCHEDULE_PHASE_HINT =
-  'Compares milestones with their own end dates. On track: none overdue. Needs attention: 1 milestone ' +
-  'past its end date and not completed. Urgent: 2 or more, or the project is past its end date with work ' +
-  'left. Projects without milestones go by how much of the schedule has passed.'
+  'Checks each milestone against its own end date. On track: every milestone on schedule. ' +
+  'Needs attention: a milestone is running late (past its end date, not completed). ' +
+  'Urgent: several milestones are late, or the project is past its end date with work left. ' +
+  'Projects without milestones go by how much of the schedule has passed.'
 
 /**
  * Project health from its milestones: how many are past their end date but not completed
