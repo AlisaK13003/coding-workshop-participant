@@ -1,0 +1,6 @@
+# Generated inside each service folder; never commit these.
+# - shared/: copied from _shared by bin/sync-backend-shared.sh
+# - packages: start-dev.sh pip-installs each service's requirements into its folder for hot reload
+# Services keep their source as flat files (function.py, *.py, requirements.txt).
+/*/*/
+/*/.pip_installed

@@ -1,0 +1,6 @@
+# Local development and tests (not deployed). Install into the repo's .venv:
+#   python3 -m venv .venv && .venv/bin/pip install -r backend/requirements-dev.txt
+psycopg[binary]==3.3.6
+bcrypt==5.0.0
+PyJWT==2.15.1
+pytest==9.1.1

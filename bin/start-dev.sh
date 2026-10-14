@@ -327,6 +327,9 @@ else
     echo -e "  Detected Mac/Windows - using host: host.docker.internal"
 fi
 
+# Copy backend/_shared into each Python service (each Lambda is packaged from its own folder)
+"$PROJECT_ROOT/bin/sync-backend-shared.sh"
+
 # Install pip requirements into each Python service directory for hot-reload
 # Skip if requirements.txt hasn't changed since last install (avoids slow PyPI lookups)
 shopt -s nullglob
