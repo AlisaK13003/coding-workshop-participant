@@ -6,12 +6,12 @@ import {
   Panel,
   SearchBox,
   ViewToggle,
-} from '../../../components/ui'
-import { addMonths, formatMonthYear } from '../../../utils/calendar.js'
-import { includesText } from '../../../utils/text.js'
+} from '../ui'
+import { addMonths, formatMonthYear } from '../../utils/calendar.js'
+import { includesText } from '../../utils/text.js'
 import { MonthCalendar } from './MonthCalendar.jsx'
 import { TimelineCalendar } from './TimelineCalendar.jsx'
-import './CalendarPage.css'
+import './ProjectCalendar.css'
 
 /** The first day of the current month, where the calendar opens and "Today" returns. */
 function currentMonth() {
@@ -23,13 +23,16 @@ const VIEW_OPTIONS = [
   { value: 'timeline', label: 'Timeline' },
 ]
 
-/** Active project deadlines on a month grid, or full date ranges on a year timeline. */
-export function CalendarPage({ projects, onOpenProject }) {
+/**
+ * Calendar page shared by managers and admins: project deadlines on a month grid, or
+ * full date ranges on a year timeline. `filters` adds role-specific controls to the
+ * toolbar (e.g. the admin's manager filter); onOpenProject(project) opens one.
+ */
+export function ProjectCalendar({ projects, onOpenProject, filters = null }) {
   const [cursor, setCursor] = useState(currentMonth)
   const [view, setView] = useState('month')
   const [search, setSearch] = useState('')
   const visible = projects.filter((project) => includesText(project.name, search))
-  const openProject = (project) => onOpenProject(project.id)
 
   return (
     <>
@@ -66,6 +69,7 @@ export function CalendarPage({ projects, onOpenProject }) {
             onChange={setSearch}
             placeholder="Filter projects"
           />
+          {filters}
           <ViewToggle options={VIEW_OPTIONS} value={view} onChange={setView} />
         </div>
         <div className="schedule-legend">
@@ -83,9 +87,9 @@ export function CalendarPage({ projects, onOpenProject }) {
           </small>
         </div>
         {view === 'month' ? (
-          <MonthCalendar month={cursor} projects={visible} onOpen={openProject} />
+          <MonthCalendar month={cursor} projects={visible} onOpen={onOpenProject} />
         ) : (
-          <TimelineCalendar year={cursor.getFullYear()} projects={visible} onOpen={openProject} />
+          <TimelineCalendar year={cursor.getFullYear()} projects={visible} onOpen={onOpenProject} />
         )}
       </Panel>
     </>

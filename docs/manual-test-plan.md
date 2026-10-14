@@ -299,6 +299,7 @@ Everyone's password is `Password123!`.
   - Riley: Jan 12 (Support Portal).
   - Today is highlighted.
 - [ ] **Calendar (timeline):** full date ranges for each project.
+- [ ] **Admin Calendar** (sidebar, after Projects): every open project's deadline, with the same month/timeline views. The **Manager** filter narrows it to one manager's projects, or **No manager** (e.g. Intranet Redesign before it's reassigned). Clicking a project opens it.
 - [ ] **Manager "hours this week"** adds up the current Monday–Sunday across all their employees.
 - [ ] **Admin stat cards** show real counts: users by role, open projects without a manager (**1**: Intranet Redesign), the oldest waiting review, over-budget projects.
 

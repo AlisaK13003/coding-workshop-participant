@@ -1,7 +1,7 @@
-import { cx } from '../../../utils/cx.js'
-import { getMonthGrid, toIsoDate, todayIso } from '../../../utils/calendar.js'
-import { formatDate } from '../../../utils/format.js'
-import { getProjectPhase } from '../../../utils/projects.js'
+import { cx } from '../../utils/cx.js'
+import { getMonthGrid, toIsoDate, todayIso } from '../../utils/calendar.js'
+import { formatDate } from '../../utils/format.js'
+import { getProjectPhase } from '../../utils/projects.js'
 import './MonthCalendar.css'
 
 const WEEKDAYS = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat']

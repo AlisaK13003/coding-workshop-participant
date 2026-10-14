@@ -17,6 +17,7 @@ import {
 } from './adminConfig.js'
 import { ActivityPage } from './ActivityPage.jsx'
 import { ArchivePage } from './ArchivePage.jsx'
+import { CalendarPage } from './CalendarPage.jsx'
 import { DashboardPage } from './DashboardPage.jsx'
 import { ProjectDetailPage } from './ProjectDetailPage.jsx'
 import { ProjectsPage } from './ProjectsPage.jsx'
@@ -93,6 +94,8 @@ export default function AdminApp() {
         return withProjects((items) => (
           <ProjectsPage projects={items} onOpenProject={openProject} onOpenDialog={dialog.open} />
         ))
+      case ADMIN_PAGES.calendar:
+        return withProjects((items) => <CalendarPage projects={items} onOpenProject={openProject} />)
       case ADMIN_PAGES.users:
         return (
           <UsersPage

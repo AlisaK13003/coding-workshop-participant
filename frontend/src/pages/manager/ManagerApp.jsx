@@ -9,7 +9,7 @@ import { useCurrentUser } from '../../hooks/useSession.js'
 import { findById } from '../../utils/collections.js'
 import { pluralize } from '../../utils/text.js'
 import { toShellUser } from '../../utils/users.js'
-import { CalendarPage } from './calendar/CalendarPage.jsx'
+import { ProjectCalendar } from '../../components/calendar/ProjectCalendar.jsx'
 import { DashboardPage } from './DashboardPage.jsx'
 import { EmployeeDetailPage } from './EmployeeDetailPage.jsx'
 import {
@@ -91,7 +91,7 @@ export default function ManagerApp() {
       case MANAGER_PAGES.projects:
         return <MyProjectsPage projects={projects} onOpenProject={openProject} />
       case MANAGER_PAGES.calendar:
-        return <CalendarPage projects={projects} onOpenProject={openProject} />
+        return <ProjectCalendar projects={projects} onOpenProject={(project) => openProject(project.id)} />
       case MANAGER_PAGES.employees:
         return selectedEmployeeId ? (
           <EmployeeDetailPage

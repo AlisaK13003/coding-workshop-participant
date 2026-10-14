@@ -1,6 +1,6 @@
-import { getYearSpan } from '../../../utils/calendar.js'
-import { formatDateRange } from '../../../utils/format.js'
-import { getProjectPhase } from '../../../utils/projects.js'
+import { getYearSpan } from '../../utils/calendar.js'
+import { formatDateRange } from '../../utils/format.js'
+import { getProjectPhase } from '../../utils/projects.js'
 import './TimelineCalendar.css'
 
 const SCALE = ['JAN', 'FEB', 'MAR', 'APR', 'MAY', 'JUN', 'JUL', 'AUG', 'SEP', 'OCT', 'NOV', 'DEC']

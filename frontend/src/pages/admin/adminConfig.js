@@ -2,6 +2,7 @@
 import {
   Activity,
   Archive,
+  CalendarDays,
   FileClock,
   FolderKanban,
   LayoutDashboard,
@@ -12,6 +13,7 @@ import {
 export const ADMIN_PAGES = {
   dashboard: 'Dashboard',
   projects: 'Projects',
+  calendar: 'Calendar',
   users: 'Users',
   workLogs: 'Work Logs',
   activity: 'Activity Log',
@@ -21,6 +23,7 @@ export const ADMIN_PAGES = {
 export const ADMIN_NAV_ITEMS = [
   { name: ADMIN_PAGES.dashboard, icon: LayoutDashboard },
   { name: ADMIN_PAGES.projects, icon: FolderKanban },
+  { name: ADMIN_PAGES.calendar, icon: CalendarDays },
   { name: ADMIN_PAGES.users, icon: Users },
   { name: ADMIN_PAGES.workLogs, icon: FileClock },
   { name: ADMIN_PAGES.activity, icon: Activity },
