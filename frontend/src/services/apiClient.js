@@ -47,6 +47,9 @@ async function send(service, path, { method = 'GET', body, query, token }) {
     response = await fetch(buildUrl(service, path, query), {
       method,
       headers,
+      // API data is always fetched fresh. Without this, a browser can keep a bad answer (say
+      // the site's index.html served during an outage) and replay it on every Retry.
+      cache: 'no-store',
       body: body === undefined ? undefined : JSON.stringify(body),
     })
   } catch {

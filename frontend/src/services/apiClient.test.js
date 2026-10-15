@@ -19,6 +19,8 @@ describe('api client', () => {
     await expect(api.get('projects', '/', { status: 'in_progress', archived: '' })).resolves.toEqual([{ id: 1 }])
     expect(calls[0].headers.Authorization).toBe('Bearer old-access')
     expect(fetch.mock.calls[0][0]).toMatch(/\/api\/projects\/\?status=in_progress$/)
+    // Never answered from the browser's cache.
+    expect(fetch.mock.calls[0][1].cache).toBe('no-store')
   })
 
   it('refreshes an expired token once and retries the request', async () => {
