@@ -54,6 +54,7 @@ export function WorkLogsPage({ onOpenDialog }) {
         <QueryContent query={logs} loadingLabel="Loading work logs…">
           {(rows) => (
             <WorkLogTable
+              key={`${search}|${JSON.stringify(filters)}`}
               logs={rows.filter((log) =>
                 includesText(`${log.employee.name} ${log.project.name} ${log.milestone.name}`, search),
               )}

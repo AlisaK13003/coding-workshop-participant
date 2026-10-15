@@ -136,6 +136,13 @@ def test_create_user_enforces_employee_fields(admin_token):
     assert r.json["error"]["fields"]["manager_id"] == "Only employees have a manager."
 
 
+def test_salary_must_fit_the_column(admin_token):
+    # annual_salary is NUMERIC(10, 2): a 400 instead of the database failing with a 500
+    r = call("users", "POST", "/", {**NEW_EMPLOYEE, "annual_salary": 100_000_000}, token=admin_token)
+    assert r.status == 400
+    assert r.json["error"]["fields"]["annual_salary"] == "Must be less than 100,000,000."
+
+
 def test_create_user_requires_active_manager(admin_token):
     r = call("users", "POST", "/", {**NEW_EMPLOYEE, "manager_id": 3}, token=admin_token)
     assert r.status == 400

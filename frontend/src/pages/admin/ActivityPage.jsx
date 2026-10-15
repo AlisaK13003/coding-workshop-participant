@@ -16,9 +16,9 @@ import { ACTION_TYPES, toActivityItem } from '../../utils/activity.js'
 import { includesText } from '../../utils/text.js'
 import { ROLES, roleLabel } from '../../utils/users.js'
 
-const PAGE_SIZE = 50
+const PAGE_SIZE = 10
 
-/** Searchable audit trail of every change, filtered by the API, 50 entries per page. */
+/** Searchable audit trail of every change, filtered by the API, 10 entries per page. */
 export function ActivityPage() {
   const [search, setSearch] = useState('')
   const [offset, setOffset] = useState(0)

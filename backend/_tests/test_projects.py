@@ -132,6 +132,15 @@ def test_create_project_validation(admin_token):
     assert r.json["error"]["fields"]["manager_id"] == "Must be an active manager."
 
 
+def test_budget_must_fit_the_column(admin_token):
+    # budget is NUMERIC(12, 2): a 400 instead of the database failing with a 500
+    r = call("projects", "POST", "/", {**NEW_PROJECT, "budget": 10_000_000_000}, token=admin_token)
+    assert r.status == 400
+    assert r.json["error"]["fields"]["budget"] == "Must be less than 10,000,000,000."
+    r = call("projects", "POST", "/", {**NEW_PROJECT, "budget": 9_999_999_999.99}, token=admin_token)
+    assert r.status == 201
+
+
 def test_create_project_duplicate_name_is_409(admin_token):
     r = call("projects", "POST", "/", {**NEW_PROJECT, "name": "customer PORTAL"}, token=admin_token)
     assert r.status == 409

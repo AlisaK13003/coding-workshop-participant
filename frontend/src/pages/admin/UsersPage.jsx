@@ -5,6 +5,7 @@ import {
   Button,
   EmptyState,
   PageHeading,
+  PagedList,
   Panel,
   QueryContent,
   SearchBox,
@@ -18,6 +19,7 @@ import { ROLE, ROLES, roleLabel } from '../../utils/users.js'
 import { UserDetailPage } from './UserDetailPage.jsx'
 
 const ALL = ''
+const PAGE_SIZE = 10
 
 /**
  * User directory; selecting a row opens that user's detail page. The open user is kept by
@@ -96,7 +98,9 @@ export function UsersPage({ projects, selectedId, onSelectUser, onOpenProject, o
               includesText(`${user.name} ${user.email} ${user.username}`, search),
             )
             return visible.length ? (
-              <UserTable users={visible} onOpen={(user) => onSelectUser(user.id)} />
+              <PagedList key={`${search}|${role}|${managerId}|${showArchived}`} items={visible} pageSize={PAGE_SIZE}>
+                {(pageUsers) => <UserTable users={pageUsers} onOpen={(user) => onSelectUser(user.id)} />}
+              </PagedList>
             ) : (
               <EmptyState title="No users found" body="Try clearing a filter or using a different search term." />
             )

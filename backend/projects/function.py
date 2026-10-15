@@ -187,7 +187,7 @@ def create_project(request):
     manager_id = v.integer("manager_id", required=True, minimum=1)
     start_date = v.date("start_date", required=True)
     end_date = v.date("end_date", required=True)
-    budget = v.money("budget", required=True)
+    budget = v.money("budget", required=True, digits=12)
     v.check_date_order(start_date, end_date)
     v.raise_if_invalid()
 
@@ -219,7 +219,7 @@ def update_project(request):
     manager_id = v.integer("manager_id", required=True, minimum=1)
     start_date = v.date("start_date", required=True)
     end_date = v.date("end_date", required=True)
-    budget = v.money("budget", required=True)
+    budget = v.money("budget", required=True, digits=12)
     v.raise_if_invalid()
 
     with db.transaction() as conn:

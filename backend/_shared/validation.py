@@ -67,8 +67,9 @@ class Validator:
             self.errors[field] = f"Must be at least {minimum}."
         return value
 
-    def money(self, field, required=False):
-        """A Decimal of zero or more, rounded to cents."""
+    def money(self, field, required=False, digits=10):
+        """A Decimal of zero or more, rounded to cents. digits is the column's NUMERIC precision
+        (NUMERIC(10, 2) holds up to 99,999,999.99); a bigger amount would make the database fail."""
         value = self._get(field, required)
         if value is None:
             return None
@@ -80,7 +81,12 @@ class Validator:
         if isinstance(value, bool) or not amount.is_finite() or amount < 0:
             self.errors[field] = "Must be zero or more."
             return None
-        return amount.quantize(Decimal("0.01"))
+        amount = amount.quantize(Decimal("0.01"))
+        limit = 10 ** (digits - 2)
+        if amount >= limit:
+            self.errors[field] = f"Must be less than {limit:,}."
+            return None
+        return amount
 
     def date(self, field, required=False):
         value = self._get(field, required)

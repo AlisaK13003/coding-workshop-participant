@@ -8,12 +8,17 @@ import './MoneyInput.css'
  * A dollar amount field that accepts commas ("100,000"), tidies the number when you
  * leave it, and steps by `step` with its ▲▼ buttons or the arrow keys (never below 0).
  * The form receives the plain number under `name` (e.g. "100000").
+ * onEdit (optional) is called whenever the person changes the amount, by typing or stepping.
  */
-export function MoneyInput({ name, defaultValue, step = 10000, required, placeholder, ...props }) {
+export function MoneyInput({ name, defaultValue, step = 10000, required, placeholder, onEdit, ...props }) {
   const [text, setText] = useState(formatAmount(defaultValue == null ? null : Number(defaultValue)))
   const amount = parseAmount(text)
 
-  const stepBy = (direction) => setText(formatAmount(Math.max(0, (amount ?? 0) + direction * step)))
+  const edit = (next) => {
+    setText(next)
+    onEdit?.()
+  }
+  const stepBy = (direction) => edit(formatAmount(Math.max(0, (amount ?? 0) + direction * step)))
 
   return (
     <span className="money-input">
@@ -27,7 +32,7 @@ export function MoneyInput({ name, defaultValue, step = 10000, required, placeho
         placeholder={placeholder}
         required={required}
         // Only digits, commas, one decimal point and spaces can be typed.
-        onChange={(event) => setText(event.target.value.replace(/[^\d.,\s]/g, ''))}
+        onChange={(event) => edit(event.target.value.replace(/[^\d.,\s]/g, ''))}
         onBlur={() => amount != null && setText(formatAmount(amount))}
         onKeyDown={(event) => {
           if (event.key === 'ArrowUp' || event.key === 'ArrowDown') {

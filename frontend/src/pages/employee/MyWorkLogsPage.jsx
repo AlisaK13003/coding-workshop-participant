@@ -45,7 +45,7 @@ export function MyWorkLogsPage({ assignments, milestones, logs }) {
           For corrections or historical entries, contact an admin. Closed and
           archived project logs aren’t shown here.
         </div>
-        <WorkLogTable logs={visible} columns={[...EMPLOYEE_WORK_LOG_COLUMNS, 'submitted']} />
+        <WorkLogTable key={JSON.stringify(filters)} logs={visible} columns={[...EMPLOYEE_WORK_LOG_COLUMNS, 'submitted']} />
       </Panel>
     </>
   )

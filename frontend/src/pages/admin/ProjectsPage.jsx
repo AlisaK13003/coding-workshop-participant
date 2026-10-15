@@ -4,6 +4,7 @@ import {
   Button,
   EmptyState,
   PageHeading,
+  PagedList,
   Panel,
   SearchBox,
   Select,
@@ -17,6 +18,7 @@ import { ProjectTable } from './ProjectTable.jsx'
 
 const ALL = ''
 const UNASSIGNED = 'unassigned'
+const PAGE_SIZE = 10
 
 function matchesManager(project, manager) {
   if (manager === ALL) return true
@@ -88,7 +90,9 @@ export function ProjectsPage({ projects, onOpenProject, onOpenDialog }) {
           </div>
         </div>
         {visible.length ? (
-          <ProjectTable projects={visible} onOpen={onOpenProject} />
+          <PagedList key={`${search}|${manager}|${status}|${phase}`} items={visible} pageSize={PAGE_SIZE}>
+            {(pageProjects) => <ProjectTable projects={pageProjects} onOpen={onOpenProject} />}
+          </PagedList>
         ) : (
           <EmptyState
             title="No projects found"

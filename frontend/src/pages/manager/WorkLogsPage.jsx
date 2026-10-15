@@ -49,6 +49,7 @@ export function WorkLogsPage({ logs, employees, projects, milestones }) {
           per day and can’t backdate. Closed and archived project logs aren’t shown.
         </div>
         <WorkLogTable
+          key={JSON.stringify(filters)}
           logs={visible}
           columns={MANAGER_WORK_LOG_COLUMNS}
           emptyBody="No entries match these filters."

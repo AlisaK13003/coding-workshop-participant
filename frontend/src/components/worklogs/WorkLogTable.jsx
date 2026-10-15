@@ -1,6 +1,6 @@
 import { formatCents, formatMoney } from '../../utils/format.js'
 import { toWorkLogRow } from '../../utils/workLogs.js'
-import { DataTable, EmptyState } from '../ui'
+import { DataTable, EmptyState, PagedList } from '../ui'
 
 // Reusable columns. Each reads a display row made by toWorkLogRow.
 const PRESET_COLUMNS = {
@@ -41,16 +41,22 @@ function resolveColumn(column) {
  * columns: preset names ('date', 'employee', 'project', 'milestone', 'hours',
  *   'rate', 'cost', 'laborCost', 'submitted') and/or custom column objects
  *   { key, header, render(row) } (e.g. a trailing action button).
+ * pageSize: rows per page. Pages with filters give the table a `key` that changes with
+ *   them, so a new result starts again on page 1.
  */
-export function WorkLogTable({ logs, columns, emptyBody = 'No work logs match these filters.' }) {
+export function WorkLogTable({ logs, columns, emptyBody = 'No work logs match these filters.', pageSize = 10 }) {
   if (!logs.length) {
     return <EmptyState title="No work logs" body={emptyBody} />
   }
   return (
-    <DataTable
-      columns={columns.map(resolveColumn)}
-      rows={logs.map(toWorkLogRow)}
-      getRowKey={(log) => log.id}
-    />
+    <PagedList items={logs} pageSize={pageSize}>
+      {(pageLogs) => (
+        <DataTable
+          columns={columns.map(resolveColumn)}
+          rows={pageLogs.map(toWorkLogRow)}
+          getRowKey={(log) => log.id}
+        />
+      )}
+    </PagedList>
   )
 }
